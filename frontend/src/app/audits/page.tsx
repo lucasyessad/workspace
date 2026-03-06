@@ -2,16 +2,31 @@
 import { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import EnergyLabel from "@/components/ui/EnergyLabel";
-import { auditsApi, buildingsApi } from "@/lib/api";
+import { auditsApi, buildingsApi, exportsApi } from "@/lib/api";
 import { Audit, Building } from "@/types";
 import { formatNumber, AUDIT_STATUS_LABELS } from "@/lib/utils";
-import { ClipboardList, Plus } from "lucide-react";
+import { ClipboardList, Plus, FileDown } from "lucide-react";
 import Link from "next/link";
 
 export default function AuditsPage() {
   const [audits, setAudits] = useState<Audit[]>([]);
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExcelExport() {
+    setExporting(true);
+    try {
+      const r = await exportsApi.downloadAuditsXlsx();
+      const url = window.URL.createObjectURL(new Blob([r.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `thermopilot_audits_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+    } finally {
+      setExporting(false);
+    }
+  }
 
   useEffect(() => {
     Promise.all([auditsApi.list(), buildingsApi.listBuildings()])
@@ -30,10 +45,22 @@ export default function AuditsPage() {
             <h1 className="text-2xl font-bold text-gray-900">Audits énergétiques</h1>
             <p className="text-gray-500 mt-1">{audits.length} audit(s)</p>
           </div>
-          <Link href="/audits/new" className="btn-primary">
-            <Plus size={16} />
-            Nouvel audit
-          </Link>
+          <div className="flex gap-2">
+            {audits.filter(a => a.status === "completed").length > 0 && (
+              <button
+                className="btn-secondary"
+                onClick={handleExcelExport}
+                disabled={exporting}
+              >
+                <FileDown size={16} />
+                {exporting ? "Export..." : "Export Excel"}
+              </button>
+            )}
+            <Link href="/audits/new" className="btn-primary">
+              <Plus size={16} />
+              Nouvel audit
+            </Link>
+          </div>
         </div>
 
         <div className="card">

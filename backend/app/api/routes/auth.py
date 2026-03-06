@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
@@ -65,3 +66,65 @@ def create_organization(payload: OrganizationCreate, db: Session = Depends(get_d
     db.commit()
     db.refresh(org)
     return org
+
+
+# ─── Me / Profile ──────────────────────────────────────────────────────────────
+
+from app.core.security import get_current_user
+
+
+class ProfileUpdate(BaseModel):
+    name: str | None = None
+    billing_email: str | None = None
+    timezone: str | None = None
+
+
+class MeResponse(BaseModel):
+    user_id: str
+    email: str
+    first_name: str | None
+    last_name: str | None
+    job_title: str | None
+    organization_id: str
+    organization_name: str
+    organization_type: str
+    plan: str
+
+
+@router.get("/me", response_model=MeResponse)
+def get_me(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    org = db.query(Organization).filter(Organization.id == current_user.organization_id).first()
+    return MeResponse(
+        user_id=str(current_user.id),
+        email=current_user.email,
+        first_name=current_user.first_name,
+        last_name=current_user.last_name,
+        job_title=current_user.job_title,
+        organization_id=str(current_user.organization_id),
+        organization_name=org.name if org else "—",
+        organization_type=org.organization_type if org else "—",
+        plan=org.plan if org else "starter",
+    )
+
+
+@router.patch("/organizations/me")
+def update_org_profile(
+    payload: ProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    org = db.query(Organization).filter(Organization.id == current_user.organization_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organisation non trouvée")
+    if payload.name is not None:
+        org.name = payload.name
+    if payload.billing_email is not None:
+        org.billing_email = payload.billing_email
+    if payload.timezone is not None:
+        org.timezone = payload.timezone
+    db.commit()
+    db.refresh(org)
+    return {"id": str(org.id), "name": org.name, "billing_email": org.billing_email, "timezone": org.timezone}

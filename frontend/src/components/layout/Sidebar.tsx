@@ -12,6 +12,7 @@ import {
   LogOut,
   CreditCard,
   KeyRound,
+  User,
   BrainCircuit,
 } from "lucide-react";
 
@@ -25,6 +26,7 @@ const navItems = [
 ];
 
 const settingsItems = [
+  { href: "/settings/profile", label: "Profil", icon: User },
   { href: "/settings/billing", label: "Abonnement", icon: CreditCard },
   { href: "/settings/apikeys", label: "Clés API", icon: KeyRound },
 ];

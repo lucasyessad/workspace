@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
@@ -6,6 +7,7 @@ from app.database import get_db
 from app.core.security import get_current_user
 from app.models.audit import Audit
 from app.models.building import Building, System, Envelope
+from app.models.organization import Organization, PLAN_LIMITS
 from app.models.user import User
 from app.schemas.audit import AuditCreate, AuditRead, AuditUpdate
 from app.services.energy_calculator import (
@@ -37,6 +39,31 @@ def create_audit(
     ).first()
     if not building:
         raise HTTPException(status_code=404, detail="Bâtiment non trouvé")
+
+    # ── Quota check ────────────────────────────────────────────────────────────
+    org = db.query(Organization).filter(
+        Organization.id == current_user.organization_id
+    ).first()
+    plan = org.plan or "starter"
+    limits = PLAN_LIMITS.get(plan, PLAN_LIMITS["starter"])
+    monthly_limit = limits["audits_per_month"]
+
+    if monthly_limit != -1:  # -1 means unlimited
+        now = datetime.now(timezone.utc)
+        # Reset counter at the start of a new month
+        if org.monthly_audit_reset_at is None or org.monthly_audit_reset_at.month != now.month:
+            org.monthly_audit_count = 0
+            org.monthly_audit_reset_at = now
+
+        if (org.monthly_audit_count or 0) >= monthly_limit:
+            raise HTTPException(
+                status_code=429,
+                detail=(
+                    f"Limite mensuelle de {monthly_limit} audits atteinte pour le plan "
+                    f"'{plan.capitalize()}'. Passez au plan Pro pour des audits illimités."
+                ),
+            )
+        org.monthly_audit_count = (org.monthly_audit_count or 0) + 1
 
     audit = Audit(
         organization_id=current_user.organization_id,

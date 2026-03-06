@@ -34,6 +34,8 @@ export const authApi = {
     api.post("/auth/login", { email, password }),
   register: (data: object) => api.post("/auth/register", data),
   createOrg: (data: object) => api.post("/auth/organizations", data),
+  me: () => api.get("/auth/me"),
+  updateOrgProfile: (data: object) => api.patch("/auth/organizations/me", data),
 };
 
 // ─── Buildings ────────────────────────────────────────────────────────────────
