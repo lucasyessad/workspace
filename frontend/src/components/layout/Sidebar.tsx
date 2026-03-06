@@ -10,6 +10,9 @@ import {
   TrendingUp,
   FileText,
   LogOut,
+  CreditCard,
+  KeyRound,
+  BrainCircuit,
 } from "lucide-react";
 
 const navItems = [
@@ -18,6 +21,12 @@ const navItems = [
   { href: "/audits", label: "Audits", icon: ClipboardList },
   { href: "/scenarios", label: "Scénarios", icon: TrendingUp },
   { href: "/reports", label: "Rapports", icon: FileText },
+  { href: "/ml", label: "IA Prédictive", icon: BrainCircuit },
+];
+
+const settingsItems = [
+  { href: "/settings/billing", label: "Abonnement", icon: CreditCard },
+  { href: "/settings/apikeys", label: "Clés API", icon: KeyRound },
 ];
 
 export default function Sidebar() {
@@ -65,8 +74,34 @@ export default function Sidebar() {
         })}
       </nav>
 
+      {/* Settings */}
+      <div className="px-3 py-2 border-t border-brand-800">
+        <p className="text-brand-400 text-xs font-semibold uppercase tracking-wider px-3 py-2">
+          Paramètres
+        </p>
+        {settingsItems.map((item) => {
+          const Icon = item.icon;
+          const active = pathname.startsWith(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                active
+                  ? "bg-brand-700 text-white"
+                  : "text-brand-300 hover:bg-brand-800 hover:text-white"
+              )}
+            >
+              <Icon size={16} />
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
+
       {/* Logout */}
-      <div className="px-3 py-4 border-t border-brand-800">
+      <div className="px-3 py-3 border-t border-brand-800">
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm font-medium text-brand-300 hover:bg-brand-800 hover:text-white transition-colors"

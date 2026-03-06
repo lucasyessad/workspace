@@ -135,3 +135,32 @@ export interface GeneratedReport {
   file_path?: string;
   created_at: string;
 }
+
+export interface ApiKey {
+  id: string;
+  name: string;
+  key_prefix: string;
+  is_active: boolean;
+  last_used_at?: string;
+  expires_at?: string;
+  created_at: string;
+  full_key?: string;
+}
+
+export interface SubscriptionPlan {
+  id: string;
+  label: string;
+  monthly_eur: number;
+  limits: { audits_per_month: number; api_keys: number; team_members: number };
+  features: string[];
+}
+
+export interface MLResult {
+  predicted_primary_energy_per_m2: number;
+  model_mae_kwh_m2: number;
+  top_influencing_factors: { feature: string; importance: number }[];
+  calculator_primary_energy_per_m2?: number;
+  delta_kwh_m2?: number;
+  delta_percent?: number;
+  note?: string;
+}

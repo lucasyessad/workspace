@@ -1,7 +1,13 @@
-from sqlalchemy import Column, String, Boolean
+from sqlalchemy import Column, String, Boolean, Integer, DateTime
 from sqlalchemy.orm import relationship
 from app.database import Base
 from app.models.base import UUIDMixin, TimestampMixin
+
+PLAN_LIMITS = {
+    "starter":    {"audits_per_month": 10,  "api_keys": 0,  "team_members": 1},
+    "pro":        {"audits_per_month": -1,  "api_keys": 0,  "team_members": 10},
+    "enterprise": {"audits_per_month": -1,  "api_keys": 10, "team_members": -1},
+}
 
 
 class Organization(Base, UUIDMixin, TimestampMixin):
@@ -15,6 +21,12 @@ class Organization(Base, UUIDMixin, TimestampMixin):
     timezone = Column(String(64), default="Europe/Paris")
     is_active = Column(Boolean, default=True)
 
+    # Subscription plan
+    plan = Column(String(50), default="starter", nullable=False)
+    monthly_audit_count = Column(Integer, default=0, nullable=False)
+    monthly_audit_reset_at = Column(DateTime(timezone=True), nullable=True)
+
     users = relationship("User", back_populates="organization", lazy="dynamic")
     building_projects = relationship("BuildingProject", back_populates="organization", lazy="dynamic")
     audits = relationship("Audit", back_populates="organization", lazy="dynamic")
+    api_keys = relationship("ApiKey", back_populates="organization", lazy="dynamic")

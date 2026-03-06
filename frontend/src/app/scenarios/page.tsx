@@ -2,19 +2,34 @@
 import { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import EnergyLabel from "@/components/ui/EnergyLabel";
-import { scenariosApi } from "@/lib/api";
+import { scenariosApi, exportsApi } from "@/lib/api";
 import { RenovationScenario } from "@/types";
 import { formatNumber } from "@/lib/utils";
-import { TrendingUp, Plus } from "lucide-react";
+import { TrendingUp, Plus, FileDown } from "lucide-react";
 import Link from "next/link";
 
 export default function ScenariosPage() {
   const [scenarios, setScenarios] = useState<RenovationScenario[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     scenariosApi.list().then((r) => setScenarios(r.data)).finally(() => setLoading(false));
   }, []);
+
+  async function handleExcelExport() {
+    setExporting(true);
+    try {
+      const r = await exportsApi.downloadScenariosXlsx();
+      const url = window.URL.createObjectURL(new Blob([r.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `thermopilot_scenarios_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <AppLayout>
@@ -24,10 +39,22 @@ export default function ScenariosPage() {
             <h1 className="text-2xl font-bold text-gray-900">Scénarios de rénovation</h1>
             <p className="text-gray-500 mt-1">{scenarios.length} scénario(s)</p>
           </div>
-          <Link href="/scenarios/new" className="btn-primary">
-            <Plus size={16} />
-            Nouveau scénario
-          </Link>
+          <div className="flex gap-2">
+            {scenarios.length > 0 && (
+              <button
+                className="btn-secondary"
+                onClick={handleExcelExport}
+                disabled={exporting}
+              >
+                <FileDown size={16} />
+                {exporting ? "Export..." : "Export Excel"}
+              </button>
+            )}
+            <Link href="/scenarios/new" className="btn-primary">
+              <Plus size={16} />
+              Nouveau scénario
+            </Link>
+          </div>
         </div>
 
         {loading ? (

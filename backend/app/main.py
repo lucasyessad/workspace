@@ -10,6 +10,10 @@ from app.api.routes.buildings import router as buildings_router
 from app.api.routes.audits import router as audits_router
 from app.api.routes.scenarios import router as scenarios_router
 from app.api.routes.reports import router as reports_router
+from app.api.routes.billing import router as billing_router
+from app.api.routes.api_keys import router as api_keys_router
+from app.api.routes.exports import router as exports_router
+from app.api.routes.ml import router as ml_router
 
 # Create all tables on startup (use Alembic in production)
 Base.metadata.create_all(bind=engine)
@@ -17,7 +21,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="ThermoPilot AI",
     description="Plateforme SaaS d'analyse énergétique automatisée pour les bâtiments",
-    version="1.0.0",
+    version="2.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -36,6 +40,10 @@ app.include_router(buildings_router, prefix="/api")
 app.include_router(audits_router, prefix="/api")
 app.include_router(scenarios_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
+app.include_router(billing_router, prefix="/api")
+app.include_router(api_keys_router, prefix="/api")
+app.include_router(exports_router, prefix="/api")
+app.include_router(ml_router, prefix="/api")
 
 
 @app.get("/", tags=["health"])

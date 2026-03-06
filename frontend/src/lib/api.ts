@@ -80,3 +80,34 @@ export const reportsApi = {
   downloadPdf: (id: string) =>
     api.get(`/reports/${id}/pdf`, { responseType: "blob" }),
 };
+
+// ─── Billing ──────────────────────────────────────────────────────────────────
+export const billingApi = {
+  getPlans: () => api.get("/billing/plans"),
+  getSubscription: () => api.get("/billing/subscription"),
+  upgrade: (plan: string) => api.post("/billing/upgrade", { plan }),
+};
+
+// ─── API Keys ─────────────────────────────────────────────────────────────────
+export const apiKeysApi = {
+  list: () => api.get("/apikeys"),
+  create: (data: object) => api.post("/apikeys", data),
+  revoke: (id: string) => api.delete(`/apikeys/${id}`),
+};
+
+// ─── Exports ──────────────────────────────────────────────────────────────────
+export const exportsApi = {
+  downloadAuditsXlsx: () =>
+    api.get("/exports/audits/xlsx", { responseType: "blob" }),
+  downloadScenariosXlsx: (auditId?: string) =>
+    api.get("/exports/scenarios/xlsx", {
+      responseType: "blob",
+      params: auditId ? { audit_id: auditId } : {},
+    }),
+};
+
+// ─── ML ───────────────────────────────────────────────────────────────────────
+export const mlApi = {
+  predict: (data: object) => api.post("/ml/predict", data),
+  predictForAudit: (auditId: string) => api.get(`/ml/predict/${auditId}`),
+};
