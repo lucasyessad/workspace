@@ -1,0 +1,1040 @@
+schema_metadata:
+  name: ThermoPilot AI PostgreSQL Schema
+  version: 1.0.0
+  target_database: PostgreSQL 16
+  purpose:
+    - multi_tenant_saas
+    - energy_audits
+    - renovation_scenarios
+    - report_generation
+    - ai_task_persistence
+  conventions:
+    primary_key_type: uuid
+    table_naming: plural_snake_case
+    timestamp_columns:
+      - created_at
+      - updated_at
+    soft_delete_column: deleted_at
+
+domains:
+  - identity_security
+  - organizations_billing
+  - buildings_assets
+  - files_documents
+  - audits
+  - calculations_ai
+  - renovation
+  - reports
+  - work_management
+  - history_snapshots
+  - integrations_workflows
+  - references
+
+tables:
+  organizations:
+    description: Tenant root entity
+    columns:
+      id: uuid pk
+      name: varchar(255) not_null
+      slug: varchar(120) unique not_null
+      organization_type: varchar(50) not_null
+      billing_email: varchar(255)
+      country_code: varchar(2)
+      timezone: varchar(64) default 'Europe/Paris'
+      is_active: boolean default true
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - unique(slug)
+
+  users:
+    description: Application users
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      email: varchar(255) unique not_null
+      password_hash: text
+      first_name: varchar(120)
+      last_name: varchar(120)
+      job_title: varchar(255)
+      phone: varchar(50)
+      status: varchar(50) default 'active'
+      last_login_at: timestamptz
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - unique(email)
+      - btree(organization_id, status)
+
+  roles:
+    columns:
+      id: uuid pk
+      code: varchar(80) unique not_null
+      name: varchar(120) not_null
+      description: text
+      created_at: timestamptz not_null
+
+  user_roles:
+    columns:
+      id: uuid pk
+      user_id: uuid fk users.id not_null
+      role_id: uuid fk roles.id not_null
+      created_at: timestamptz not_null
+    constraints:
+      - unique(user_id, role_id)
+
+  api_keys:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      name: varchar(255) not_null
+      key_prefix: varchar(20) not_null
+      key_hash: text not_null
+      scopes: jsonb default '[]'
+      last_used_at: timestamptz
+      expires_at: timestamptz
+      revoked_at: timestamptz
+      created_at: timestamptz not_null
+    indexes:
+      - btree(organization_id)
+
+  subscription_plans:
+    columns:
+      id: uuid pk
+      code: varchar(80) unique not_null
+      name: varchar(120) not_null
+      monthly_price_eur: numeric(12,2) not_null
+      yearly_price_eur: numeric(12,2)
+      features: jsonb default '{}'
+      created_at: timestamptz not_null
+
+  subscriptions:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      plan_id: uuid fk subscription_plans.id not_null
+      status: varchar(50) not_null
+      starts_at: timestamptz not_null
+      ends_at: timestamptz
+      billing_cycle: varchar(20) not_null
+      max_users: integer
+      max_projects: integer
+      max_monthly_audits: integer
+      features: jsonb default '{}'
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(organization_id, status)
+
+  usage_counters:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      metric_code: varchar(80) not_null
+      period_start: date not_null
+      period_end: date not_null
+      value_numeric: numeric(18,4) default 0
+      created_at: timestamptz not_null
+    constraints:
+      - unique(organization_id, metric_code, period_start, period_end)
+
+  building_projects:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      project_code: varchar(80)
+      name: varchar(255) not_null
+      project_status: varchar(50) not_null
+      client_reference: varchar(120)
+      primary_manager_user_id: uuid fk users.id
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(organization_id, project_status)
+      - unique(organization_id, project_code)
+
+  buildings:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      project_id: uuid fk building_projects.id not_null
+      name: varchar(255) not_null
+      address_line_1: varchar(255)
+      address_line_2: varchar(255)
+      postal_code: varchar(20)
+      city: varchar(120)
+      country_code: varchar(2)
+      latitude: numeric(9,6)
+      longitude: numeric(9,6)
+      construction_year: integer
+      building_type: varchar(80)
+      ownership_type: varchar(80)
+      heated_area_m2: numeric(14,2)
+      floors_above_ground: integer
+      floors_below_ground: integer
+      main_use_type: varchar(80)
+      occupancy_profile: varchar(80)
+      current_energy_label: varchar(4)
+      current_ghg_label: varchar(4)
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(organization_id, city)
+      - btree(project_id)
+      - btree(postal_code)
+
+  building_blocks:
+    columns:
+      id: uuid pk
+      building_id: uuid fk buildings.id not_null
+      name: varchar(255) not_null
+      block_type: varchar(50)
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+
+  building_zones:
+    columns:
+      id: uuid pk
+      building_id: uuid fk buildings.id not_null
+      block_id: uuid fk building_blocks.id
+      name: varchar(255) not_null
+      zone_type: varchar(80)
+      heated_area_m2: numeric(14,2)
+      volume_m3: numeric(14,2)
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+
+  units:
+    columns:
+      id: uuid pk
+      building_id: uuid fk buildings.id not_null
+      zone_id: uuid fk building_zones.id
+      lot_number: varchar(80)
+      unit_type: varchar(80)
+      floor_label: varchar(50)
+      area_m2: numeric(14,2)
+      occupancy_type: varchar(80)
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+
+  systems:
+    columns:
+      id: uuid pk
+      building_id: uuid fk buildings.id not_null
+      zone_id: uuid fk building_zones.id
+      system_type: varchar(80) not_null
+      energy_source: varchar(80)
+      brand: varchar(120)
+      model: varchar(120)
+      installation_year: integer
+      nominal_power_kw: numeric(14,3)
+      efficiency_nominal: numeric(8,4)
+      status: varchar(50)
+      metadata: jsonb default '{}'
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(building_id, system_type)
+      - gin(metadata)
+
+  envelopes:
+    columns:
+      id: uuid pk
+      building_id: uuid fk buildings.id not_null
+      zone_id: uuid fk building_zones.id
+      element_type: varchar(80) not_null
+      orientation: varchar(20)
+      surface_m2: numeric(14,2)
+      u_value: numeric(8,4)
+      insulation_type: varchar(120)
+      insulation_thickness_mm: numeric(10,2)
+      condition_state: varchar(50)
+      metadata: jsonb default '{}'
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(building_id, element_type)
+      - gin(metadata)
+
+  metering_points:
+    columns:
+      id: uuid pk
+      building_id: uuid fk buildings.id not_null
+      energy_type: varchar(80) not_null
+      meter_reference: varchar(120)
+      provider_name: varchar(255)
+      unit: varchar(20)
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+
+  energy_bills:
+    columns:
+      id: uuid pk
+      building_id: uuid fk buildings.id not_null
+      metering_point_id: uuid fk metering_points.id
+      billing_period_start: date not_null
+      billing_period_end: date not_null
+      energy_type: varchar(80) not_null
+      consumption_kwh: numeric(18,3)
+      cost_eur_ht: numeric(14,2)
+      cost_eur_ttc: numeric(14,2)
+      degree_days_base: numeric(10,2)
+      supplier_name: varchar(255)
+      invoice_reference: varchar(120)
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(building_id, billing_period_start, billing_period_end)
+
+  files:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      storage_provider: varchar(50) not_null
+      storage_bucket: varchar(255) not_null
+      storage_key: text not_null
+      original_filename: varchar(255) not_null
+      mime_type: varchar(150) not_null
+      file_size_bytes: bigint not_null
+      checksum_sha256: char(64)
+      uploaded_by_user_id: uuid fk users.id
+      uploaded_at: timestamptz not_null
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(organization_id)
+      - unique(storage_bucket, storage_key)
+
+  file_links:
+    columns:
+      id: uuid pk
+      file_id: uuid fk files.id not_null
+      linked_entity_type: varchar(80) not_null
+      linked_entity_id: uuid not_null
+      link_role: varchar(80)
+      created_at: timestamptz not_null
+    indexes:
+      - btree(file_id)
+      - btree(linked_entity_type, linked_entity_id)
+
+  document_extractions:
+    columns:
+      id: uuid pk
+      file_id: uuid fk files.id not_null
+      extraction_type: varchar(80) not_null
+      engine_name: varchar(120)
+      engine_version: varchar(80)
+      status: varchar(50) not_null
+      raw_text: text
+      structured_data: jsonb default '{}'
+      confidence_score: numeric(5,4)
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(file_id, extraction_type)
+      - gin(structured_data)
+
+  site_photos:
+    columns:
+      id: uuid pk
+      building_id: uuid fk buildings.id not_null
+      file_id: uuid fk files.id not_null
+      photo_category: varchar(80)
+      taken_at: timestamptz
+      latitude: numeric(9,6)
+      longitude: numeric(9,6)
+      notes: text
+      created_at: timestamptz not_null
+
+  audits:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      project_id: uuid fk building_projects.id not_null
+      building_id: uuid fk buildings.id not_null
+      audit_type: varchar(80) not_null
+      version_number: integer default 1
+      status: varchar(50) not_null
+      initiated_by_user_id: uuid fk users.id
+      validated_by_user_id: uuid fk users.id
+      reference_period_start: date
+      reference_period_end: date
+      weather_normalization_method: varchar(80)
+      baseline_energy_consumption_kwh: numeric(18,3)
+      baseline_energy_cost_eur: numeric(14,2)
+      baseline_co2_kg: numeric(18,3)
+      computed_energy_label: varchar(4)
+      computed_ghg_label: varchar(4)
+      assumptions: jsonb default '{}'
+      input_snapshot: jsonb default '{}'
+      result_snapshot: jsonb default '{}'
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(building_id, created_at)
+      - btree(organization_id, status)
+      - gin(assumptions)
+
+  audit_inputs:
+    columns:
+      id: uuid pk
+      audit_id: uuid fk audits.id not_null
+      input_group: varchar(80) not_null
+      input_key: varchar(120) not_null
+      input_value_text: text
+      input_value_numeric: numeric(18,6)
+      input_value_bool: boolean
+      unit: varchar(30)
+      source_type: varchar(80)
+      source_reference: varchar(255)
+      confidence_score: numeric(5,4)
+      created_at: timestamptz not_null
+    indexes:
+      - btree(audit_id, input_group)
+      - btree(audit_id, input_key)
+
+  audit_observations:
+    columns:
+      id: uuid pk
+      audit_id: uuid fk audits.id not_null
+      category: varchar(80) not_null
+      severity: varchar(50)
+      title: varchar(255) not_null
+      description: text
+      location_label: varchar(255)
+      related_photo_id: uuid fk site_photos.id
+      created_by_user_id: uuid fk users.id
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+
+  audit_issues:
+    columns:
+      id: uuid pk
+      audit_id: uuid fk audits.id not_null
+      issue_code: varchar(80) not_null
+      severity: varchar(50) not_null
+      title: varchar(255) not_null
+      description: text
+      status: varchar(50) not_null
+      resolution_notes: text
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(audit_id, status)
+
+  audit_versions:
+    columns:
+      id: uuid pk
+      audit_id: uuid fk audits.id not_null
+      version_number: integer not_null
+      snapshot_payload: jsonb not_null
+      created_by_user_id: uuid fk users.id
+      created_at: timestamptz not_null
+    constraints:
+      - unique(audit_id, version_number)
+
+  calculation_runs:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      audit_id: uuid fk audits.id not_null
+      calculation_type: varchar(80) not_null
+      engine_name: varchar(120) not_null
+      engine_version: varchar(80)
+      status: varchar(50) not_null
+      started_at: timestamptz
+      finished_at: timestamptz
+      requested_by_user_id: uuid fk users.id
+      input_payload: jsonb default '{}'
+      output_payload: jsonb default '{}'
+      logs_excerpt: text
+      error_code: varchar(80)
+      error_message: text
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(audit_id, status)
+      - gin(input_payload)
+      - gin(output_payload)
+
+  calculation_metrics:
+    columns:
+      id: uuid pk
+      calculation_run_id: uuid fk calculation_runs.id not_null
+      metric_code: varchar(80) not_null
+      metric_value: numeric(18,6)
+      unit: varchar(30)
+      created_at: timestamptz not_null
+    constraints:
+      - unique(calculation_run_id, metric_code)
+
+  ai_analysis_runs:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      audit_id: uuid fk audits.id
+      file_id: uuid fk files.id
+      analysis_type: varchar(80) not_null
+      model_name: varchar(120) not_null
+      model_version: varchar(80)
+      status: varchar(50) not_null
+      input_payload: jsonb default '{}'
+      output_payload: jsonb default '{}'
+      confidence_score: numeric(5,4)
+      started_at: timestamptz
+      finished_at: timestamptz
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+
+  ai_analysis_outputs:
+    columns:
+      id: uuid pk
+      ai_analysis_run_id: uuid fk ai_analysis_runs.id not_null
+      output_key: varchar(120) not_null
+      output_value_text: text
+      output_value_numeric: numeric(18,6)
+      output_payload: jsonb default '{}'
+      created_at: timestamptz not_null
+
+  renovation_scenarios:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      audit_id: uuid fk audits.id not_null
+      name: varchar(255) not_null
+      scenario_type: varchar(80) not_null
+      status: varchar(50) not_null
+      target_energy_label: varchar(4)
+      target_ghg_label: varchar(4)
+      estimated_total_cost_eur: numeric(14,2)
+      estimated_annual_savings_eur: numeric(14,2)
+      estimated_energy_savings_kwh: numeric(18,3)
+      estimated_co2_reduction_kg: numeric(18,3)
+      simple_payback_years: numeric(10,2)
+      priority_score: numeric(10,4)
+      notes: text
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(audit_id, status)
+
+  renovation_measures:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      measure_type: varchar(80) not_null
+      component_scope: varchar(120)
+      description: text
+      quantity: numeric(14,3)
+      unit: varchar(30)
+      estimated_unit_cost_eur: numeric(14,2)
+      estimated_total_cost_eur: numeric(14,2)
+      expected_energy_gain_kwh: numeric(18,3)
+      expected_co2_gain_kg: numeric(18,3)
+      expected_maintenance_impact: varchar(80)
+      execution_complexity: varchar(50)
+      phasing_group: varchar(80)
+      metadata: jsonb default '{}'
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+
+  scenario_measure_links:
+    columns:
+      id: uuid pk
+      scenario_id: uuid fk renovation_scenarios.id not_null
+      measure_id: uuid fk renovation_measures.id not_null
+      sequence_order: integer
+      is_mandatory: boolean default true
+      created_at: timestamptz not_null
+    constraints:
+      - unique(scenario_id, measure_id)
+
+  financial_aids:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id
+      aid_code: varchar(80) not_null
+      aid_name: varchar(255) not_null
+      aid_type: varchar(80)
+      eligibility_rules: jsonb default '{}'
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+
+  scenario_financials:
+    columns:
+      id: uuid pk
+      scenario_id: uuid fk renovation_scenarios.id not_null
+      total_cost_eur: numeric(14,2)
+      total_aids_eur: numeric(14,2)
+      net_cost_eur: numeric(14,2)
+      annual_savings_eur: numeric(14,2)
+      payback_years: numeric(10,2)
+      npv_eur: numeric(14,2)
+      irr_percent: numeric(10,4)
+      assumptions: jsonb default '{}'
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    constraints:
+      - unique(scenario_id)
+
+  report_templates:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id
+      template_code: varchar(80) not_null
+      name: varchar(255) not_null
+      report_type: varchar(80) not_null
+      template_payload: jsonb default '{}'
+      is_active: boolean default true
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(report_type, is_active)
+
+  generated_reports:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      audit_id: uuid fk audits.id
+      scenario_id: uuid fk renovation_scenarios.id
+      template_id: uuid fk report_templates.id
+      report_type: varchar(80) not_null
+      version_number: integer default 1
+      status: varchar(50) not_null
+      language_code: varchar(10) default 'fr'
+      generated_by_user_id: uuid fk users.id
+      generation_context: jsonb default '{}'
+      file_id: uuid fk files.id
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(audit_id, report_type)
+      - btree(scenario_id)
+
+  report_sections:
+    columns:
+      id: uuid pk
+      report_id: uuid fk generated_reports.id not_null
+      section_code: varchar(80) not_null
+      title: varchar(255)
+      content_markdown: text
+      sort_order: integer not_null
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    constraints:
+      - unique(report_id, section_code)
+
+  report_generation_logs:
+    columns:
+      id: uuid pk
+      report_id: uuid fk generated_reports.id not_null
+      log_level: varchar(20) not_null
+      message: text not_null
+      payload: jsonb default '{}'
+      created_at: timestamptz not_null
+
+  workspaces:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      name: varchar(255) not_null
+      workspace_type: varchar(80) not_null
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+
+  epics:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      workspace_id: uuid fk workspaces.id not_null
+      code: varchar(80)
+      title: varchar(255) not_null
+      description: text
+      status: varchar(50) not_null
+      priority: varchar(30) not_null
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(workspace_id, status)
+
+  features:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      epic_id: uuid fk epics.id not_null
+      code: varchar(80)
+      title: varchar(255) not_null
+      description: text
+      status: varchar(50) not_null
+      priority: varchar(30) not_null
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(epic_id, status)
+
+  tasks:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      workspace_id: uuid fk workspaces.id not_null
+      epic_id: uuid fk epics.id
+      feature_id: uuid fk features.id
+      parent_task_id: uuid fk tasks.id
+      related_entity_type: varchar(80)
+      related_entity_id: uuid
+      title: varchar(255) not_null
+      description: text
+      task_type: varchar(80) not_null
+      priority: varchar(30) not_null
+      status: varchar(50) not_null
+      assignee_user_id: uuid fk users.id
+      assignee_agent_type: varchar(80)
+      created_by_user_id: uuid fk users.id
+      estimated_hours: numeric(10,2)
+      actual_hours: numeric(10,2)
+      due_date: date
+      started_at: timestamptz
+      completed_at: timestamptz
+      next_action: text
+      definition_of_done: text
+      acceptance_criteria: jsonb default '[]'
+      tags: jsonb default '[]'
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    indexes:
+      - btree(workspace_id, status, priority)
+      - btree(related_entity_type, related_entity_id)
+      - gin(tags)
+
+  task_dependencies:
+    columns:
+      id: uuid pk
+      task_id: uuid fk tasks.id not_null
+      depends_on_task_id: uuid fk tasks.id not_null
+      dependency_type: varchar(50) default 'blocks'
+      created_at: timestamptz not_null
+    constraints:
+      - unique(task_id, depends_on_task_id)
+
+  task_comments:
+    columns:
+      id: uuid pk
+      task_id: uuid fk tasks.id not_null
+      author_user_id: uuid fk users.id
+      author_agent_type: varchar(80)
+      comment_body: text not_null
+      created_at: timestamptz not_null
+
+  task_checklists:
+    columns:
+      id: uuid pk
+      task_id: uuid fk tasks.id not_null
+      item_label: varchar(255) not_null
+      is_done: boolean default false
+      sort_order: integer default 0
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+
+  task_artifacts:
+    columns:
+      id: uuid pk
+      task_id: uuid fk tasks.id not_null
+      artifact_type: varchar(80) not_null
+      artifact_label: varchar(255) not_null
+      file_id: uuid fk files.id
+      artifact_uri: text
+      metadata: jsonb default '{}'
+      created_at: timestamptz not_null
+    indexes:
+      - btree(task_id, artifact_type)
+
+  activity_logs:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      actor_user_id: uuid fk users.id
+      actor_agent_type: varchar(80)
+      action_code: varchar(120) not_null
+      entity_type: varchar(80)
+      entity_id: uuid
+      payload: jsonb default '{}'
+      created_at: timestamptz not_null
+    indexes:
+      - btree(organization_id, created_at)
+      - btree(entity_type, entity_id)
+
+  entity_change_log:
+    columns:
+      id: uuid pk
+      entity_type: varchar(80) not_null
+      entity_id: uuid not_null
+      change_type: varchar(50) not_null
+      before_data: jsonb
+      after_data: jsonb
+      changed_by_user_id: uuid fk users.id
+      changed_by_agent: varchar(80)
+      changed_at: timestamptz not_null
+    indexes:
+      - btree(entity_type, entity_id, changed_at)
+      - gin(after_data)
+
+  task_status_history:
+    columns:
+      id: uuid pk
+      task_id: uuid fk tasks.id not_null
+      previous_status: varchar(50)
+      new_status: varchar(50) not_null
+      changed_by_user_id: uuid fk users.id
+      changed_by_agent_type: varchar(80)
+      change_reason: text
+      changed_at: timestamptz not_null
+    indexes:
+      - btree(task_id, changed_at)
+
+  task_session_snapshots:
+    columns:
+      id: uuid pk
+      task_id: uuid fk tasks.id not_null
+      snapshot_label: varchar(255) not_null
+      summary_completed: text
+      summary_remaining: text
+      open_questions: text
+      resume_instructions: text
+      context_payload: jsonb default '{}'
+      created_at: timestamptz not_null
+    indexes:
+      - btree(task_id, created_at)
+      - gin(context_payload)
+
+  checkpoints:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      workspace_id: uuid fk workspaces.id
+      project_id: uuid fk building_projects.id
+      checkpoint_label: varchar(255) not_null
+      status_summary: text
+      payload: jsonb default '{}'
+      created_at: timestamptz not_null
+
+  execution_runs:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      task_id: uuid fk tasks.id
+      workflow_run_id: uuid
+      run_type: varchar(80) not_null
+      status: varchar(50) not_null
+      started_at: timestamptz
+      finished_at: timestamptz
+      input_payload: jsonb default '{}'
+      output_payload: jsonb default '{}'
+      error_payload: jsonb default '{}'
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+
+  integrations:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      integration_type: varchar(80) not_null
+      name: varchar(255) not_null
+      status: varchar(50) not_null
+      config_public: jsonb default '{}'
+      config_secret_ref: varchar(255)
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+
+  webhooks:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      direction: varchar(20) not_null
+      event_code: varchar(120) not_null
+      target_url: text
+      secret_ref: varchar(255)
+      status: varchar(50) not_null
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+
+  automation_workflows:
+    columns:
+      id: uuid pk
+      organization_id: uuid fk organizations.id not_null
+      name: varchar(255) not_null
+      workflow_type: varchar(80) not_null
+      status: varchar(50) not_null
+      trigger_config: jsonb default '{}'
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+
+  workflow_runs:
+    columns:
+      id: uuid pk
+      workflow_id: uuid fk automation_workflows.id not_null
+      status: varchar(50) not_null
+      started_at: timestamptz
+      finished_at: timestamptz
+      input_payload: jsonb default '{}'
+      output_payload: jsonb default '{}'
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+
+  workflow_steps:
+    columns:
+      id: uuid pk
+      workflow_id: uuid fk automation_workflows.id not_null
+      step_code: varchar(80) not_null
+      step_type: varchar(80) not_null
+      sort_order: integer not_null
+      config: jsonb default '{}'
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+    constraints:
+      - unique(workflow_id, step_code)
+
+  workflow_step_runs:
+    columns:
+      id: uuid pk
+      workflow_run_id: uuid fk workflow_runs.id not_null
+      workflow_step_id: uuid fk workflow_steps.id not_null
+      status: varchar(50) not_null
+      started_at: timestamptz
+      finished_at: timestamptz
+      input_payload: jsonb default '{}'
+      output_payload: jsonb default '{}'
+      error_payload: jsonb default '{}'
+      created_at: timestamptz not_null
+      updated_at: timestamptz not_null
+
+  ref_energy_types:
+    columns:
+      id: uuid pk
+      code: varchar(40) unique not_null
+      label: varchar(120) not_null
+      created_at: timestamptz not_null
+
+  ref_system_types:
+    columns:
+      id: uuid pk
+      code: varchar(40) unique not_null
+      label: varchar(120) not_null
+      created_at: timestamptz not_null
+
+  ref_measure_types:
+    columns:
+      id: uuid pk
+      code: varchar(40) unique not_null
+      label: varchar(120) not_null
+      created_at: timestamptz not_null
+
+  ref_document_types:
+    columns:
+      id: uuid pk
+      code: varchar(40) unique not_null
+      label: varchar(120) not_null
+      created_at: timestamptz not_null
+
+  ref_task_statuses:
+    columns:
+      id: uuid pk
+      code: varchar(40) unique not_null
+      label: varchar(120) not_null
+      is_terminal: boolean default false
+      created_at: timestamptz not_null
+
+  ref_priorities:
+    columns:
+      id: uuid pk
+      code: varchar(40) unique not_null
+      label: varchar(120) not_null
+      sort_order: integer not_null
+      created_at: timestamptz not_null
+
+task_persistence_protocol:
+  current_state_tables:
+    - tasks
+    - task_checklists
+    - task_dependencies
+    - task_artifacts
+  immutable_history_tables:
+    - task_status_history
+    - entity_change_log
+    - activity_logs
+  context_resume_tables:
+    - task_session_snapshots
+    - checkpoints
+  execution_trace_tables:
+    - execution_runs
+    - workflow_runs
+    - workflow_step_runs
+  resume_algorithm:
+    - load task
+    - load latest snapshot ordered by created_at desc
+    - load open dependencies
+    - load artifacts
+    - load last status transitions
+    - infer next actionable step from next_action and unresolved checklist items
+  mandatory_snapshot_triggers:
+    - task status changes to review
+    - task status changes to done
+    - end of ai execution session
+    - before major entity refactor
+  anti_duplication_rules:
+    - never restart a done task without creating a new child task or reopening with reason
+    - attach produced files through task_artifacts
+    - require change log entry on all important entity changes
+
+recommended_views:
+  - vw_active_tasks_by_workspace
+  - vw_blocked_tasks
+  - vw_latest_task_snapshot
+  - vw_audit_latest_version
+  - vw_scenario_financial_summary
+  - vw_building_energy_baseline
+
+migration_strategy:
+  phase_1_mvp:
+    - organizations
+    - users
+    - roles
+    - user_roles
+    - building_projects
+    - buildings
+    - systems
+    - envelopes
+    - energy_bills
+    - files
+    - audits
+    - audit_inputs
+    - calculation_runs
+    - renovation_scenarios
+    - renovation_measures
+    - generated_reports
+    - workspaces
+    - epics
+    - features
+    - tasks
+    - task_dependencies
+    - task_artifacts
+    - task_status_history
+    - task_session_snapshots
+  phase_2_growth:
+    - document_extractions
+    - ai_analysis_runs
+    - ai_analysis_outputs
+    - scenario_financials
+    - report_sections
+    - execution_runs
+    - integrations
+    - automation_workflows
+    - workflow_runs
+    - workflow_steps
+    - workflow_step_runs
+  phase_3_enterprise:
+    - subscriptions
+    - usage_counters
+    - api_keys
+    - webhooks
+    - checkpoints
+    - full reference catalogs
