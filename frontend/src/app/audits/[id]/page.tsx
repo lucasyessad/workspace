@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import EnergyLabel from "@/components/ui/EnergyLabel";
+import { useToastContext } from "@/components/ui/ToastProvider";
 import { auditsApi, buildingsApi, scenariosApi, reportsApi } from "@/lib/api";
 import { Audit, Building, SimulationResult } from "@/types";
 import { formatNumber, MEASURE_LABELS } from "@/lib/utils";
@@ -12,7 +13,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 
 export default function AuditDetailPage() {
   const { id } = useParams() as { id: string };
-  const router = useRouter();
+  const toast = useToastContext();
   const [audit, setAudit] = useState<Audit | null>(null);
   const [building, setBuilding] = useState<Building | null>(null);
   const [simulations, setSimulations] = useState<SimulationResult[]>([]);
@@ -32,6 +33,9 @@ export default function AuditDetailPage() {
     try {
       const r = await auditsApi.calculate(id);
       setAudit(r.data);
+      toast.success("Calcul énergétique terminé");
+    } catch {
+      toast.error("Erreur lors du calcul — vérifiez les données du bâtiment");
     } finally {
       setCalculating(false);
     }
@@ -42,6 +46,9 @@ export default function AuditDetailPage() {
     try {
       const r = await scenariosApi.simulate(id);
       setSimulations(r.data.simulations);
+      toast.success("Simulation des travaux terminée");
+    } catch {
+      toast.error("Lancez d'abord le calcul énergétique");
     } finally {
       setSimulating(false);
     }
@@ -57,6 +64,9 @@ export default function AuditDetailPage() {
       a.href = url;
       a.download = `audit_${id}.pdf`;
       a.click();
+      toast.success("Rapport PDF téléchargé");
+    } catch {
+      toast.error("Erreur lors de la génération du PDF");
     } finally {
       setGenerating(false);
     }
