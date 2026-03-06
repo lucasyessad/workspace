@@ -3,6 +3,8 @@ ThermoPilot AI — API Key management (Enterprise plan only)
 """
 import secrets
 import string
+import hashlib
+import hmac
 from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID
@@ -17,14 +19,22 @@ from app.database import get_db
 from app.models.api_key import ApiKey
 from app.models.organization import Organization, PLAN_LIMITS
 from app.models.user import User
-from passlib.context import CryptContext
 
 router = APIRouter(prefix="/apikeys", tags=["api-keys"])
 
-_pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 KEY_PREFIX = "tp_live_"
+_HMAC_SECRET = b"thermopilot-api-key-hmac-secret"  # In production: load from settings
+
+
+def _hash_key(raw_key: str) -> str:
+    """SHA-256 HMAC hash of the raw key (same approach as GitHub/Stripe)."""
+    return hmac.new(_HMAC_SECRET, raw_key.encode(), hashlib.sha256).hexdigest()
+
+
+def _verify_key(raw_key: str, stored_hash: str) -> bool:
+    return hmac.compare_digest(_hash_key(raw_key), stored_hash)
 
 
 # ── Schemas ────────────────────────────────────────────────────────────────────
@@ -58,7 +68,7 @@ def _generate_key() -> tuple[str, str, str]:
     random_part = "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(40))
     full_key = KEY_PREFIX + random_part
     prefix = full_key[:16]
-    key_hash = _pwd.hash(full_key)
+    key_hash = _hash_key(full_key)
     return full_key, prefix, key_hash
 
 
@@ -168,7 +178,7 @@ def get_org_from_api_key(
     ).all()
 
     for candidate in candidates:
-        if _pwd.verify(api_key_value, candidate.key_hash):
+        if _verify_key(api_key_value, candidate.key_hash):
             # Check expiry
             if candidate.expires_at and candidate.expires_at < datetime.now(timezone.utc):
                 continue

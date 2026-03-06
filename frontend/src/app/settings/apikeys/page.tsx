@@ -24,7 +24,9 @@ export default function ApiKeysPage() {
   const [showForm, setShowForm] = useState(false);
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
-  const { success, error } = useToast();
+  const { addToast } = useToast();
+  const success = (msg: string) => addToast(msg, "success");
+  const error = (msg: string) => addToast(msg, "error");
 
   useEffect(() => {
     apiKeysApi
