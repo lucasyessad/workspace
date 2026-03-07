@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import Base, engine
+from app.middleware.security_headers import SecurityHeadersMiddleware
 import app.models  # noqa: F401 — register all models
 
 # Import routers
@@ -18,20 +19,29 @@ from app.api.routes.ml import router as ml_router
 # Create all tables on startup (use Alembic in production)
 Base.metadata.create_all(bind=engine)
 
+# Désactiver la doc Swagger/ReDoc en production
+_docs_url = None if settings.environment == "production" else "/docs"
+_redoc_url = None if settings.environment == "production" else "/redoc"
+
 app = FastAPI(
     title="ThermoPilot AI",
     description="Plateforme SaaS d'analyse énergétique automatisée pour les bâtiments",
     version="2.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url=_docs_url,
+    redoc_url=_redoc_url,
+    debug=settings.debug,
 )
 
+# Security headers sur toutes les réponses
+app.add_middleware(SecurityHeadersMiddleware)
+
+# CORS — origines chargées depuis la config/env
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://frontend:3000"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key"],
 )
 
 # Mount API routes
@@ -50,9 +60,8 @@ app.include_router(ml_router, prefix="/api")
 def root():
     return {
         "app": "ThermoPilot AI",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "status": "running",
-        "docs": "/docs",
     }
 
 

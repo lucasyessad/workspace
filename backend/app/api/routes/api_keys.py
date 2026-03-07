@@ -14,6 +14,7 @@ from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.core.security import get_current_user
 from app.database import get_db
 from app.models.api_key import ApiKey
@@ -25,12 +26,12 @@ router = APIRouter(prefix="/apikeys", tags=["api-keys"])
 _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 KEY_PREFIX = "tp_live_"
-_HMAC_SECRET = b"thermopilot-api-key-hmac-secret"  # In production: load from settings
 
 
 def _hash_key(raw_key: str) -> str:
-    """SHA-256 HMAC hash of the raw key (same approach as GitHub/Stripe)."""
-    return hmac.new(_HMAC_SECRET, raw_key.encode(), hashlib.sha256).hexdigest()
+    """SHA-256 HMAC hash of the raw key (même approche que GitHub/Stripe)."""
+    secret = settings.api_key_hmac_secret.encode()
+    return hmac.new(secret, raw_key.encode(), hashlib.sha256).hexdigest()
 
 
 def _verify_key(raw_key: str, stored_hash: str) -> bool:

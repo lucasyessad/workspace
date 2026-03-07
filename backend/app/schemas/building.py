@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from uuid import UUID
 from datetime import datetime
@@ -29,11 +29,11 @@ class BuildingCreate(BaseModel):
     address_line_1: Optional[str] = None
     postal_code: Optional[str] = None
     city: Optional[str] = None
-    construction_year: Optional[int] = None
+    construction_year: Optional[int] = Field(None, ge=1800, le=2100)
     building_type: Optional[str] = None        # collectif, individuel, tertiaire
     ownership_type: Optional[str] = None       # copropriete, bailleur
-    heated_area_m2: Optional[float] = None
-    floors_above_ground: Optional[int] = None
+    heated_area_m2: Optional[float] = Field(None, gt=0, le=1_000_000)
+    floors_above_ground: Optional[int] = Field(None, ge=0, le=200)
     main_use_type: Optional[str] = None
     current_energy_label: Optional[str] = None
 
@@ -64,9 +64,9 @@ class SystemCreate(BaseModel):
     energy_source: Optional[str] = None
     brand: Optional[str] = None
     model: Optional[str] = None
-    installation_year: Optional[int] = None
-    nominal_power_kw: Optional[float] = None
-    efficiency_nominal: Optional[float] = None
+    installation_year: Optional[int] = Field(None, ge=1800, le=2100)
+    nominal_power_kw: Optional[float] = Field(None, gt=0)
+    efficiency_nominal: Optional[float] = Field(None, gt=0, le=10.0)
 
 
 class SystemRead(BaseModel):
@@ -87,10 +87,10 @@ class EnvelopeCreate(BaseModel):
     building_id: UUID
     element_type: str
     orientation: Optional[str] = None
-    surface_m2: Optional[float] = None
-    u_value: Optional[float] = None
+    surface_m2: Optional[float] = Field(None, gt=0, le=100_000)
+    u_value: Optional[float] = Field(None, ge=0, le=20.0)
     insulation_type: Optional[str] = None
-    insulation_thickness_mm: Optional[float] = None
+    insulation_thickness_mm: Optional[float] = Field(None, ge=0, le=2000)
     condition_state: Optional[str] = None
 
 
@@ -113,8 +113,8 @@ class EnergyBillCreate(BaseModel):
     billing_period_start: str
     billing_period_end: str
     energy_type: str
-    consumption_kwh: Optional[float] = None
-    cost_eur_ttc: Optional[float] = None
+    consumption_kwh: Optional[float] = Field(None, ge=0)
+    cost_eur_ttc: Optional[float] = Field(None, ge=0)
     supplier_name: Optional[str] = None
 
 

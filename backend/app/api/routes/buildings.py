@@ -17,6 +17,17 @@ from app.schemas.building import (
 router = APIRouter(prefix="/buildings", tags=["buildings"])
 
 
+def _get_building_or_404(building_id: UUID, current_user: User, db: Session) -> Building:
+    """Retourne le bâtiment uniquement s'il appartient à l'organisation de l'utilisateur."""
+    building = db.query(Building).filter(
+        Building.id == building_id,
+        Building.organization_id == current_user.organization_id,
+    ).first()
+    if not building:
+        raise HTTPException(status_code=404, detail="Bâtiment non trouvé")
+    return building
+
+
 # ─── Projects ─────────────────────────────────────────────────────────────────
 
 @router.get("/projects", response_model=List[BuildingProjectRead])
@@ -140,6 +151,7 @@ def list_systems(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _get_building_or_404(building_id, current_user, db)
     return db.query(System).filter(System.building_id == building_id).all()
 
 
@@ -150,6 +162,7 @@ def create_system(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _get_building_or_404(building_id, current_user, db)
     system = System(building_id=building_id, **payload.model_dump(exclude={"building_id"}))
     db.add(system)
     db.commit()
@@ -165,6 +178,7 @@ def list_envelopes(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _get_building_or_404(building_id, current_user, db)
     return db.query(Envelope).filter(Envelope.building_id == building_id).all()
 
 
@@ -175,6 +189,7 @@ def create_envelope(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _get_building_or_404(building_id, current_user, db)
     envelope = Envelope(building_id=building_id, **payload.model_dump(exclude={"building_id"}))
     db.add(envelope)
     db.commit()
@@ -190,6 +205,7 @@ def list_bills(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _get_building_or_404(building_id, current_user, db)
     return db.query(EnergyBill).filter(EnergyBill.building_id == building_id).all()
 
 
@@ -200,6 +216,7 @@ def create_bill(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _get_building_or_404(building_id, current_user, db)
     bill = EnergyBill(building_id=building_id, **payload.model_dump(exclude={"building_id"}))
     db.add(bill)
     db.commit()
