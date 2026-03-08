@@ -2,7 +2,7 @@
 import { useParams } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Bot, Copy, RotateCcw, Check } from "lucide-react";
+import { Bot, Copy, RotateCcw, Check } from "lucide-react";
 import Link from "next/link";
 import { getModule } from "@/lib/modules";
 import { getPromptConfig } from "@/lib/prompts";
@@ -17,7 +17,10 @@ import Charts from "@/components/Charts";
 import HistoryPanel from "@/components/HistoryPanel";
 import ScenariosPanel from "@/components/ScenariosPanel";
 import ThemeToggle from "@/components/ThemeToggle";
+import Breadcrumb from "@/components/Breadcrumb";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { useTheme } from "@/components/ThemeProvider";
+import { useToast } from "@/components/Toast";
 import { trackEvent, Events } from "@/lib/analytics";
 
 function loadState(): AppState {
@@ -45,6 +48,7 @@ export default function ModulePage() {
   const moduleId = Number(params.id);
   const mod = getModule(moduleId);
   const { theme, toggleTheme } = useTheme();
+  const { toast } = useToast();
 
   const [formData, setFormData] = useState<FData>({});
   const [calculations, setCalculations] = useState<CalculationResult[] | null>(null);
@@ -108,6 +112,7 @@ export default function ModulePage() {
       if (!response.ok) {
         const err = await response.json();
         setAiResult(`**Erreur**: ${err.error || "Une erreur est survenue"}`);
+        toast("L'analyse a échoué. Veuillez réessayer.", "error");
         setIsStreaming(false);
         return;
       }
@@ -160,9 +165,11 @@ export default function ModulePage() {
       setHistory(state.modules[moduleId].history!);
       saveState(state);
       setCompletedModules((prev) => [...new Set([...prev, moduleId])]);
+      toast("Analyse terminée avec succès", "success");
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== "AbortError") {
         setAiResult(`**Erreur**: ${err.message}`);
+        toast("Erreur lors de l'analyse", "error");
       }
     } finally {
       setIsStreaming(false);
@@ -174,6 +181,7 @@ export default function ModulePage() {
     if (!cfg) return;
     navigator.clipboard.writeText(`${cfg.system}\n\n---\n\n${cfg.buildUserPrompt(formData)}`);
     setCopied(true);
+    toast("Prompt copié dans le presse-papier", "success");
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -183,6 +191,7 @@ export default function ModulePage() {
     delete state.modules[moduleId];
     saveState(state);
     setCompletedModules((prev) => prev.filter((id) => id !== moduleId));
+    toast("Module réinitialisé", "info");
   };
 
   if (!mod) {
@@ -196,94 +205,102 @@ export default function ModulePage() {
   return (
     <div className="min-h-screen flex">
       <Sidebar completedModules={completedModules} />
-      <main className="flex-1 overflow-y-auto bg-[var(--color-bg)]">
-        <AnimatePresence mode="wait">
-          <motion.div key={moduleId} variants={pageVariants} initial="initial" animate="animate" exit="exit" className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
-            {/* Topbar */}
-            <div className="flex justify-between items-center mb-6">
-              <Link href="/" className="btn-ghost text-sm">
-                <ArrowLeft size={14} /> Dashboard
-              </Link>
-              <ThemeToggle theme={theme} onToggle={toggleTheme} />
-            </div>
+      <main className="flex-1 overflow-y-auto bg-[var(--color-bg)]" aria-label={`Module ${mod.id}: ${mod.title}`}>
+        <ErrorBoundary>
+          <AnimatePresence mode="wait">
+            <motion.div key={moduleId} variants={pageVariants} initial="initial" animate="animate" exit="exit" className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+              {/* Topbar */}
+              <div className="flex justify-between items-center mb-4">
+                <Breadcrumb items={[
+                  { label: "Modules", href: "/" },
+                  { label: `${String(mod.id).padStart(2, "0")} — ${mod.title}` },
+                ]} />
+                <ThemeToggle theme={theme} onToggle={toggleTheme} />
+              </div>
 
-            {/* Header */}
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-              <div className="flex items-start gap-4">
-                <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }} className="text-3xl">{mod.icon}</motion.span>
-                <div>
-                  <span className="text-overline text-gold-600 dark:text-gold-400">Module {String(mod.id).padStart(2, "0")} &middot; Style {mod.style}</span>
-                  <h1 className="text-heading-xl font-serif text-[var(--color-text-primary)]">{mod.title}</h1>
-                  <p className="text-body-sm text-[var(--color-text-secondary)] mt-1">{mod.description}</p>
+              {/* Header */}
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+                <div className="flex items-start gap-4">
+                  <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }} className="text-3xl" aria-hidden="true">{mod.icon}</motion.span>
+                  <div>
+                    <span className="text-overline text-gold-600 dark:text-gold-400">Module {String(mod.id).padStart(2, "0")} &middot; Style {mod.style}</span>
+                    <h1 className="text-heading-xl font-serif text-[var(--color-text-primary)]">{mod.title}</h1>
+                    <p className="text-body-sm text-[var(--color-text-secondary)] mt-1">{mod.description}</p>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-
-            {/* Form */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-heading font-serif text-[var(--color-text-primary)] section-marker">Vos informations</h2>
-                <button onClick={handleReset} className="btn-ghost text-caption text-[var(--color-text-muted)]">
-                  <RotateCcw size={12} /> Réinitialiser
-                </button>
-              </div>
-              <ModuleForm fields={mod.fields} formData={formData} onChange={handleFieldChange} />
-            </motion.div>
-
-            {/* Calculations */}
-            {calculations && calculations.length > 0 && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mb-8">
-                <LocalCalculations results={calculations} />
               </motion.div>
-            )}
 
-            {/* Charts */}
-            {mod.hasCalculator && <div className="mb-8"><Charts moduleId={moduleId} formData={formData} calculations={calculations} /></div>}
-
-            {/* Scenarios */}
-            {[1, 2, 10].includes(moduleId) && Object.keys(formData).length > 0 && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.18 }} className="mb-8">
-                <ScenariosPanel formData={formData} moduleId={moduleId} />
+              {/* Form */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-heading font-serif text-[var(--color-text-primary)] section-marker">Vos informations</h2>
+                  <button onClick={handleReset} className="btn-ghost text-caption text-[var(--color-text-muted)]" aria-label="Réinitialiser le formulaire">
+                    <RotateCcw size={12} /> Réinitialiser
+                  </button>
+                </div>
+                <ModuleForm fields={mod.fields} formData={formData} onChange={handleFieldChange} />
               </motion.div>
-            )}
 
-            {/* History */}
-            {history.length > 0 && <div className="mb-8"><HistoryPanel history={history} currentResults={calculations} /></div>}
-
-            {/* Actions */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex flex-wrap gap-3 mb-8">
-              <button onClick={handleAnalyze} disabled={isStreaming} className="btn-primary py-3 px-6 disabled:opacity-50 disabled:cursor-not-allowed shadow-gold-glow">
-                <Bot size={18} /> {isStreaming ? "Analyse en cours..." : "Lancer l'analyse IA complète"}
-              </button>
-              <button onClick={handleCopyPrompt} className="btn-secondary py-3">
-                {copied ? <Check size={16} className="text-success-500" /> : <Copy size={16} />}
-                {copied ? "Copié !" : "Copier le prompt"}
-              </button>
-            </motion.div>
-
-            {/* AI Result */}
-            <AnimatePresence>
-              {aiResult && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mb-8">
-                  <AIResult content={aiResult} isStreaming={isStreaming} />
+              {/* Calculations */}
+              {calculations && calculations.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mb-8">
+                  <LocalCalculations results={calculations} />
                 </motion.div>
               )}
-            </AnimatePresence>
 
-            {/* Export */}
-            {(aiResult || (calculations && calculations.length > 0)) && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-12">
-                <ExportButtons moduleTitle={mod.title} moduleStyle={mod.style} formData={formData} calculations={calculations} aiResult={aiResult} />
+              {/* Charts */}
+              {mod.hasCalculator && <div className="mb-8"><Charts moduleId={moduleId} formData={formData} calculations={calculations} /></div>}
+
+              {/* Scenarios */}
+              {[1, 2, 10].includes(moduleId) && Object.keys(formData).length > 0 && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.18 }} className="mb-8">
+                  <ScenariosPanel formData={formData} moduleId={moduleId} />
+                </motion.div>
+              )}
+
+              {/* History */}
+              {history.length > 0 && <div className="mb-8"><HistoryPanel history={history} currentResults={calculations} /></div>}
+
+              {/* Actions */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex flex-wrap gap-3 mb-8">
+                <button
+                  onClick={handleAnalyze}
+                  disabled={isStreaming}
+                  className="btn-primary py-3 px-6 disabled:opacity-50 disabled:cursor-not-allowed shadow-gold-glow"
+                  aria-busy={isStreaming}
+                >
+                  <Bot size={18} /> {isStreaming ? "Analyse en cours..." : "Lancer l'analyse IA complète"}
+                </button>
+                <button onClick={handleCopyPrompt} className="btn-secondary py-3" aria-label="Copier le prompt IA">
+                  {copied ? <Check size={16} className="text-success-500" /> : <Copy size={16} />}
+                  {copied ? "Copié !" : "Copier le prompt"}
+                </button>
               </motion.div>
-            )}
 
-            {/* Nav */}
-            <div className="flex justify-between items-center py-6 border-t border-[var(--color-border)]">
-              {moduleId > 1 ? <Link href={`/module/${moduleId - 1}`} className="btn-ghost text-sm">&larr; Module {String(moduleId - 1).padStart(2, "0")}</Link> : <div />}
-              {moduleId < 12 ? <Link href={`/module/${moduleId + 1}`} className="btn-ghost text-sm">Module {String(moduleId + 1).padStart(2, "0")} &rarr;</Link> : <div />}
-            </div>
-          </motion.div>
-        </AnimatePresence>
+              {/* AI Result */}
+              <AnimatePresence>
+                {aiResult && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mb-8">
+                    <AIResult content={aiResult} isStreaming={isStreaming} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Export */}
+              {(aiResult || (calculations && calculations.length > 0)) && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-12">
+                  <ExportButtons moduleTitle={mod.title} moduleStyle={mod.style} formData={formData} calculations={calculations} aiResult={aiResult} />
+                </motion.div>
+              )}
+
+              {/* Nav */}
+              <nav className="flex justify-between items-center py-6 border-t border-[var(--color-border)]" aria-label="Navigation entre modules">
+                {moduleId > 1 ? <Link href={`/module/${moduleId - 1}`} className="btn-ghost text-sm">&larr; Module {String(moduleId - 1).padStart(2, "0")}</Link> : <div />}
+                {moduleId < 12 ? <Link href={`/module/${moduleId + 1}`} className="btn-ghost text-sm">Module {String(moduleId + 1).padStart(2, "0")} &rarr;</Link> : <div />}
+              </nav>
+            </motion.div>
+          </AnimatePresence>
+        </ErrorBoundary>
       </main>
     </div>
   );

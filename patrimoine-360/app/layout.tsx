@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
+import ToastProvider from "@/components/Toast";
 import Disclaimer from "@/components/Disclaimer";
 
 export const metadata: Metadata = {
@@ -51,9 +52,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text-primary)]">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] btn-primary">
+          Aller au contenu principal
+        </a>
         <ThemeProvider>
-          {children}
-          <Disclaimer />
+          <ToastProvider>
+            <main id="main-content">
+              {children}
+            </main>
+            <Disclaimer />
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

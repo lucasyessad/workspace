@@ -80,13 +80,14 @@ export default function PricingPage() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16" role="list" aria-label="Plans tarifaires">
           {plans.map((plan, i) => (
             <motion.div
               key={plan.name}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
+              role="listitem"
               className={`relative rounded-2xl border p-6 flex flex-col ${
                 plan.popular
                   ? "border-gold-500/50 bg-gold-500/5 shadow-premium-lg"

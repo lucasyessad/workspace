@@ -151,14 +151,14 @@ export default function CopilotePage() {
   return (
     <div className="min-h-screen flex flex-col bg-[var(--color-bg)]">
       {/* Header */}
-      <div className="border-b border-[var(--color-border)] px-4 py-3">
+      <header className="border-b border-[var(--color-border)] px-4 py-3" role="banner">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition">
+            <Link href="/" className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition" aria-label="Retour au tableau de bord">
               <ArrowLeft size={18} />
             </Link>
             <div className="flex items-center gap-2">
-              <Bot size={20} className="text-gold-500" />
+              <Bot size={20} className="text-gold-500" aria-hidden="true" />
               <h1 className="text-heading font-serif text-[var(--color-text-primary)]">Copilote Financier</h1>
             </div>
           </div>
@@ -178,10 +178,10 @@ export default function CopilotePage() {
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
+      <div className="flex-1 overflow-y-auto px-4 py-6" role="log" aria-label="Messages de conversation" aria-live="polite">
         <div className="max-w-4xl mx-auto space-y-4">
           {messages.length === 0 && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center py-12">
@@ -252,7 +252,7 @@ export default function CopilotePage() {
 
       {/* Input */}
       <div className="border-t border-[var(--color-border)] px-4 py-4">
-        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex gap-3">
+        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex gap-3" role="search" aria-label="Poser une question">
           <input
             type="text"
             value={input}
@@ -260,11 +260,13 @@ export default function CopilotePage() {
             placeholder="Pose ta question patrimoniale..."
             className="flex-1 input-premium"
             disabled={isStreaming}
+            aria-label="Votre question"
           />
           <button
             type="submit"
             disabled={isStreaming || !input.trim()}
             className="btn-primary px-5 py-3 disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label="Envoyer"
           >
             <Send size={18} />
           </button>

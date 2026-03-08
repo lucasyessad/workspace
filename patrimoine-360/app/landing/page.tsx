@@ -42,7 +42,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
       {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-navy-950/80 backdrop-blur-xl border-b border-white/[0.06]">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-navy-950/80 backdrop-blur-xl border-b border-white/[0.06]" aria-label="Navigation principale">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/landing" className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-gradient-gold flex items-center justify-center shadow-gold-glow">
@@ -188,18 +188,23 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section className="py-20 px-4 bg-[var(--color-bg-secondary)]">
+      <section className="py-20 px-4 bg-[var(--color-bg-secondary)]" aria-label="Questions fréquentes">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-display font-serif text-[var(--color-text-primary)] text-center mb-12">Questions fréquentes</h2>
-          <div className="space-y-3">
+          <div className="space-y-3" role="list">
             {faqs.map((faq, i) => (
-              <div key={i} className="surface-card overflow-hidden">
-                <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full text-left px-5 py-4 flex items-center justify-between">
+              <div key={i} className="surface-card overflow-hidden" role="listitem">
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full text-left px-5 py-4 flex items-center justify-between"
+                  aria-expanded={openFaq === i}
+                  aria-controls={`faq-answer-${i}`}
+                >
                   <span className="text-body-sm text-[var(--color-text-primary)] font-medium">{faq.q}</span>
-                  <span className="text-[var(--color-text-muted)] text-lg ml-4">{openFaq === i ? "−" : "+"}</span>
+                  <span className="text-[var(--color-text-muted)] text-lg ml-4" aria-hidden="true">{openFaq === i ? "−" : "+"}</span>
                 </button>
                 {openFaq === i && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="px-5 pb-4">
+                  <motion.div id={`faq-answer-${i}`} initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="px-5 pb-4" role="region" aria-label={faq.q}>
                     <p className="text-body-sm text-[var(--color-text-secondary)]">{faq.a}</p>
                   </motion.div>
                 )}

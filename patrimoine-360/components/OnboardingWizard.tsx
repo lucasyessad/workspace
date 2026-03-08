@@ -60,20 +60,21 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-navy-950 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-navy-950 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Assistant de configuration">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="max-w-lg w-full"
       >
         {/* Progress dots */}
-        <div className="flex justify-center gap-2 mb-8">
+        <div className="flex justify-center gap-2 mb-8" role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={steps.length} aria-label={`Étape ${step + 1} sur ${steps.length}`}>
           {steps.map((_, i) => (
             <div
               key={i}
               className={`h-1.5 rounded-full transition-all duration-300 ${
                 i === step ? "w-8 bg-gold-400" : i < step ? "w-4 bg-gold-400/40" : "w-4 bg-white/10"
               }`}
+              aria-hidden="true"
             />
           ))}
         </div>

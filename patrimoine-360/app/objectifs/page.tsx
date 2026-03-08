@@ -110,9 +110,9 @@ export default function ObjectifsPage() {
   return (
     <div className="min-h-screen px-4 py-8 bg-[var(--color-bg)]">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <header className="flex items-center justify-between mb-8" role="banner">
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition"><ArrowLeft size={18} /></Link>
+            <Link href="/" className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition" aria-label="Retour au tableau de bord"><ArrowLeft size={18} /></Link>
             <div>
               <h1 className="text-heading-xl font-serif text-[var(--color-text-primary)] flex items-center gap-2">
                 <Target size={24} className="text-gold-500" /> Centre d&apos;objectifs
@@ -121,12 +121,12 @@ export default function ObjectifsPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => { setShowForm(true); setEditingId(null); }} className="btn-primary text-sm">
+            <button onClick={() => { setShowForm(true); setEditingId(null); }} className="btn-primary text-sm" aria-label="Créer un nouvel objectif">
               <Plus size={16} /> Nouvel objectif
             </button>
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
           </div>
-        </div>
+        </header>
 
         {objectives.length > 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-3 gap-4 mb-8">
@@ -147,7 +147,7 @@ export default function ObjectifsPage() {
 
         <AnimatePresence>
           {showForm && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label={editingId ? "Modifier un objectif" : "Créer un objectif"}>
               <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="surface-elevated p-6 max-w-md w-full">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-heading font-serif text-[var(--color-text-primary)]">{editingId ? "Modifier" : "Nouvel"} objectif</h2>
@@ -183,9 +183,15 @@ export default function ObjectifsPage() {
         </AnimatePresence>
 
         {objectives.length === 0 ? (
-          <div className="text-center py-16">
-            <Target className="mx-auto text-[var(--color-text-muted)] mb-4" size={48} />
-            <p className="text-[var(--color-text-tertiary)]">Aucun objectif défini. Commence par en créer un !</p>
+          <div className="text-center py-16" role="status">
+            <div className="w-20 h-20 rounded-2xl bg-[var(--color-surface-active)] flex items-center justify-center mx-auto mb-6">
+              <Target className="text-[var(--color-text-muted)]" size={36} />
+            </div>
+            <h3 className="text-heading font-serif text-[var(--color-text-primary)] mb-2">Aucun objectif défini</h3>
+            <p className="text-body-sm text-[var(--color-text-tertiary)] mb-6 max-w-md mx-auto">Définis ton premier objectif patrimonial pour commencer à suivre ta progression vers tes rêves financiers.</p>
+            <button onClick={() => { setShowForm(true); setEditingId(null); }} className="btn-primary">
+              <Plus size={16} /> Créer mon premier objectif
+            </button>
           </div>
         ) : (
           <div className="space-y-3">

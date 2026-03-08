@@ -21,6 +21,8 @@ export default function Sidebar({ completedModules }: SidebarProps) {
       className={`hidden md:flex flex-col bg-gradient-sidebar transition-all duration-300 ${
         collapsed ? "w-sidebar-collapsed" : "w-sidebar"
       }`}
+      aria-label="Barre latérale de navigation"
+      role="navigation"
     >
       {/* Logo */}
       <div className="p-4 flex items-center justify-between border-b border-[var(--color-sidebar-border)]">
@@ -38,6 +40,8 @@ export default function Sidebar({ completedModules }: SidebarProps) {
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="p-1.5 rounded-lg hover:bg-[var(--color-sidebar-hover)] text-navy-400 transition"
+          aria-label={collapsed ? "Agrandir la barre latérale" : "Réduire la barre latérale"}
+          aria-expanded={!collapsed}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
@@ -75,7 +79,7 @@ export default function Sidebar({ completedModules }: SidebarProps) {
       </div>
 
       {/* Modules */}
-      <nav className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5">
+      <nav className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5" aria-label="Modules patrimoniaux">
         {modules.map((m) => {
           const isActive = pathname === `/module/${m.id}`;
           const isComplete = completedModules.includes(m.id);
