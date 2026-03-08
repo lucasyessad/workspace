@@ -1,7 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, BarChart3, Brain, FileText, Shield, Smartphone, Target, TrendingUp, Zap } from "lucide-react";
+import { ArrowRight, BarChart3, Brain, FileText, Shield, Smartphone, Target, TrendingUp, Zap, Sparkles } from "lucide-react";
 import { useState } from "react";
 
 const features = [
@@ -40,17 +40,22 @@ export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[var(--color-bg)]">
       {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0B0F1A]/80 backdrop-blur-xl border-b border-white/[0.06]">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-navy-950/80 backdrop-blur-xl border-b border-white/[0.06]">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/landing" className="text-xl font-serif font-bold text-white">
-            Patrimoine <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">360°</span>
+          <Link href="/landing" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-gold flex items-center justify-center shadow-gold-glow">
+              <Sparkles size={16} className="text-navy-950" />
+            </div>
+            <span className="text-lg font-serif font-bold text-white">
+              Patrimoine <span className="text-gradient-gold">360°</span>
+            </span>
           </Link>
           <div className="flex items-center gap-6">
-            <Link href="/pricing" className="text-sm text-gray-400 hover:text-white transition hidden sm:block">Tarifs</Link>
-            <Link href="/confidentialite" className="text-sm text-gray-400 hover:text-white transition hidden sm:block">Confidentialité</Link>
-            <Link href="/" className="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-medium hover:from-indigo-600 hover:to-purple-600 transition">
+            <Link href="/pricing" className="text-sm text-navy-300 hover:text-white transition hidden sm:block">Tarifs</Link>
+            <Link href="/confidentialite" className="text-sm text-navy-300 hover:text-white transition hidden sm:block">Confidentialité</Link>
+            <Link href="/" className="btn-primary">
               Démarrer mon bilan
             </Link>
           </div>
@@ -58,27 +63,27 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-20 px-4">
+      <section className="pt-32 pb-20 px-4 bg-gradient-hero">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <span className="inline-block px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-xs font-medium mb-6">
+            <span className="inline-block px-4 py-1.5 rounded-full border border-gold-500/30 bg-gold-500/10 text-gold-400 text-xs font-medium mb-6">
               Copilote financier intelligent
             </span>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif font-bold text-white leading-tight mb-6">
+            <h1 className="text-display-lg sm:text-display-xl font-serif text-white leading-tight mb-6">
               Visualise, analyse et optimise ton patrimoine avec{" "}
-              <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <span className="text-gradient-gold">
                 l&apos;intelligence artificielle
               </span>
             </h1>
-            <p className="text-lg text-gray-400 max-w-2xl mx-auto mb-10">
+            <p className="text-body-lg text-navy-300 max-w-2xl mx-auto mb-10">
               Patrimoine 360° centralise ta situation financière, produit des analyses intelligentes
               et te fournit un plan d&apos;action concret pour mieux épargner, investir et préparer l&apos;avenir.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/" className="flex items-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium hover:from-indigo-600 hover:to-purple-600 transition shadow-xl shadow-indigo-500/25">
+              <Link href="/" className="btn-primary px-8 py-4 text-base shadow-gold-glow">
                 Commencer mon bilan <ArrowRight size={18} />
               </Link>
-              <Link href="#modules" className="px-8 py-4 rounded-xl border border-white/[0.1] text-gray-300 hover:bg-white/[0.04] hover:text-white transition">
+              <Link href="#modules" className="btn-secondary px-8 py-4 border-white/10 text-white hover:border-gold-400">
                 Voir les modules
               </Link>
             </div>
@@ -86,8 +91,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Preuves */}
-      <section className="py-12 border-y border-white/[0.06]">
+      {/* Stats */}
+      <section className="py-12 border-y border-white/[0.06] bg-navy-950/50">
         <div className="max-w-5xl mx-auto px-4 flex flex-wrap justify-center gap-8 text-center">
           {[
             { value: "12", label: "modules patrimoniaux" },
@@ -96,39 +101,39 @@ export default function LandingPage() {
             { value: "PWA", label: "web + mobile" },
           ].map((item, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.1 }}>
-              <div className="text-2xl font-bold text-indigo-400 font-mono">{item.value}</div>
-              <div className="text-xs text-gray-500">{item.label}</div>
+              <div className="text-2xl font-bold text-gold-400 font-mono">{item.value}</div>
+              <div className="text-caption text-navy-400">{item.label}</div>
             </motion.div>
           ))}
         </div>
       </section>
 
-      {/* Problème */}
+      {/* Problem */}
       <section className="py-20 px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-serif font-bold text-white mb-6">Le problème</h2>
-          <p className="text-gray-400 mb-8">
+          <h2 className="text-display font-serif text-[var(--color-text-primary)] mb-6">Le problème</h2>
+          <p className="text-body-lg text-[var(--color-text-secondary)] mb-8">
             Comptes dispersés, investissements fragmentés, fiscalité incomprise, absence de stratégie long terme.
             Les outils existants sont trop techniques, fragmentés ou coûteux.
           </p>
-          <p className="text-lg text-white font-medium">
+          <p className="text-body-lg text-[var(--color-text-primary)] font-medium">
             Le besoin n&apos;est pas d&apos;avoir des chiffres. C&apos;est d&apos;obtenir une{" "}
-            <span className="text-indigo-400">interprétation fiable et utile</span> de ces chiffres.
+            <span className="text-gold-500">interprétation fiable et utile</span> de ces chiffres.
           </p>
         </div>
       </section>
 
       {/* Features */}
-      <section className="py-20 px-4 bg-white/[0.01]">
+      <section className="py-20 px-4 bg-[var(--color-bg-secondary)]">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-serif font-bold text-white text-center mb-12">Ce que Patrimoine 360° te permet de faire</h2>
+          <h2 className="text-display font-serif text-[var(--color-text-primary)] text-center mb-12">Ce que Patrimoine 360° te permet de faire</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((f, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
-                className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 hover:border-indigo-500/30 transition">
-                <div className="text-indigo-400 mb-4">{f.icon}</div>
-                <h3 className="text-white font-medium mb-2">{f.title}</h3>
-                <p className="text-sm text-gray-500">{f.desc}</p>
+                className="surface-card p-6 hover:border-gold-500/30 transition">
+                <div className="text-gold-500 mb-4">{f.icon}</div>
+                <h3 className="text-[var(--color-text-primary)] font-medium mb-2">{f.title}</h3>
+                <p className="text-body-sm text-[var(--color-text-tertiary)]">{f.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -138,33 +143,33 @@ export default function LandingPage() {
       {/* Modules */}
       <section id="modules" className="py-20 px-4">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-serif font-bold text-white text-center mb-4">12 modules experts</h2>
-          <p className="text-gray-400 text-center mb-12 max-w-xl mx-auto">
+          <h2 className="text-display font-serif text-[var(--color-text-primary)] text-center mb-4">12 modules experts</h2>
+          <p className="text-body-lg text-[var(--color-text-secondary)] text-center mb-12 max-w-xl mx-auto">
             Chaque module combine formulaire structuré, calculs locaux, analyse IA et export premium.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {modules.map((m, i) => (
               <motion.div key={i} initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.04 }}
-                className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 text-center hover:border-indigo-500/30 transition">
+                className="surface-card p-4 text-center hover:border-gold-500/30 transition">
                 <span className="text-2xl">{m.icon}</span>
-                <span className="block text-xs text-indigo-400 font-mono mt-1">Module {m.num}</span>
-                <span className="block text-sm text-gray-300 mt-1">{m.title}</span>
+                <span className="block text-overline text-gold-600 dark:text-gold-400 mt-1">Module {m.num}</span>
+                <span className="block text-body-sm text-[var(--color-text-secondary)] mt-1">{m.title}</span>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Copilote */}
-      <section className="py-20 px-4 bg-gradient-to-b from-indigo-500/5 to-transparent">
+      {/* Copilot CTA */}
+      <section className="py-20 px-4 bg-gradient-to-b from-gold-500/5 to-transparent">
         <div className="max-w-3xl mx-auto text-center">
-          <Zap className="mx-auto text-indigo-400 mb-4" size={32} />
-          <h2 className="text-3xl font-serif font-bold text-white mb-4">Copilote financier conversationnel</h2>
-          <p className="text-gray-400 mb-8">
+          <Zap className="mx-auto text-gold-400 mb-4" size={32} />
+          <h2 className="text-display font-serif text-[var(--color-text-primary)] mb-4">Copilote financier conversationnel</h2>
+          <p className="text-body-lg text-[var(--color-text-secondary)] mb-8">
             Pose tes questions librement : &quot;Puis-je acheter un appartement à 350 000 € ?&quot;,
             &quot;Dois-je rembourser mon crédit ou investir ?&quot;. L&apos;IA analyse tes données et propose une stratégie.
           </p>
-          <Link href="/copilote" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium hover:from-indigo-600 hover:to-purple-600 transition shadow-xl shadow-indigo-500/25">
+          <Link href="/copilote" className="btn-primary px-8 py-4 text-base shadow-gold-glow">
             Essayer le copilote <ArrowRight size={18} />
           </Link>
         </div>
@@ -173,9 +178,9 @@ export default function LandingPage() {
       {/* Mobile */}
       <section className="py-20 px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <Smartphone className="mx-auto text-indigo-400 mb-4" size={32} />
-          <h2 className="text-3xl font-serif font-bold text-white mb-4">Disponible sur mobile</h2>
-          <p className="text-gray-400">
+          <Smartphone className="mx-auto text-gold-400 mb-4" size={32} />
+          <h2 className="text-display font-serif text-[var(--color-text-primary)] mb-4">Disponible sur mobile</h2>
+          <p className="text-body-lg text-[var(--color-text-secondary)]">
             Consulte ton score, mets à jour ton budget, lance un bilan rapide. L&apos;app mobile est conçue pour une utilisation
             en consultation rapide avec toutes les fonctionnalités essentielles.
           </p>
@@ -183,19 +188,19 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section className="py-20 px-4 bg-white/[0.01]">
+      <section className="py-20 px-4 bg-[var(--color-bg-secondary)]">
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-3xl font-serif font-bold text-white text-center mb-12">Questions fréquentes</h2>
+          <h2 className="text-display font-serif text-[var(--color-text-primary)] text-center mb-12">Questions fréquentes</h2>
           <div className="space-y-3">
             {faqs.map((faq, i) => (
-              <div key={i} className="rounded-xl border border-white/[0.08] bg-white/[0.02] overflow-hidden">
+              <div key={i} className="surface-card overflow-hidden">
                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full text-left px-5 py-4 flex items-center justify-between">
-                  <span className="text-sm text-white font-medium">{faq.q}</span>
-                  <span className="text-gray-500 text-lg ml-4">{openFaq === i ? "−" : "+"}</span>
+                  <span className="text-body-sm text-[var(--color-text-primary)] font-medium">{faq.q}</span>
+                  <span className="text-[var(--color-text-muted)] text-lg ml-4">{openFaq === i ? "−" : "+"}</span>
                 </button>
                 {openFaq === i && (
                   <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="px-5 pb-4">
-                    <p className="text-sm text-gray-400">{faq.a}</p>
+                    <p className="text-body-sm text-[var(--color-text-secondary)]">{faq.a}</p>
                   </motion.div>
                 )}
               </div>
@@ -204,25 +209,25 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Final */}
+      {/* Final CTA */}
       <section className="py-20 px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-serif font-bold text-white mb-4">Prêt à reprendre le contrôle ?</h2>
-          <p className="text-gray-400 mb-8">Commence ton bilan patrimonial gratuit en moins de 5 minutes.</p>
-          <Link href="/" className="inline-flex items-center gap-2 px-10 py-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium text-lg hover:from-indigo-600 hover:to-purple-600 transition shadow-xl shadow-indigo-500/25">
+          <h2 className="text-display font-serif text-[var(--color-text-primary)] mb-4">Prêt à reprendre le contrôle ?</h2>
+          <p className="text-body-lg text-[var(--color-text-secondary)] mb-8">Commence ton bilan patrimonial gratuit en moins de 5 minutes.</p>
+          <Link href="/" className="btn-primary px-10 py-4 text-lg shadow-gold-glow">
             Démarrer gratuitement <ArrowRight size={20} />
           </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.06] py-8 px-4">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
-          <span>© {new Date().getFullYear()} Patrimoine 360°. Tous droits réservés.</span>
+      <footer className="border-t border-[var(--color-border)] py-8 px-4">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-caption text-[var(--color-text-muted)]">
+          <span>&copy; {new Date().getFullYear()} Patrimoine 360°. Tous droits réservés.</span>
           <div className="flex gap-6">
-            <Link href="/pricing" className="hover:text-white transition">Tarifs</Link>
-            <Link href="/confidentialite" className="hover:text-white transition">Confidentialité</Link>
-            <Link href="/" className="hover:text-white transition">Application</Link>
+            <Link href="/pricing" className="hover:text-[var(--color-text-primary)] transition">Tarifs</Link>
+            <Link href="/confidentialite" className="hover:text-[var(--color-text-primary)] transition">Confidentialité</Link>
+            <Link href="/" className="hover:text-[var(--color-text-primary)] transition">Application</Link>
           </div>
         </div>
       </footer>

@@ -149,28 +149,28 @@ export default function CopilotePage() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[var(--color-bg)]">
       {/* Header */}
-      <div className="border-b border-white/[0.08] px-4 py-3">
+      <div className="border-b border-[var(--color-border)] px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-gray-400 hover:text-white transition">
+            <Link href="/" className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition">
               <ArrowLeft size={18} />
             </Link>
             <div className="flex items-center gap-2">
-              <Bot size={20} className="text-indigo-400" />
-              <h1 className="text-lg font-serif font-bold text-white">Copilote Financier</h1>
+              <Bot size={20} className="text-gold-500" />
+              <h1 className="text-heading font-serif text-[var(--color-text-primary)]">Copilote Financier</h1>
             </div>
           </div>
           <div className="flex items-center gap-3">
             {filledModules.length > 0 && (
-              <span className="text-xs text-gray-500">
+              <span className="text-caption text-[var(--color-text-muted)]">
                 {filledModules.length} module(s) chargé(s)
               </span>
             )}
             <button
               onClick={() => setMessages([])}
-              className="text-gray-500 hover:text-gray-300 transition"
+              className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition"
               title="Effacer la conversation"
             >
               <Trash2 size={16} />
@@ -185,9 +185,9 @@ export default function CopilotePage() {
         <div className="max-w-4xl mx-auto space-y-4">
           {messages.length === 0 && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center py-12">
-              <Sparkles className="mx-auto text-indigo-400 mb-4" size={32} />
-              <h2 className="text-xl font-serif font-bold text-white mb-2">Pose ta question patrimoniale</h2>
-              <p className="text-sm text-gray-500 mb-8 max-w-md mx-auto">
+              <Sparkles className="mx-auto text-gold-400 mb-4" size={32} />
+              <h2 className="text-heading-lg font-serif text-[var(--color-text-primary)] mb-2">Pose ta question patrimoniale</h2>
+              <p className="text-body-sm text-[var(--color-text-tertiary)] mb-8 max-w-md mx-auto">
                 Le copilote analyse tes données (si tu as rempli des modules) et te fournit des recommandations personnalisées.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-xl mx-auto">
@@ -195,7 +195,7 @@ export default function CopilotePage() {
                   <button
                     key={i}
                     onClick={() => sendMessage(s)}
-                    className="text-left text-sm px-4 py-3 rounded-xl border border-white/[0.08] bg-white/[0.02] text-gray-400 hover:border-indigo-500/30 hover:text-white transition"
+                    className="text-left text-body-sm px-4 py-3 surface-card text-[var(--color-text-secondary)] hover:border-gold-500/30 hover:text-[var(--color-text-primary)] transition"
                   >
                     {s}
                   </button>
@@ -213,26 +213,26 @@ export default function CopilotePage() {
                 className={`flex gap-3 ${msg.role === "user" ? "justify-end" : ""}`}
               >
                 {msg.role === "assistant" && (
-                  <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
-                    <Bot size={16} className="text-indigo-400" />
+                  <div className="w-8 h-8 rounded-full bg-gold-500/20 flex items-center justify-center flex-shrink-0">
+                    <Bot size={16} className="text-gold-500" />
                   </div>
                 )}
                 <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                   msg.role === "user"
-                    ? "bg-indigo-500/20 text-white"
-                    : "bg-white/[0.03] border border-white/[0.08]"
+                    ? "bg-navy-600 text-white"
+                    : "surface-card"
                 }`}>
                   {msg.role === "assistant" ? (
-                    <div className="prose prose-invert prose-sm max-w-none">
+                    <div className="prose prose-sm max-w-none dark:prose-invert">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content || "..."}</ReactMarkdown>
                     </div>
                   ) : (
-                    <p className="text-sm">{msg.content}</p>
+                    <p className="text-body-sm">{msg.content}</p>
                   )}
                 </div>
                 {msg.role === "user" && (
-                  <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                    <User size={16} className="text-purple-400" />
+                  <div className="w-8 h-8 rounded-full bg-navy-500/20 flex items-center justify-center flex-shrink-0">
+                    <User size={16} className="text-navy-400" />
                   </div>
                 )}
               </motion.div>
@@ -240,8 +240,8 @@ export default function CopilotePage() {
           </AnimatePresence>
 
           {isStreaming && (
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+            <div className="flex items-center gap-2 text-caption text-[var(--color-text-muted)]">
+              <div className="w-1.5 h-1.5 rounded-full bg-gold-400 animate-pulse" />
               Le copilote réfléchit...
             </div>
           )}
@@ -251,20 +251,20 @@ export default function CopilotePage() {
       </div>
 
       {/* Input */}
-      <div className="border-t border-white/[0.08] px-4 py-4">
+      <div className="border-t border-[var(--color-border)] px-4 py-4">
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex gap-3">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Pose ta question patrimoniale..."
-            className="flex-1 bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 transition"
+            className="flex-1 input-premium"
             disabled={isStreaming}
           />
           <button
             type="submit"
             disabled={isStreaming || !input.trim()}
-            className="px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            className="btn-primary px-5 py-3 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Send size={18} />
           </button>

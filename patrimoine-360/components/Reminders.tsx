@@ -69,13 +69,12 @@ export default function Reminders() {
   const handleDismiss = (id: string) => {
     const updated = reminders.map((r) => {
       if (r.id !== id) return r;
-      // Advance to next trigger based on frequency
       const next = new Date(r.nextTrigger);
       if (r.frequency === "weekly") next.setDate(next.getDate() + 7);
       else if (r.frequency === "monthly") next.setMonth(next.getMonth() + 1);
       else if (r.frequency === "quarterly") next.setMonth(next.getMonth() + 3);
       else if (r.frequency === "yearly") next.setFullYear(next.getFullYear() + 1);
-      else return { ...r, isActive: false }; // once
+      else return { ...r, isActive: false };
       return { ...r, nextTrigger: next.toISOString().split("T")[0] };
     });
     setReminders(updated);
@@ -90,50 +89,47 @@ export default function Reminders() {
 
   return (
     <>
-      {/* Bell button */}
-      <button onClick={() => setShowPanel(!showPanel)} className="relative p-2 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.04] transition">
-        <Bell size={18} className="text-gray-400" />
+      <button onClick={() => setShowPanel(!showPanel)} className="relative p-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] transition">
+        <Bell size={18} className="text-[var(--color-text-tertiary)]" />
         {dueReminders.length > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-danger-500 text-white text-[10px] flex items-center justify-center font-bold">
             {dueReminders.length}
           </span>
         )}
       </button>
 
-      {/* Panel */}
       <AnimatePresence>
         {showPanel && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-start justify-end bg-black/40 p-4 pt-16">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-start justify-end bg-black/40 backdrop-blur-sm p-4 pt-16">
             <motion.div initial={{ x: 20 }} animate={{ x: 0 }} exit={{ x: 20 }}
-              className="bg-[#111827] border border-white/[0.08] rounded-2xl p-5 w-full max-w-sm max-h-[70vh] overflow-y-auto">
+              className="surface-elevated p-5 w-full max-w-sm max-h-[70vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-serif font-bold text-white flex items-center gap-2">
-                  <Bell size={18} className="text-indigo-400" /> Rappels
+                <h3 className="text-heading font-serif text-[var(--color-text-primary)] flex items-center gap-2">
+                  <Bell size={18} className="text-gold-500" /> Rappels
                 </h3>
                 <div className="flex gap-2">
-                  <button onClick={() => setShowForm(true)} className="p-1.5 rounded-lg hover:bg-white/[0.06] text-gray-400">
+                  <button onClick={() => setShowForm(true)} className="p-1.5 rounded-lg hover:bg-[var(--color-surface-hover)] text-[var(--color-text-tertiary)]">
                     <Plus size={16} />
                   </button>
-                  <button onClick={() => setShowPanel(false)} className="p-1.5 rounded-lg hover:bg-white/[0.06] text-gray-400">
+                  <button onClick={() => setShowPanel(false)} className="p-1.5 rounded-lg hover:bg-[var(--color-surface-hover)] text-[var(--color-text-tertiary)]">
                     <X size={16} />
                   </button>
                 </div>
               </div>
 
-              {/* Due reminders */}
               {dueReminders.length > 0 && (
                 <div className="mb-4">
-                  <p className="text-xs text-red-400 font-medium mb-2">En retard</p>
+                  <p className="text-caption text-danger-500 font-medium mb-2">En retard</p>
                   {dueReminders.map((r) => {
                     const typeInfo = reminderTypes.find((t) => t.value === r.type);
                     return (
-                      <div key={r.id} className="flex items-start gap-2 p-3 rounded-xl border border-red-500/20 bg-red-500/5 mb-2">
+                      <div key={r.id} className="flex items-start gap-2 p-3 rounded-xl border border-danger-500/20 bg-danger-500/5 mb-2">
                         <span>{typeInfo?.icon}</span>
                         <div className="flex-1">
-                          <p className="text-sm text-white font-medium">{r.title}</p>
-                          {r.message && <p className="text-xs text-gray-500">{r.message}</p>}
+                          <p className="text-body-sm text-[var(--color-text-primary)] font-medium">{r.title}</p>
+                          {r.message && <p className="text-caption text-[var(--color-text-muted)]">{r.message}</p>}
                         </div>
-                        <button onClick={() => handleDismiss(r.id)} className="p-1 text-green-400 hover:text-green-300">
+                        <button onClick={() => handleDismiss(r.id)} className="p-1 text-success-500 hover:text-success-400">
                           <Check size={14} />
                         </button>
                       </div>
@@ -142,51 +138,49 @@ export default function Reminders() {
                 </div>
               )}
 
-              {/* All reminders */}
               <div className="space-y-2">
                 {reminders.filter((r) => r.isActive && !dueReminders.includes(r)).map((r) => {
                   const typeInfo = reminderTypes.find((t) => t.value === r.type);
                   return (
-                    <div key={r.id} className="flex items-start gap-2 p-3 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+                    <div key={r.id} className="flex items-start gap-2 p-3 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface)]">
                       <span>{typeInfo?.icon}</span>
                       <div className="flex-1">
-                        <p className="text-sm text-gray-300">{r.title}</p>
-                        <p className="text-[10px] text-gray-600 flex items-center gap-1">
+                        <p className="text-body-sm text-[var(--color-text-secondary)]">{r.title}</p>
+                        <p className="text-[10px] text-[var(--color-text-muted)] flex items-center gap-1">
                           <Clock size={10} /> {new Date(r.nextTrigger).toLocaleDateString("fr-FR")} — {frequencies.find((f) => f.value === r.frequency)?.label}
                         </p>
                       </div>
-                      <button onClick={() => handleDelete(r.id)} className="p-1 text-gray-600 hover:text-red-400"><X size={12} /></button>
+                      <button onClick={() => handleDelete(r.id)} className="p-1 text-[var(--color-text-muted)] hover:text-danger-500"><X size={12} /></button>
                     </div>
                   );
                 })}
               </div>
 
               {reminders.length === 0 && !showForm && (
-                <p className="text-xs text-gray-600 text-center py-4">Aucun rappel configuré.</p>
+                <p className="text-caption text-[var(--color-text-muted)] text-center py-4">Aucun rappel configuré.</p>
               )}
 
-              {/* Create form */}
               {showForm && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 space-y-3">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 p-4 rounded-xl border border-gold-500/20 bg-gold-500/5 space-y-3">
                   <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Titre du rappel"
-                    className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50" />
+                    className="input-premium" />
                   <input value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Message (optionnel)"
-                    className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50" />
+                    className="input-premium" />
                   <div className="grid grid-cols-2 gap-2">
                     <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}
-                      className="bg-white/[0.03] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+                      className="input-premium text-sm">
                       {reminderTypes.map((t) => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}
                     </select>
                     <select value={form.frequency} onChange={(e) => setForm({ ...form, frequency: e.target.value })}
-                      className="bg-white/[0.03] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+                      className="input-premium text-sm">
                       {frequencies.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
                     </select>
                   </div>
                   <input type="date" value={form.nextTrigger} onChange={(e) => setForm({ ...form, nextTrigger: e.target.value })}
-                    className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white focus:outline-none" />
+                    className="input-premium" />
                   <div className="flex gap-2">
-                    <button onClick={handleCreate} disabled={!form.title} className="flex-1 px-3 py-2 rounded-lg bg-indigo-500 text-white text-sm font-medium hover:bg-indigo-600 transition disabled:opacity-40">Créer</button>
-                    <button onClick={() => setShowForm(false)} className="px-3 py-2 rounded-lg border border-white/[0.08] text-gray-400 text-sm hover:text-white transition">Annuler</button>
+                    <button onClick={handleCreate} disabled={!form.title} className="flex-1 btn-primary justify-center py-2 disabled:opacity-40">Créer</button>
+                    <button onClick={() => setShowForm(false)} className="btn-secondary py-2">Annuler</button>
                   </div>
                 </motion.div>
               )}

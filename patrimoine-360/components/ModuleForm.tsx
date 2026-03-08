@@ -8,19 +8,17 @@ interface ModuleFormProps {
 }
 
 export default function ModuleForm({ fields, formData, onChange }: ModuleFormProps) {
-  const baseInput = "w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 transition font-sans text-sm";
-
   return (
     <div className="space-y-5">
       {fields.map((field) => (
         <div key={field.id}>
-          <label className="block text-sm font-medium text-gray-300 mb-1.5">
+          <label className="block text-body-sm font-medium text-[var(--color-text-primary)] mb-1.5">
             {field.label}
-            {field.suffix && <span className="text-gray-500 ml-1 text-xs">({field.suffix})</span>}
+            {field.suffix && <span className="text-[var(--color-text-tertiary)] ml-1 text-caption">({field.suffix})</span>}
           </label>
           {field.type === "textarea" ? (
             <textarea
-              className={`${baseInput} min-h-[100px] resize-y`}
+              className="input-premium min-h-[100px] resize-y"
               placeholder={field.placeholder}
               value={formData[field.id] || ""}
               onChange={(e) => onChange(field.id, e.target.value)}
@@ -28,7 +26,7 @@ export default function ModuleForm({ fields, formData, onChange }: ModuleFormPro
             />
           ) : field.type === "select" ? (
             <select
-              className={baseInput}
+              className="input-premium"
               value={formData[field.id] || ""}
               onChange={(e) => onChange(field.id, e.target.value)}
             >
@@ -40,7 +38,7 @@ export default function ModuleForm({ fields, formData, onChange }: ModuleFormPro
           ) : (
             <input
               type={field.type}
-              className={`${baseInput} font-mono`}
+              className={`input-premium ${field.type === "number" ? "font-mono" : ""}`}
               placeholder={field.placeholder}
               value={formData[field.id] ?? ""}
               onChange={(e) => {

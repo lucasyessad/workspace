@@ -9,10 +9,10 @@ interface ScoreGaugeProps {
 }
 
 const colorMap = {
-  success: "#4ADE80",
-  warning: "#FACC15",
-  danger: "#EF4444",
-  accent: "#818CF8",
+  success: "#22c55e",
+  warning: "#f59e0b",
+  danger: "#ef4444",
+  accent: "#e5b044",
 };
 
 export default function ScoreGauge({ value, max, label, color = "accent" }: ScoreGaugeProps) {
@@ -26,7 +26,7 @@ export default function ScoreGauge({ value, max, label, color = "accent" }: Scor
     <div className="flex flex-col items-center gap-2">
       <div className="relative w-32 h-32">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-          <circle cx="60" cy="60" r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
+          <circle cx="60" cy="60" r={radius} fill="none" stroke="var(--color-border)" strokeWidth="8" />
           <motion.circle
             cx="60" cy="60" r={radius} fill="none"
             stroke={strokeColor} strokeWidth="8" strokeLinecap="round"
@@ -38,17 +38,17 @@ export default function ScoreGauge({ value, max, label, color = "accent" }: Scor
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <motion.span
-            className="text-2xl font-mono font-bold text-white"
+            className="text-2xl font-mono font-bold text-[var(--color-text-primary)]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
             {value}
           </motion.span>
-          <span className="text-xs text-gray-400">/ {max}</span>
+          <span className="text-xs text-[var(--color-text-tertiary)]">/ {max}</span>
         </div>
       </div>
-      <span className="text-sm text-gray-300 text-center">{label}</span>
+      <span className="text-sm text-[var(--color-text-secondary)] text-center">{label}</span>
     </div>
   );
 }

@@ -9,17 +9,17 @@ interface MetricCardProps {
 }
 
 const colorMap = {
-  success: "text-green-400",
-  warning: "text-yellow-400",
-  danger: "text-red-400",
-  accent: "text-indigo-400",
+  success: "text-success-500 dark:text-success-400",
+  warning: "text-warning-500 dark:text-warning-400",
+  danger: "text-danger-500 dark:text-danger-400",
+  accent: "text-gold-600 dark:text-gold-400",
 };
 
-const bgMap = {
-  success: "border-green-500/20",
-  warning: "border-yellow-500/20",
-  danger: "border-red-500/20",
-  accent: "border-indigo-500/20",
+const borderMap = {
+  success: "border-success-500/20",
+  warning: "border-warning-500/20",
+  danger: "border-danger-500/20",
+  accent: "border-gold-500/20",
 };
 
 export default function MetricCard({ label, value, suffix, color = "accent" }: MetricCardProps) {
@@ -31,12 +31,12 @@ export default function MetricCard({ label, value, suffix, color = "accent" }: M
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-xl border ${bgMap[color]} bg-white/[0.02] p-4`}
+      className={`surface-card ${borderMap[color]} p-4`}
     >
-      <p className="text-xs text-gray-400 mb-1 uppercase tracking-wider">{label}</p>
+      <p className="text-caption uppercase tracking-wider text-[var(--color-text-tertiary)] mb-1">{label}</p>
       <p className={`text-xl font-mono font-semibold ${colorMap[color]}`}>
         {formatted}
-        {suffix && <span className="text-sm ml-1 text-gray-400">{suffix}</span>}
+        {suffix && <span className="text-sm ml-1 text-[var(--color-text-tertiary)]">{suffix}</span>}
       </p>
     </motion.div>
   );

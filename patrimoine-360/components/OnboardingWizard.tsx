@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft, Check, Sparkles } from "lucide-react";
-import { OnboardingData, AppState } from "@/types";
+import { OnboardingData } from "@/types";
 
 interface OnboardingWizardProps {
   onComplete: (data: OnboardingData) => void;
@@ -59,10 +59,8 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
     onComplete({ ...data, completed: true } as OnboardingData);
   };
 
-  const inputClass = "w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 transition font-sans text-sm";
-
   return (
-    <div className="fixed inset-0 z-50 bg-[#0B0F1A] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-navy-950 flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -74,7 +72,7 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
             <div
               key={i}
               className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === step ? "w-8 bg-indigo-400" : i < step ? "w-4 bg-indigo-400/40" : "w-4 bg-white/10"
+                i === step ? "w-8 bg-gold-400" : i < step ? "w-4 bg-gold-400/40" : "w-4 bg-white/10"
               }`}
             />
           ))}
@@ -91,23 +89,25 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
           >
             {step === 0 && (
               <div className="mb-6">
-                <Sparkles className="mx-auto text-indigo-400 mb-4" size={48} />
+                <div className="w-16 h-16 rounded-2xl bg-gradient-gold flex items-center justify-center shadow-gold-glow mx-auto">
+                  <Sparkles className="text-navy-950" size={32} />
+                </div>
               </div>
             )}
-            <h2 className="text-2xl font-serif font-bold text-white mb-2">{currentStep.title}</h2>
-            <p className="text-gray-400 text-sm mb-8">{currentStep.subtitle}</p>
+            <h2 className="text-heading-xl font-serif text-white mb-2">{currentStep.title}</h2>
+            <p className="text-body-sm text-navy-300 mb-8">{currentStep.subtitle}</p>
 
             {currentStep.fields.length > 0 && (
               <div className="space-y-4 text-left">
                 {currentStep.fields.map((field) => (
                   <div key={field.id}>
-                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                    <label className="block text-body-sm font-medium text-navy-200 mb-1.5">
                       {field.label}
-                      {field.suffix && <span className="text-gray-500 ml-1 text-xs">({field.suffix})</span>}
+                      {field.suffix && <span className="text-navy-500 ml-1 text-caption">({field.suffix})</span>}
                     </label>
                     <input
                       type={field.type}
-                      className={`${inputClass} font-mono`}
+                      className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-white placeholder-navy-500 focus:outline-none focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/30 transition text-sm font-mono"
                       placeholder={field.placeholder}
                       value={String(data[field.id] ?? "")}
                       onChange={(e) => handleChange(field.id, field.type === "number" ? (e.target.value === "" ? "" : Number(e.target.value)) : e.target.value)}
@@ -123,18 +123,18 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
         <div className="flex items-center justify-between mt-8">
           <div>
             {step > 0 ? (
-              <button onClick={() => setStep(step - 1)} className="flex items-center gap-1 text-sm text-gray-400 hover:text-white transition">
+              <button onClick={() => setStep(step - 1)} className="flex items-center gap-1 text-sm text-navy-400 hover:text-white transition">
                 <ArrowLeft size={14} /> Précédent
               </button>
             ) : (
-              <button onClick={onSkip} className="text-sm text-gray-500 hover:text-gray-300 transition">
+              <button onClick={onSkip} className="text-sm text-navy-500 hover:text-navy-300 transition">
                 Passer
               </button>
             )}
           </div>
           <button
             onClick={isLast ? handleComplete : () => setStep(step + 1)}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-medium hover:from-indigo-600 hover:to-purple-600 transition shadow-lg shadow-indigo-500/25"
+            className="btn-primary py-2.5 px-6 shadow-gold-glow"
           >
             {isLast ? (
               <>

@@ -134,7 +134,6 @@ export default function ModulePage() {
         }
       }
 
-      // Save with history (versioned)
       const state = loadState();
       if (!state.modules[moduleId]) state.modules[moduleId] = { formData, completed: false };
       state.modules[moduleId].aiResult = accumulated;
@@ -188,8 +187,8 @@ export default function ModulePage() {
 
   if (!mod) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-400">
-        Module non trouvé. <Link href="/" className="ml-2 text-indigo-400 hover:underline">Retour</Link>
+      <div className="min-h-screen flex items-center justify-center text-[var(--color-text-tertiary)]">
+        Module non trouvé. <Link href="/" className="ml-2 text-gold-500 hover:underline">Retour</Link>
       </div>
     );
   }
@@ -197,12 +196,12 @@ export default function ModulePage() {
   return (
     <div className="min-h-screen flex">
       <Sidebar completedModules={completedModules} />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto bg-[var(--color-bg)]">
         <AnimatePresence mode="wait">
-          <motion.div key={moduleId} variants={pageVariants} initial="initial" animate="animate" exit="exit" className="max-w-4xl mx-auto px-4 py-6">
-            {/* Top bar */}
-            <div className="flex justify-between items-center mb-4">
-              <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition">
+          <motion.div key={moduleId} variants={pageVariants} initial="initial" animate="animate" exit="exit" className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+            {/* Topbar */}
+            <div className="flex justify-between items-center mb-6">
+              <Link href="/" className="btn-ghost text-sm">
                 <ArrowLeft size={14} /> Dashboard
               </Link>
               <ThemeToggle theme={theme} onToggle={toggleTheme} />
@@ -213,9 +212,9 @@ export default function ModulePage() {
               <div className="flex items-start gap-4">
                 <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }} className="text-3xl">{mod.icon}</motion.span>
                 <div>
-                  <span className="text-xs text-indigo-400 font-mono">Module {String(mod.id).padStart(2, "0")} &middot; Style {mod.style}</span>
-                  <h1 className="text-2xl font-serif font-bold text-white">{mod.title}</h1>
-                  <p className="text-sm text-gray-400 mt-1">{mod.description}</p>
+                  <span className="text-overline text-gold-600 dark:text-gold-400">Module {String(mod.id).padStart(2, "0")} &middot; Style {mod.style}</span>
+                  <h1 className="text-heading-xl font-serif text-[var(--color-text-primary)]">{mod.title}</h1>
+                  <p className="text-body-sm text-[var(--color-text-secondary)] mt-1">{mod.description}</p>
                 </div>
               </div>
             </motion.div>
@@ -223,10 +222,8 @@ export default function ModulePage() {
             {/* Form */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="mb-8">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-serif font-semibold text-white flex items-center gap-2">
-                  <span className="w-1 h-5 bg-indigo-500 rounded-full" /> Vos informations
-                </h2>
-                <button onClick={handleReset} className="text-xs text-gray-500 hover:text-gray-300 transition flex items-center gap-1">
+                <h2 className="text-heading font-serif text-[var(--color-text-primary)] section-marker">Vos informations</h2>
+                <button onClick={handleReset} className="btn-ghost text-caption text-[var(--color-text-muted)]">
                   <RotateCcw size={12} /> Réinitialiser
                 </button>
               </div>
@@ -255,11 +252,11 @@ export default function ModulePage() {
 
             {/* Actions */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex flex-wrap gap-3 mb-8">
-              <button onClick={handleAnalyze} disabled={isStreaming} className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium hover:from-indigo-600 hover:to-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm shadow-lg shadow-indigo-500/25">
+              <button onClick={handleAnalyze} disabled={isStreaming} className="btn-primary py-3 px-6 disabled:opacity-50 disabled:cursor-not-allowed shadow-gold-glow">
                 <Bot size={18} /> {isStreaming ? "Analyse en cours..." : "Lancer l'analyse IA complète"}
               </button>
-              <button onClick={handleCopyPrompt} className="flex items-center gap-2 px-5 py-3 rounded-xl border border-white/[0.1] bg-white/[0.03] text-gray-300 hover:bg-white/[0.06] hover:text-white transition text-sm">
-                {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
+              <button onClick={handleCopyPrompt} className="btn-secondary py-3">
+                {copied ? <Check size={16} className="text-success-500" /> : <Copy size={16} />}
                 {copied ? "Copié !" : "Copier le prompt"}
               </button>
             </motion.div>
@@ -281,9 +278,9 @@ export default function ModulePage() {
             )}
 
             {/* Nav */}
-            <div className="flex justify-between items-center py-6 border-t border-white/[0.08]">
-              {moduleId > 1 ? <Link href={`/module/${moduleId - 1}`} className="text-sm text-gray-400 hover:text-white transition">← Module {String(moduleId - 1).padStart(2, "0")}</Link> : <div />}
-              {moduleId < 12 ? <Link href={`/module/${moduleId + 1}`} className="text-sm text-gray-400 hover:text-white transition">Module {String(moduleId + 1).padStart(2, "0")} →</Link> : <div />}
+            <div className="flex justify-between items-center py-6 border-t border-[var(--color-border)]">
+              {moduleId > 1 ? <Link href={`/module/${moduleId - 1}`} className="btn-ghost text-sm">&larr; Module {String(moduleId - 1).padStart(2, "0")}</Link> : <div />}
+              {moduleId < 12 ? <Link href={`/module/${moduleId + 1}`} className="btn-ghost text-sm">Module {String(moduleId + 1).padStart(2, "0")} &rarr;</Link> : <div />}
             </div>
           </motion.div>
         </AnimatePresence>

@@ -39,7 +39,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#6366F1",
+  themeColor: "#1a2340",
   width: "device-width",
   initialScale: 1,
 };
@@ -50,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className="min-h-screen bg-[#0B0F1A]">
+      <body className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text-primary)]">
         <ThemeProvider>
           {children}
           <Disclaimer />

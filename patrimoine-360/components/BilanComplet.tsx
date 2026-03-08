@@ -61,7 +61,6 @@ export default function BilanComplet({ appState }: BilanCompletProps) {
   };
 
   const handleExportFullPdf = () => {
-    // Dynamic import to avoid SSR issues
     import("jspdf").then(({ jsPDF }) => {
       const doc = new jsPDF();
       const pw = doc.internal.pageSize.getWidth();
@@ -70,7 +69,7 @@ export default function BilanComplet({ appState }: BilanCompletProps) {
       const addPage = (needed: number) => { if (y + needed > 270) { doc.addPage(); y = 20; } };
 
       doc.setFontSize(22);
-      doc.setTextColor(99, 102, 241);
+      doc.setTextColor(26, 35, 64); // navy-900
       doc.text("Patrimoine 360° — Bilan Complet", pw / 2, y, { align: "center" });
       y += 10;
       doc.setFontSize(10);
@@ -83,7 +82,7 @@ export default function BilanComplet({ appState }: BilanCompletProps) {
         if (!result) continue;
 
         addPage(20);
-        doc.setDrawColor(99, 102, 241);
+        doc.setDrawColor(220, 154, 40); // gold-500
         doc.line(20, y, pw - 20, y);
         y += 8;
 
@@ -124,10 +123,10 @@ export default function BilanComplet({ appState }: BilanCompletProps) {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-medium hover:from-purple-600 hover:to-pink-600 transition shadow-lg shadow-purple-500/20"
+        className="btn-secondary text-sm"
       >
         <FileText size={16} />
-        Bilan complet
+        <span className="hidden sm:inline">Bilan complet</span>
       </button>
 
       <AnimatePresence>
@@ -136,69 +135,67 @@ export default function BilanComplet({ appState }: BilanCompletProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#111827] border border-white/[0.08] rounded-2xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto"
+              className="surface-elevated p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-serif font-bold text-white">Bilan Complet</h2>
-                <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white transition">
+                <h2 className="text-heading-lg font-serif text-[var(--color-text-primary)]">Bilan Complet</h2>
+                <button onClick={() => setIsOpen(false)} className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition">
                   <X size={20} />
                 </button>
               </div>
 
-              <p className="text-sm text-gray-400 mb-4">
+              <p className="text-body-sm text-[var(--color-text-secondary)] mb-4">
                 Lance les 12 analyses IA en séquence et génère un rapport PDF consolidé.
                 {completedModules.length < 12 && (
-                  <span className="block mt-1 text-yellow-400/80">
+                  <span className="block mt-1 text-warning-500">
                     {completedModules.length} module(s) avec des données remplies seront analysés.
                   </span>
                 )}
               </p>
 
-              {/* Module list */}
               <div className="space-y-2 mb-6">
                 {completedModules.map((mod) => (
                   <div key={mod.id} className="flex items-center gap-3 text-sm">
                     <span className="text-base">{mod.icon}</span>
-                    <span className="flex-1 text-gray-300">{mod.title}</span>
+                    <span className="flex-1 text-[var(--color-text-secondary)]">{mod.title}</span>
                     {results[mod.id] ? (
-                      <span className="text-green-400 text-xs">&#10003;</span>
+                      <span className="text-success-400 text-xs">&#10003;</span>
                     ) : currentModule === mod.id && running ? (
-                      <Loader2 size={14} className="text-indigo-400 animate-spin" />
+                      <Loader2 size={14} className="text-gold-400 animate-spin" />
                     ) : (
-                      <span className="text-gray-600 text-xs">En attente</span>
+                      <span className="text-[var(--color-text-muted)] text-xs">En attente</span>
                     )}
                   </div>
                 ))}
               </div>
 
-              {/* Progress */}
               {running && (
                 <div className="mb-4">
-                  <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                  <div className="h-1.5 rounded-full bg-[var(--color-surface-active)] overflow-hidden">
                     <motion.div
-                      className="h-full bg-indigo-500 rounded-full"
+                      className="h-full bg-gradient-to-r from-gold-400 to-gold-500 rounded-full"
                       animate={{ width: `${(doneCount / completedModules.length) * 100}%` }}
                       transition={{ duration: 0.5 }}
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">{doneCount}/{completedModules.length} modules analysés</p>
+                  <p className="text-caption text-[var(--color-text-muted)] mt-1">{doneCount}/{completedModules.length} modules analysés</p>
                 </div>
               )}
 
-              {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
+              {error && <p className="text-danger-500 text-sm mb-4">{error}</p>}
 
               <div className="flex gap-3">
                 {!running && doneCount === 0 && (
                   <button
                     onClick={handleRunAll}
                     disabled={completedModules.length === 0}
-                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-medium hover:from-indigo-600 hover:to-purple-600 transition disabled:opacity-40"
+                    className="flex-1 btn-primary justify-center py-3 disabled:opacity-40"
                   >
                     Lancer les {completedModules.length} analyses
                   </button>
@@ -206,7 +203,7 @@ export default function BilanComplet({ appState }: BilanCompletProps) {
                 {doneCount > 0 && !running && (
                   <button
                     onClick={handleExportFullPdf}
-                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-medium hover:from-green-600 hover:to-emerald-600 transition"
+                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-success-500 to-success-600 text-white text-sm font-medium hover:from-success-600 hover:to-success-600 transition"
                   >
                     <Download size={16} />
                     Télécharger le PDF complet

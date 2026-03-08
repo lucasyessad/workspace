@@ -19,14 +19,14 @@ export default function ExportButtons({ moduleTitle, moduleStyle, formData, calc
     <div className="flex gap-3">
       <button
         onClick={() => exportPdf({ moduleTitle, moduleStyle, formData, calculations, aiResult })}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-gray-300 hover:bg-white/[0.06] hover:text-white transition text-sm"
+        className="btn-secondary text-sm"
       >
         <FileText size={16} />
         Exporter PDF
       </button>
       <button
         onClick={() => exportExcel({ moduleTitle, moduleStyle, formData, calculations, aiResult })}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-gray-300 hover:bg-white/[0.06] hover:text-white transition text-sm"
+        className="btn-secondary text-sm"
       >
         <Table size={16} />
         Exporter Excel

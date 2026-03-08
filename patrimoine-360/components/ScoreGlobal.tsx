@@ -8,11 +8,19 @@ interface ScoreGlobalProps {
 }
 
 const levelColors: Record<GlobalScore["level"], string> = {
-  critique: "text-red-400",
-  fragile: "text-orange-400",
-  correct: "text-yellow-400",
-  bon: "text-green-400",
-  excellent: "text-emerald-400",
+  critique: "text-danger-500 dark:text-danger-400",
+  fragile: "text-warning-600 dark:text-warning-400",
+  correct: "text-warning-500 dark:text-warning-400",
+  bon: "text-success-500 dark:text-success-400",
+  excellent: "text-success-600 dark:text-success-400",
+};
+
+const levelStroke: Record<GlobalScore["level"], string> = {
+  critique: "#ef4444",
+  fragile: "#f59e0b",
+  correct: "#eab308",
+  bon: "#22c55e",
+  excellent: "#16a34a",
 };
 
 const levelLabels: Record<GlobalScore["level"], string> = {
@@ -23,21 +31,13 @@ const levelLabels: Record<GlobalScore["level"], string> = {
   excellent: "Excellent",
 };
 
-const levelGradient: Record<GlobalScore["level"], string> = {
-  critique: "from-red-500 to-red-600",
-  fragile: "from-orange-500 to-orange-600",
-  correct: "from-yellow-500 to-yellow-600",
-  bon: "from-green-500 to-green-600",
-  excellent: "from-emerald-500 to-emerald-600",
-};
-
 export default function ScoreGlobal({ appState }: ScoreGlobalProps) {
   const result = computeGlobalScore(appState);
 
   if (!result) {
     return (
-      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 text-center">
-        <p className="text-sm text-gray-500">
+      <div className="surface-card p-6 text-center">
+        <p className="text-body-sm text-[var(--color-text-tertiary)]">
           Remplis au moins un module pour voir ton score de santé financière.
         </p>
       </div>
@@ -49,9 +49,8 @@ export default function ScoreGlobal({ appState }: ScoreGlobalProps) {
   const offset = circumference - (score / 100) * circumference;
 
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6">
-      <h3 className="text-lg font-serif font-semibold text-white mb-4 flex items-center gap-2">
-        <span className="w-1 h-5 bg-indigo-500 rounded-full" />
+    <div className="surface-card p-6">
+      <h3 className="text-heading font-serif text-[var(--color-text-primary)] mb-4 section-marker">
         Score de santé financière
       </h3>
 
@@ -59,11 +58,11 @@ export default function ScoreGlobal({ appState }: ScoreGlobalProps) {
         {/* Gauge */}
         <div className="relative w-36 h-36 flex-shrink-0">
           <svg viewBox="0 0 140 140" className="w-full h-full -rotate-90">
-            <circle cx="70" cy="70" r="60" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
+            <circle cx="70" cy="70" r="60" fill="none" stroke="var(--color-border)" strokeWidth="10" />
             <motion.circle
               cx="70" cy="70" r="60" fill="none"
               strokeWidth="10" strokeLinecap="round"
-              className={`stroke-current ${levelColors[level]}`}
+              stroke={levelStroke[level]}
               strokeDasharray={circumference}
               initial={{ strokeDashoffset: circumference }}
               animate={{ strokeDashoffset: offset }}
@@ -72,7 +71,7 @@ export default function ScoreGlobal({ appState }: ScoreGlobalProps) {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <motion.span
-              className="text-3xl font-bold text-white"
+              className="text-3xl font-bold text-[var(--color-text-primary)]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
@@ -95,22 +94,22 @@ export default function ScoreGlobal({ appState }: ScoreGlobalProps) {
               transition={{ delay: 0.3 + i * 0.1 }}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-gray-400">{item.category}</span>
-                <span className="text-xs font-mono text-gray-300">{item.score}/100</span>
+                <span className="text-caption text-[var(--color-text-tertiary)]">{item.category}</span>
+                <span className="text-caption font-mono text-[var(--color-text-secondary)]">{item.score}/100</span>
               </div>
-              <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+              <div className="h-1.5 rounded-full bg-[var(--color-surface-active)] overflow-hidden">
                 <motion.div
-                  className={`h-full rounded-full bg-gradient-to-r ${
-                    item.score >= 70 ? "from-green-500 to-emerald-500" :
-                    item.score >= 50 ? "from-yellow-500 to-orange-500" :
-                    "from-red-500 to-red-600"
+                  className={`h-full rounded-full ${
+                    item.score >= 70 ? "bg-gradient-to-r from-success-500 to-success-600" :
+                    item.score >= 50 ? "bg-gradient-to-r from-warning-400 to-warning-500" :
+                    "bg-gradient-to-r from-danger-400 to-danger-500"
                   }`}
                   initial={{ width: 0 }}
                   animate={{ width: `${item.score}%` }}
                   transition={{ duration: 1, delay: 0.5 + i * 0.1 }}
                 />
               </div>
-              <p className="text-[10px] text-gray-600 mt-0.5">{item.comment}</p>
+              <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{item.comment}</p>
             </motion.div>
           ))}
         </div>
