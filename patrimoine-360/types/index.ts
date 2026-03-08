@@ -42,6 +42,8 @@ export interface HistoryEntry {
   formData: FormData;
   aiResult?: string;
   calculationResults?: CalculationResult[];
+  version?: number;
+  modelUsed?: string;
 }
 
 export interface ModuleState {

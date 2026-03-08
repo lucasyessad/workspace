@@ -15,8 +15,10 @@ import ExportButtons from "@/components/ExportButtons";
 import Sidebar from "@/components/Sidebar";
 import Charts from "@/components/Charts";
 import HistoryPanel from "@/components/HistoryPanel";
+import ScenariosPanel from "@/components/ScenariosPanel";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useTheme } from "@/components/ThemeProvider";
+import { trackEvent, Events } from "@/lib/analytics";
 
 function loadState(): AppState {
   try {
@@ -132,20 +134,27 @@ export default function ModulePage() {
         }
       }
 
-      // Save with history
+      // Save with history (versioned)
       const state = loadState();
       if (!state.modules[moduleId]) state.modules[moduleId] = { formData, completed: false };
       state.modules[moduleId].aiResult = accumulated;
       state.modules[moduleId].completed = true;
+
+      const existingHistory = state.modules[moduleId].history || [];
+      const nextVersion = existingHistory.length + 1;
 
       const entry: HistoryEntry = {
         date: new Date().toISOString(),
         formData: { ...formData },
         aiResult: accumulated,
         calculationResults: calculations ? [...calculations] : undefined,
+        version: nextVersion,
+        modelUsed: "claude-sonnet-4-20250514",
       };
       if (!state.modules[moduleId].history) state.modules[moduleId].history = [];
       state.modules[moduleId].history!.push(entry);
+
+      trackEvent(Events.MODULE_ANALYSIS_COMPLETE, { moduleId });
       if (state.modules[moduleId].history!.length > 10) {
         state.modules[moduleId].history = state.modules[moduleId].history!.slice(-10);
       }
@@ -233,6 +242,13 @@ export default function ModulePage() {
 
             {/* Charts */}
             {mod.hasCalculator && <div className="mb-8"><Charts moduleId={moduleId} formData={formData} calculations={calculations} /></div>}
+
+            {/* Scenarios */}
+            {[1, 2, 10].includes(moduleId) && Object.keys(formData).length > 0 && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.18 }} className="mb-8">
+                <ScenariosPanel formData={formData} moduleId={moduleId} />
+              </motion.div>
+            )}
 
             {/* History */}
             {history.length > 0 && <div className="mb-8"><HistoryPanel history={history} currentResults={calculations} /></div>}

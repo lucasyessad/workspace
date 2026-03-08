@@ -1,10 +1,13 @@
 "use client";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { Bot, Target } from "lucide-react";
 import { modules } from "@/lib/modules";
 import { AppState } from "@/types";
 import ThemeToggle from "./ThemeToggle";
 import BilanComplet from "./BilanComplet";
+import ScoreGlobal from "./ScoreGlobal";
+import Reminders from "./Reminders";
 import { useTheme } from "./ThemeProvider";
 
 interface DashboardProps {
@@ -21,7 +24,14 @@ export default function Dashboard({ completedModules, appState }: DashboardProps
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Top bar */}
       <div className="flex justify-end items-center gap-3 mb-4">
+        <Link href="/copilote" className="flex items-center gap-2 px-4 py-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-sm font-medium hover:bg-indigo-500/20 transition">
+          <Bot size={16} /> Copilote IA
+        </Link>
+        <Link href="/objectifs" className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/[0.08] bg-white/[0.02] text-gray-400 text-sm hover:text-white hover:bg-white/[0.04] transition">
+          <Target size={16} /> Objectifs
+        </Link>
         <BilanComplet appState={appState} />
+        <Reminders />
         <ThemeToggle theme={theme} onToggle={toggleTheme} />
       </div>
 
@@ -35,8 +45,13 @@ export default function Dashboard({ completedModules, appState }: DashboardProps
           Patrimoine <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">360°</span>
         </h1>
         <p className="text-gray-400 text-sm">
-          12 modules experts &middot; Calculs en temps réel &middot; Analyse IA personnalisée
+          Copilote financier intelligent &middot; 12 modules experts &middot; Analyse IA personnalisée
         </p>
+      </motion.div>
+
+      {/* Score Global */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="mb-8">
+        <ScoreGlobal appState={appState} />
       </motion.div>
 
       {/* Global progress bar */}

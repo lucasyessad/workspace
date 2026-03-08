@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /module/
+
+Sitemap: https://patrimoine360.app/sitemap.xml

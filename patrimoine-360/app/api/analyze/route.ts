@@ -1,10 +1,21 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { getPromptConfig } from "@/lib/prompts";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    // Rate limiting
+    const clientIp = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "anonymous";
+    const rateCheck = checkRateLimit(clientIp);
+    if (!rateCheck.allowed) {
+      return Response.json(
+        { error: `Trop de requêtes. Réessayez dans ${Math.ceil(rateCheck.resetIn / 1000)} secondes.` },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(rateCheck.resetIn / 1000)) } }
+      );
+    }
+
     const { moduleId, formData } = await request.json();
 
     if (!moduleId || !formData) {
