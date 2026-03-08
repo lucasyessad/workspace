@@ -219,24 +219,40 @@ export default async function AgenceLocalePage({
                 )}
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-2.5">
-                <a
-                  href={`https://wa.me/${agence.telephone_whatsapp.replace(/\s/g, "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button variant="or" size="default">
-                    <MessageCircle className="h-4 w-4 me-2" />
-                    WhatsApp
-                  </Button>
-                </a>
-                <a href={`tel:${agence.telephone_whatsapp}`}>
-                  <Button variant="outline" size="default">
-                    <Phone className="h-4 w-4 me-2" />
-                    {t.appeler}
-                  </Button>
-                </a>
+              {/* Navigation + Actions */}
+              <div className="flex flex-col items-center md:items-end gap-3">
+                <div className="flex gap-2.5">
+                  <a
+                    href={`https://wa.me/${agence.telephone_whatsapp.replace(/\s/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="or" size="default">
+                      <MessageCircle className="h-4 w-4 me-2" />
+                      WhatsApp
+                    </Button>
+                  </a>
+                  <a href={`tel:${agence.telephone_whatsapp}`}>
+                    <Button variant="outline" size="default">
+                      <Phone className="h-4 w-4 me-2" />
+                      {t.appeler}
+                    </Button>
+                  </a>
+                </div>
+                <div className="flex gap-4 text-caption text-muted-foreground">
+                  <Link
+                    href={`/${locale}/${params.agence}/a-propos`}
+                    className="hover:text-foreground transition-colors"
+                  >
+                    {locale === "ar" ? "من نحن" : locale === "en" ? "About" : "À propos"}
+                  </Link>
+                  <Link
+                    href={`/${locale}/${params.agence}/contact`}
+                    className="hover:text-foreground transition-colors"
+                  >
+                    {locale === "ar" ? "اتصل بنا" : locale === "en" ? "Contact" : "Contact"}
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -329,9 +345,10 @@ export default async function AgenceLocalePage({
               };
 
               return (
-                <div
+                <Link
                   key={bien.id}
-                  className="group bg-white rounded-2xl border border-border overflow-hidden hover:shadow-card transition-shadow duration-300"
+                  href={`/${locale}/${params.agence}/${bien.id}`}
+                  className="group bg-white rounded-2xl border border-border overflow-hidden hover:shadow-card transition-shadow duration-300 block"
                 >
                   <TrackerVue listingId={bien.id} agentId={agence.id} />
 
@@ -431,7 +448,7 @@ export default async function AgenceLocalePage({
                       </a>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

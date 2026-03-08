@@ -9,6 +9,8 @@ import {
   List,
   BarChart3,
   ExternalLink,
+  Users,
+  Palette,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
@@ -37,7 +39,9 @@ export default async function DashboardLayout({
     { href: "/dashboard", label: "Vue d'ensemble", icon: LayoutDashboard },
     { href: "/dashboard/annonces", label: "Annonces", icon: List },
     { href: "/dashboard/annonces/nouvelle", label: "Nouvelle annonce", icon: PlusCircle },
+    { href: "/dashboard/leads", label: "Leads", icon: Users },
     { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
+    { href: "/dashboard/branding", label: "Identité visuelle", icon: Palette },
     { href: "/dashboard/profil", label: "Profil", icon: User },
   ];
 
