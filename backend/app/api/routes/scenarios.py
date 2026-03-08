@@ -13,7 +13,7 @@ from app.schemas.scenario import (
     RenovationMeasureCreate, RenovationMeasureRead,
 )
 from app.services.energy_calculator import (
-    calculator, AuditInputData, BuildingInput, EnvelopeInput, SystemInput
+    calculator, AuditInputData, BuildingInput, EnvelopeInput, SystemInput, UNIT_PRICE
 )
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
@@ -91,9 +91,13 @@ def create_scenario(
     scenario.estimated_co2_reduction_kg = total_co2
 
     if total_cost > 0 and total_savings_kwh > 0:
-        # Approximate annual savings cost: avg 0.12 €/kWh
-        annual_savings_eur = total_savings_kwh * 0.12
-        scenario.estimated_annual_savings_eur = annual_savings_eur
+        # Valorise les économies au prix réel de l'énergie principale du bâtiment
+        # (récupère la source depuis l'audit si disponible, sinon moyenne France)
+        audit_snap    = audit.result_snapshot or {}
+        heating_src   = audit_snap.get("details", {}).get("heating_energy_source", "gaz")
+        energy_price  = UNIT_PRICE.get(heating_src, 0.12)
+        annual_savings_eur = total_savings_kwh * energy_price
+        scenario.estimated_annual_savings_eur = round(annual_savings_eur, 2)
         scenario.simple_payback_years = round(total_cost / annual_savings_eur, 1)
 
     db.commit()
@@ -177,6 +181,7 @@ def simulate_measures(
             "simple_payback_years": sim.simple_payback_years,
             "new_energy_label": sim.new_energy_label,
             "new_ghg_label": sim.new_ghg_label,
+            "new_dpe_label": sim.new_dpe_label,
             "new_primary_energy_per_m2": sim.new_primary_energy_per_m2,
         })
 

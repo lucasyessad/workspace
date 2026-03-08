@@ -51,7 +51,10 @@ def create_audit(
     if monthly_limit != -1:  # -1 means unlimited
         now = datetime.now(timezone.utc)
         # Reset counter at the start of a new month
-        if org.monthly_audit_reset_at is None or org.monthly_audit_reset_at.month != now.month:
+        if org.monthly_audit_reset_at is None or (
+            org.monthly_audit_reset_at.year  != now.year or
+            org.monthly_audit_reset_at.month != now.month
+        ):
             org.monthly_audit_count = 0
             org.monthly_audit_reset_at = now
 
@@ -176,11 +179,13 @@ def calculate_audit(
     # Update audit with results
     audit.baseline_energy_consumption_kwh = result.total_final_kwh
     audit.baseline_co2_kg = result.co2_per_m2 * float(building.heated_area_m2 or 1000)
-    audit.computed_energy_label = result.energy_label
+    audit.computed_energy_label = result.dpe_label
     audit.computed_ghg_label = result.ghg_label
     audit.status = "completed"
     audit.result_snapshot = {
         "energy_label": result.energy_label,
+        "ghg_label": result.ghg_label,
+        "dpe_label": result.dpe_label,
         "ghg_label": result.ghg_label,
         "primary_energy_per_m2": result.primary_energy_per_m2,
         "co2_per_m2": result.co2_per_m2,
