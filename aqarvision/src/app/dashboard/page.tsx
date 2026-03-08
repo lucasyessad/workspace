@@ -21,6 +21,14 @@ export default async function DashboardPage() {
     .eq("agent_id", user?.id)
     .eq("est_active", true);
 
+  // Récupérer les analytics du mois
+  const { data: vuesCeMois } = await supabase.rpc("vues_ce_mois", {
+    p_agent_id: user?.id,
+  });
+  const { data: contactsCeMois } = await supabase.rpc("contacts_ce_mois", {
+    p_agent_id: user?.id,
+  });
+
   const stats = [
     {
       titre: "Total annonces",
@@ -38,14 +46,14 @@ export default async function DashboardPage() {
     },
     {
       titre: "Vues ce mois",
-      valeur: 0,
+      valeur: vuesCeMois ?? 0,
       icon: TrendingUp,
       couleur: "text-or",
       bg: "bg-yellow-100",
     },
     {
       titre: "Contacts reçus",
-      valeur: 0,
+      valeur: contactsCeMois ?? 0,
       icon: Building2,
       couleur: "text-purple-600",
       bg: "bg-purple-100",

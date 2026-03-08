@@ -22,12 +22,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { WILAYAS } from "@/lib/wilayas";
+import { validerTelephoneAlgerien } from "@/lib/validation";
 
 /** Page de gestion du profil de l'agence */
 export default function ProfilPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [erreurTel, setErreurTel] = useState<string | null>(null);
   const [profil, setProfil] = useState({
     nom_agence: "",
     telephone_whatsapp: "",
@@ -73,6 +75,15 @@ export default function ProfilPage() {
     e.preventDefault();
     setSaving(true);
     setMessage(null);
+    setErreurTel(null);
+
+    // Valider le numéro de téléphone algérien
+    const validationTel = validerTelephoneAlgerien(profil.telephone_whatsapp);
+    if (!validationTel.valide) {
+      setErreurTel(validationTel.message);
+      setSaving(false);
+      return;
+    }
 
     const supabase = createClient();
     const {
@@ -151,12 +162,20 @@ export default function ProfilPage() {
               <Input
                 id="tel"
                 type="tel"
+                placeholder="+213 5XX XX XX XX"
                 value={profil.telephone_whatsapp}
-                onChange={(e) =>
-                  setProfil({ ...profil, telephone_whatsapp: e.target.value })
-                }
+                onChange={(e) => {
+                  setProfil({ ...profil, telephone_whatsapp: e.target.value });
+                  setErreurTel(null);
+                }}
                 required
               />
+              {erreurTel && (
+                <p className="text-xs text-red-500">{erreurTel}</p>
+              )}
+              <p className="text-xs text-gray-400">
+                Format : +213 5/6/7XX XX XX XX ou 05/06/07XX XX XX XX
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

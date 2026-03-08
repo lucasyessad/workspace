@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
 import {
   Building2,
   Phone,
@@ -15,6 +16,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatPrix, formatSurface, whatsappLink } from "@/lib/utils";
 import { getWilayaById } from "@/lib/wilayas";
+import { BoutonFavori } from "@/components/favoris/bouton-favori";
+import { BoutonComparer } from "@/components/favoris/bouton-comparer";
+import { PanneauComparaison } from "@/components/favoris/panneau-comparaison";
+import { TrackerVue } from "@/components/analytics/tracker-vue";
 import type { Listing, Profile } from "@/types";
 
 interface AgencePageProps {
@@ -22,14 +27,70 @@ interface AgencePageProps {
   searchParams: { type?: string; transaction?: string };
 }
 
-/** Page publique de l'agence - Mini-site vitrine */
+/** Métadonnées dynamiques SEO + Open Graph pour le partage WhatsApp/Facebook */
+export async function generateMetadata({
+  params,
+}: AgencePageProps): Promise<Metadata> {
+  const supabase = createClient();
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("slug_url", params.agence)
+    .single();
+
+  if (!profile) {
+    return { title: "Agence non trouvée - AqarVision" };
+  }
+
+  const agence = profile as Profile;
+  const wilaya = getWilayaById(agence.wilaya_id);
+
+  const { count } = await supabase
+    .from("listings")
+    .select("*", { count: "exact", head: true })
+    .eq("agent_id", agence.id)
+    .eq("est_active", true);
+
+  const titre = `${agence.nom_agence} - Agence Immobilière${wilaya ? ` à ${wilaya.nom_fr}` : ""} | AqarVision`;
+  const description = agence.description
+    ? agence.description.substring(0, 160)
+    : `${agence.nom_agence} - ${count ?? 0} biens immobiliers disponibles${wilaya ? ` à ${wilaya.nom_fr}` : ""} en Algérie. Contactez-nous sur WhatsApp.`;
+
+  return {
+    title: titre,
+    description,
+    keywords: [
+      "immobilier", "algérie", wilaya?.nom_fr ?? "", wilaya?.nom_ar ?? "",
+      "vente", "location", "appartement", "villa", "terrain",
+      agence.nom_agence, "عقارات", "الجزائر",
+    ].filter(Boolean),
+    openGraph: {
+      title: titre,
+      description,
+      type: "website",
+      locale: "fr_DZ",
+      alternateLocale: ["ar_DZ"],
+      siteName: "AqarVision",
+      images: agence.logo_url
+        ? [{ url: agence.logo_url, width: 200, height: 200, alt: agence.nom_agence }]
+        : [],
+    },
+    twitter: {
+      card: "summary",
+      title: agence.nom_agence,
+      description,
+    },
+  };
+}
+
+/** Page publique de l'agence - Mini-site vitrine avec SEO, favoris et analytics */
 export default async function AgencePage({
   params,
   searchParams,
 }: AgencePageProps) {
   const supabase = createClient();
 
-  // Récupérer le profil de l'agence par slug
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
@@ -60,13 +121,45 @@ export default async function AgencePage({
 
   const { data: annonces } = await query;
 
+  // Enregistrer la recherche filtrée pour les analytics
+  if (searchParams.type || searchParams.transaction) {
+    await supabase.from("analytics_recherches").insert({
+      agent_id: agence.id,
+      type_bien_filtre: searchParams.type || null,
+      transaction_filtre: searchParams.transaction || null,
+      wilaya_id: agence.wilaya_id,
+    });
+  }
+
+  // Schema.org JSON-LD pour le référencement Google
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateAgent",
+    name: agence.nom_agence,
+    description: agence.description,
+    telephone: agence.telephone_whatsapp,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: agence.commune,
+      addressRegion: wilayaAgence?.nom_fr,
+      addressCountry: "DZ",
+    },
+    ...(agence.logo_url && { image: agence.logo_url }),
+    areaServed: { "@type": "Country", name: "Algeria" },
+  };
+
   return (
     <div className="min-h-screen bg-blanc-casse">
+      {/* JSON-LD Schema.org pour le référencement */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* En-tête de l'agence */}
       <header className="bg-bleu-nuit text-white">
         <div className="container mx-auto px-4 py-12 md:py-16">
           <div className="flex flex-col md:flex-row items-center gap-6">
-            {/* Logo */}
             <div className="w-20 h-20 bg-white/10 rounded-xl flex items-center justify-center">
               {agence.logo_url ? (
                 <img
@@ -100,7 +193,6 @@ export default async function AgencePage({
               )}
             </div>
 
-            {/* Boutons de contact */}
             <div className="flex gap-3">
               <a
                 href={`https://wa.me/${agence.telephone_whatsapp.replace(/\s/g, "")}`}
@@ -134,21 +226,16 @@ export default async function AgencePage({
             <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
             <Link href={`/${params.agence}`}>
               <Badge
-                variant={!searchParams.transaction ? "default" : "outline"}
+                variant={!searchParams.transaction && !searchParams.type ? "default" : "outline"}
                 className="cursor-pointer whitespace-nowrap"
               >
                 Tous
               </Badge>
             </Link>
             {["Vente", "Location"].map((type) => (
-              <Link
-                key={type}
-                href={`/${params.agence}?transaction=${type}`}
-              >
+              <Link key={type} href={`/${params.agence}?transaction=${type}`}>
                 <Badge
-                  variant={
-                    searchParams.transaction === type ? "default" : "outline"
-                  }
+                  variant={searchParams.transaction === type ? "default" : "outline"}
                   className="cursor-pointer whitespace-nowrap"
                 >
                   {type}
@@ -158,14 +245,9 @@ export default async function AgencePage({
             <div className="w-px h-6 bg-gray-200 flex-shrink-0" />
             {["Villa", "Appartement F3", "Terrain", "Local Commercial"].map(
               (type) => (
-                <Link
-                  key={type}
-                  href={`/${params.agence}?type=${type}`}
-                >
+                <Link key={type} href={`/${params.agence}?type=${type}`}>
                   <Badge
-                    variant={
-                      searchParams.type === type ? "secondary" : "outline"
-                    }
+                    variant={searchParams.type === type ? "secondary" : "outline"}
                     className="cursor-pointer whitespace-nowrap"
                   >
                     {type}
@@ -197,11 +279,27 @@ export default async function AgencePage({
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {(annonces as Listing[]).map((bien) => {
               const wilaya = getWilayaById(bien.wilaya_id);
+              const bienFavori = {
+                id: bien.id,
+                titre: bien.titre,
+                prix: bien.prix,
+                surface: bien.surface,
+                type_bien: bien.type_bien,
+                photo: bien.photos?.[0] || null,
+                wilaya: wilaya?.nom_fr || "",
+                commune: bien.commune,
+                slug_agence: params.agence,
+                ajouteLe: "",
+              };
+
               return (
                 <Card
                   key={bien.id}
                   className="overflow-hidden hover:shadow-lg transition-shadow group"
                 >
+                  {/* Tracker de vue analytics */}
+                  <TrackerVue listingId={bien.id} agentId={agence.id} />
+
                   {/* Image */}
                   <div className="relative h-48 bg-gray-100">
                     {bien.photos?.[0] ? (
@@ -216,15 +314,18 @@ export default async function AgencePage({
                       </div>
                     )}
                     <div className="absolute top-3 left-3 flex gap-2">
-                      <Badge className="bg-bleu-nuit">
-                        {bien.type_transaction}
-                      </Badge>
+                      <Badge className="bg-bleu-nuit">{bien.type_transaction}</Badge>
                       <Badge variant="success">{bien.statut_document}</Badge>
                     </div>
                     <div className="absolute bottom-3 right-3">
                       <span className="bg-or text-bleu-nuit px-3 py-1 rounded-full text-sm font-bold">
                         {formatPrix(bien.prix)}
                       </span>
+                    </div>
+                    {/* Boutons favoris et comparaison */}
+                    <div className="absolute top-3 right-3 flex flex-col gap-1">
+                      <BoutonFavori bien={bienFavori} taille="sm" />
+                      <BoutonComparer bien={bienFavori} />
                     </div>
                   </div>
 
@@ -239,7 +340,6 @@ export default async function AgencePage({
                       {wilaya?.nom_fr}
                     </p>
 
-                    {/* Caractéristiques */}
                     <div className="flex flex-wrap gap-2 text-xs text-gray-500 mb-3">
                       <span>{bien.type_bien}</span>
                       <span>|</span>
@@ -253,53 +353,26 @@ export default async function AgencePage({
                       {bien.etage !== null && (
                         <>
                           <span>|</span>
-                          <span>
-                            {bien.etage === 0 ? "RDC" : `${bien.etage}e étage`}
-                          </span>
+                          <span>{bien.etage === 0 ? "RDC" : `${bien.etage}e étage`}</span>
                         </>
                       )}
                     </div>
 
-                    {/* Tags */}
                     <div className="flex flex-wrap gap-1 mb-3">
-                      {bien.ascenseur && (
-                        <Badge variant="outline" className="text-xs">
-                          Ascenseur
-                        </Badge>
-                      )}
-                      {bien.garage && (
-                        <Badge variant="outline" className="text-xs">
-                          Garage
-                        </Badge>
-                      )}
-                      {bien.jardin && (
-                        <Badge variant="outline" className="text-xs">
-                          Jardin
-                        </Badge>
-                      )}
-                      {bien.citerne && (
-                        <Badge variant="outline" className="text-xs">
-                          Citerne
-                        </Badge>
-                      )}
+                      {bien.ascenseur && <Badge variant="outline" className="text-xs">Ascenseur</Badge>}
+                      {bien.garage && <Badge variant="outline" className="text-xs">Garage</Badge>}
+                      {bien.jardin && <Badge variant="outline" className="text-xs">Jardin</Badge>}
+                      {bien.citerne && <Badge variant="outline" className="text-xs">Citerne</Badge>}
                     </div>
 
-                    {/* Boutons de contact */}
                     <div className="flex gap-2">
                       <a
-                        href={whatsappLink(
-                          agence.telephone_whatsapp,
-                          bien.titre
-                        )}
+                        href={whatsappLink(agence.telephone_whatsapp, bien.titre)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex-1"
                       >
-                        <Button
-                          variant="or"
-                          size="sm"
-                          className="w-full text-xs"
-                        >
+                        <Button variant="or" size="sm" className="w-full text-xs">
                           <MessageCircle className="h-3 w-3 mr-1" />
                           WhatsApp
                         </Button>
@@ -317,6 +390,9 @@ export default async function AgencePage({
           </div>
         )}
       </section>
+
+      {/* Panneau de comparaison flottant */}
+      <PanneauComparaison />
 
       {/* Footer */}
       <footer className="bg-bleu-nuit text-white py-8 mt-12">

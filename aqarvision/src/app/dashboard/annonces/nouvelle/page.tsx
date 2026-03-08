@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Sparkles, Upload, X } from "lucide-react";
+import { Loader2, Sparkles, Upload, X, Languages, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { WILAYAS } from "@/lib/wilayas";
+import { validerPrix, validerSurface } from "@/lib/validation";
+import { compresserImage, formaterTailleFichier } from "@/lib/compression-image";
+import type { Locale } from "@/lib/i18n";
 import type {
   TypeBien,
   TypeTransaction,
@@ -43,14 +46,23 @@ const STATUTS_DOCUMENT: StatutDocument[] = [
   "Acte", "Livret foncier", "Concession", "Promesse de vente", "Timbré", "Autre",
 ];
 
-/** Formulaire "Smart" de création d'annonce - Adapté au marché algérien */
+const LANGUES_IA: { code: Locale; label: string; drapeau: string }[] = [
+  { code: "fr", label: "Français", drapeau: "FR" },
+  { code: "ar", label: "العربية", drapeau: "AR" },
+  { code: "en", label: "English", drapeau: "EN" },
+];
+
+/** Formulaire "Smart" de création d'annonce - Avec IA trilingue et compression d'images */
 export default function NouvelleAnnoncePage() {
   const router = useRouter();
   const [etape, setEtape] = useState(1);
   const [loading, setLoading] = useState(false);
   const [genereIA, setGenereIA] = useState(false);
+  const [langueIA, setLangueIA] = useState<Locale>("fr");
   const [erreur, setErreur] = useState<string | null>(null);
   const [photosPreviews, setPhotosPreviews] = useState<string[]>([]);
+  const [photosFiles, setPhotosFiles] = useState<File[]>([]);
+  const [compression, setCompression] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     titre: "",
@@ -69,7 +81,6 @@ export default function NouvelleAnnoncePage() {
     citerne: false,
     garage: false,
     jardin: false,
-    // Points clés pour la génération IA
     points_cles: "",
   });
 
@@ -77,41 +88,121 @@ export default function NouvelleAnnoncePage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }
 
-  /** Générer une description avec l'IA à partir des points clés */
+  /** Générer une description trilingue avec l'IA */
   async function genererAvecIA() {
     if (!formData.points_cles.trim()) return;
     setGenereIA(true);
 
-    // Simulation de génération IA (à remplacer par un appel API réel)
     const wilaya = WILAYAS.find((w) => String(w.id) === formData.wilaya_id);
-    const description = `${formData.type_bien || "Bien"} ${formData.type_transaction === "Location" ? "à louer" : "à vendre"} situé${formData.commune ? ` à ${formData.commune}` : ""}${wilaya ? `, wilaya de ${wilaya.nom_fr}` : ""}.\n\n${formData.points_cles}\n\nSurface : ${formData.surface} m² | Prix : ${formData.prix} DA\nDocuments : ${formData.statut_document}\n\nContactez-nous pour plus d'informations ou pour organiser une visite.`;
 
-    setFormData((prev) => ({ ...prev, description }));
+    try {
+      const response = await fetch("/api/generer-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          points_cles: formData.points_cles,
+          type_bien: formData.type_bien,
+          type_transaction: formData.type_transaction,
+          surface: formData.surface,
+          prix: formData.prix,
+          commune: formData.commune,
+          wilaya: wilaya?.nom_fr || "",
+          statut_document: formData.statut_document,
+          nb_pieces: formData.nb_pieces,
+          etage: formData.etage,
+          ascenseur: formData.ascenseur,
+          citerne: formData.citerne,
+          garage: formData.garage,
+          jardin: formData.jardin,
+          locale: langueIA,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.description) {
+        setFormData((prev) => ({ ...prev, description: data.description }));
+      }
+    } catch {
+      setErreur("Erreur lors de la génération IA");
+    }
+
     setGenereIA(false);
   }
 
-  /** Gestion de l'upload des photos */
-  function handlePhotos(e: React.ChangeEvent<HTMLInputElement>) {
+  /** Gestion de l'upload des photos avec compression automatique */
+  async function handlePhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const fichiers = e.target.files;
     if (!fichiers) return;
 
+    setCompression("Compression en cours...");
+
+    const fichiersArray = Array.from(fichiers);
     const nouvelles: string[] = [];
-    Array.from(fichiers).forEach((fichier) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        if (ev.target?.result) {
-          nouvelles.push(ev.target.result as string);
-          if (nouvelles.length === fichiers.length) {
-            setPhotosPreviews((prev) => [...prev, ...nouvelles]);
-          }
+    const nouveauxFiles: File[] = [];
+
+    for (const fichier of fichiersArray) {
+      try {
+        const tailleBefore = fichier.size;
+        const compresse = await compresserImage(fichier, {
+          maxLargeur: 1200,
+          maxHauteur: 1200,
+          qualite: 0.8,
+          tailleMaxOctets: 500 * 1024,
+        });
+        const tailleAfter = compresse.size;
+
+        if (tailleBefore > tailleAfter) {
+          setCompression(
+            `Compressé : ${formaterTailleFichier(tailleBefore)} → ${formaterTailleFichier(tailleAfter)}`
+          );
         }
-      };
-      reader.readAsDataURL(fichier);
-    });
+
+        nouveauxFiles.push(compresse);
+        nouvelles.push(URL.createObjectURL(compresse));
+      } catch {
+        nouveauxFiles.push(fichier);
+        nouvelles.push(URL.createObjectURL(fichier));
+      }
+    }
+
+    setPhotosPreviews((prev) => [...prev, ...nouvelles]);
+    setPhotosFiles((prev) => [...prev, ...nouveauxFiles]);
+    setTimeout(() => setCompression(null), 3000);
   }
 
   function supprimerPhoto(index: number) {
     setPhotosPreviews((prev) => prev.filter((_, i) => i !== index));
+    setPhotosFiles((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  /** Valider l'étape avant de passer à la suivante */
+  function validerEtape(etapeCible: number): boolean {
+    if (etapeCible > 1 && etape === 1) {
+      if (!formData.titre.trim()) {
+        setErreur("Le titre est requis");
+        return false;
+      }
+      if (!formData.type_bien) {
+        setErreur("Le type de bien est requis");
+        return false;
+      }
+      if (formData.prix) {
+        const validPrix = validerPrix(Number(formData.prix), formData.type_transaction);
+        if (!validPrix.valide) {
+          setErreur(validPrix.message);
+          return false;
+        }
+      }
+      if (formData.surface) {
+        const validSurface = validerSurface(Number(formData.surface));
+        if (!validSurface.valide) {
+          setErreur(validSurface.message);
+          return false;
+        }
+      }
+    }
+    setErreur(null);
+    return true;
   }
 
   /** Soumettre le formulaire */
@@ -129,6 +220,26 @@ export default function NouvelleAnnoncePage() {
       setErreur("Vous devez être connecté.");
       setLoading(false);
       return;
+    }
+
+    // Upload des photos compressées vers Supabase Storage
+    const photosUrls: string[] = [];
+    for (const fichier of photosFiles) {
+      const nomFichier = `${user.id}/${Date.now()}-${fichier.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("listing-photos")
+        .upload(nomFichier, fichier);
+
+      if (uploadError) {
+        console.error("Erreur upload:", uploadError);
+        continue;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("listing-photos")
+        .getPublicUrl(uploadData.path);
+
+      photosUrls.push(urlData.publicUrl);
     }
 
     const { error } = await supabase.from("listings").insert({
@@ -149,7 +260,7 @@ export default function NouvelleAnnoncePage() {
       garage: formData.garage,
       jardin: formData.jardin,
       agent_id: user.id,
-      photos: photosPreviews,
+      photos: photosUrls,
     });
 
     if (error) {
@@ -174,12 +285,14 @@ export default function NouvelleAnnoncePage() {
           <div key={step} className="flex items-center gap-2 flex-1">
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                etape >= step
+                etape > step
+                  ? "bg-green-500 text-white"
+                  : etape === step
                   ? "bg-or text-bleu-nuit"
                   : "bg-gray-200 text-gray-500"
               }`}
             >
-              {step}
+              {etape > step ? <Check className="h-4 w-4" /> : step}
             </div>
             <span className="text-sm text-gray-600 hidden sm:inline">
               {step === 1 && "Informations"}
@@ -307,7 +420,9 @@ export default function NouvelleAnnoncePage() {
                 <Button
                   type="button"
                   variant="or"
-                  onClick={() => setEtape(2)}
+                  onClick={() => {
+                    if (validerEtape(2)) setEtape(2);
+                  }}
                 >
                   Suivant
                 </Button>
@@ -389,7 +504,6 @@ export default function NouvelleAnnoncePage() {
                 </div>
               </div>
 
-              {/* Caractéristiques spécifiques */}
               <div className="space-y-2">
                 <Label>Caractéristiques</Label>
                 <div className="grid grid-cols-2 gap-3">
@@ -416,18 +530,10 @@ export default function NouvelleAnnoncePage() {
               </div>
 
               <div className="flex justify-between">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEtape(1)}
-                >
+                <Button type="button" variant="outline" onClick={() => setEtape(1)}>
                   Précédent
                 </Button>
-                <Button
-                  type="button"
-                  variant="or"
-                  onClick={() => setEtape(3)}
-                >
+                <Button type="button" variant="or" onClick={() => setEtape(3)}>
                   Suivant
                 </Button>
               </div>
@@ -435,23 +541,26 @@ export default function NouvelleAnnoncePage() {
           </Card>
         )}
 
-        {/* Étape 3 : Photos et Description IA */}
+        {/* Étape 3 : Photos et Description IA trilingue */}
         {etape === 3 && (
           <Card>
             <CardHeader>
               <CardTitle>Photos & Description</CardTitle>
               <CardDescription>
-                Ajoutez des photos et utilisez l&apos;IA pour la description
+                Photos compressées automatiquement + génération IA trilingue
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Upload de photos */}
+              {/* Upload de photos avec compression */}
               <div className="space-y-2">
                 <Label>Photos du bien</Label>
                 <div className="border-2 border-dashed rounded-lg p-6 text-center">
                   <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600 mb-2">
+                  <p className="text-sm text-gray-600 mb-1">
                     Glissez vos photos ici ou cliquez pour sélectionner
+                  </p>
+                  <p className="text-xs text-gray-400 mb-2">
+                    Compression automatique pour les connexions mobiles
                   </p>
                   <input
                     type="file"
@@ -467,7 +576,11 @@ export default function NouvelleAnnoncePage() {
                     </Button>
                   </label>
                 </div>
-                {/* Aperçu des photos */}
+                {compression && (
+                  <p className="text-xs text-green-600 bg-green-50 p-2 rounded">
+                    {compression}
+                  </p>
+                )}
                 {photosPreviews.length > 0 && (
                   <div className="grid grid-cols-3 gap-2 mt-3">
                     {photosPreviews.map((photo, i) => (
@@ -490,11 +603,9 @@ export default function NouvelleAnnoncePage() {
                 )}
               </div>
 
-              {/* Génération IA */}
+              {/* Génération IA trilingue */}
               <div className="space-y-2">
-                <Label htmlFor="points_cles">
-                  Points clés (pour génération IA)
-                </Label>
+                <Label htmlFor="points_cles">Points clés (pour génération IA)</Label>
                 <Textarea
                   id="points_cles"
                   placeholder="Ex: Vue sur mer, 3 chambres spacieuses, cuisine équipée, parking, proche commodités..."
@@ -502,6 +613,29 @@ export default function NouvelleAnnoncePage() {
                   onChange={(e) => updateField("points_cles", e.target.value)}
                   rows={3}
                 />
+
+                {/* Sélecteur de langue */}
+                <div className="flex items-center gap-2">
+                  <Languages className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-500">Langue :</span>
+                  <div className="flex gap-1">
+                    {LANGUES_IA.map((langue) => (
+                      <button
+                        key={langue.code}
+                        type="button"
+                        onClick={() => setLangueIA(langue.code)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          langueIA === langue.code
+                            ? "bg-or text-bleu-nuit"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
+                      >
+                        {langue.drapeau} {langue.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <Button
                   type="button"
                   variant="secondary"
@@ -517,7 +651,7 @@ export default function NouvelleAnnoncePage() {
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4 mr-2" />
-                      Générer avec IA
+                      Générer ({LANGUES_IA.find((l) => l.code === langueIA)?.label})
                     </>
                   )}
                 </Button>
@@ -533,15 +667,12 @@ export default function NouvelleAnnoncePage() {
                   onChange={(e) => updateField("description", e.target.value)}
                   rows={6}
                   required
+                  dir={langueIA === "ar" ? "rtl" : "ltr"}
                 />
               </div>
 
               <div className="flex justify-between">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEtape(2)}
-                >
+                <Button type="button" variant="outline" onClick={() => setEtape(2)}>
                   Précédent
                 </Button>
                 <Button type="submit" variant="or" disabled={loading}>

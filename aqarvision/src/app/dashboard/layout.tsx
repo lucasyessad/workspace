@@ -7,6 +7,7 @@ import {
   User,
   LogOut,
   List,
+  BarChart3,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ export default async function DashboardLayout({
     { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
     { href: "/dashboard/annonces", label: "Mes annonces", icon: List },
     { href: "/dashboard/annonces/nouvelle", label: "Nouvelle annonce", icon: PlusCircle },
+    { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
     { href: "/dashboard/profil", label: "Mon profil", icon: User },
   ];
 
