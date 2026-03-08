@@ -8,11 +8,11 @@ import {
   LogOut,
   List,
   BarChart3,
+  ExternalLink,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 
-/** Layout du Dashboard Agent - Barre latérale + contenu */
 export default async function DashboardLayout({
   children,
 }: {
@@ -27,7 +27,6 @@ export default async function DashboardLayout({
     redirect("/auth/login");
   }
 
-  // Récupérer le profil de l'agence
   const { data: profile } = await supabase
     .from("profiles")
     .select("nom_agence, slug_url")
@@ -35,35 +34,36 @@ export default async function DashboardLayout({
     .single();
 
   const liens = [
-    { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
-    { href: "/dashboard/annonces", label: "Mes annonces", icon: List },
+    { href: "/dashboard", label: "Vue d'ensemble", icon: LayoutDashboard },
+    { href: "/dashboard/annonces", label: "Annonces", icon: List },
     { href: "/dashboard/annonces/nouvelle", label: "Nouvelle annonce", icon: PlusCircle },
     { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-    { href: "/dashboard/profil", label: "Mon profil", icon: User },
+    { href: "/dashboard/profil", label: "Profil", icon: User },
   ];
 
   return (
     <div className="min-h-screen bg-blanc-casse">
-      {/* Barre de navigation mobile */}
-      <nav className="md:hidden border-b bg-white sticky top-0 z-50">
+      {/* Mobile top bar */}
+      <nav className="md:hidden border-b border-border bg-white sticky top-0 z-50">
         <div className="px-4 h-14 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <Building2 className="h-6 w-6 text-or" />
-            <span className="font-bold text-bleu-nuit">AqarVision</span>
+            <div className="w-7 h-7 bg-bleu-nuit rounded-lg flex items-center justify-center">
+              <Building2 className="h-3.5 w-3.5 text-white" />
+            </div>
+            <span className="text-sm font-bold text-foreground">AqarVision</span>
           </Link>
-          <span className="text-sm text-gray-500">
+          <span className="text-caption text-muted-foreground truncate ml-4">
             {profile?.nom_agence ?? "Mon Agence"}
           </span>
         </div>
-        {/* Navigation mobile en bas */}
-        <div className="flex border-t">
+        <div className="flex border-t border-border">
           {liens.map((lien) => (
             <Link
               key={lien.href}
               href={lien.href}
-              className="flex-1 flex flex-col items-center py-2 text-xs text-gray-600 hover:text-or transition-colors"
+              className="flex-1 flex flex-col items-center py-2 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
             >
-              <lien.icon className="h-5 w-5 mb-1" />
+              <lien.icon className="h-4 w-4 mb-0.5" />
               {lien.label.split(" ").slice(-1)[0]}
             </Link>
           ))}
@@ -71,58 +71,62 @@ export default async function DashboardLayout({
       </nav>
 
       <div className="flex">
-        {/* Barre latérale desktop */}
-        <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-bleu-nuit text-white">
+        {/* Sidebar desktop */}
+        <aside className="hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-border">
           <div className="flex flex-col h-full">
             {/* Logo */}
-            <div className="px-6 py-5 border-b border-white/10">
+            <div className="px-5 h-14 flex items-center border-b border-border">
               <Link href="/dashboard" className="flex items-center gap-2">
-                <Building2 className="h-7 w-7 text-or" />
-                <span className="text-lg font-bold">
+                <div className="w-7 h-7 bg-bleu-nuit rounded-lg flex items-center justify-center">
+                  <Building2 className="h-3.5 w-3.5 text-white" />
+                </div>
+                <span className="text-sm font-bold text-foreground">
                   Aqar<span className="text-or">Vision</span>
                 </span>
               </Link>
             </div>
 
-            {/* Nom de l'agence */}
-            <div className="px-6 py-4 border-b border-white/10">
-              <p className="text-sm text-gray-400">Agence</p>
-              <p className="font-medium truncate">
+            {/* Agency name */}
+            <div className="px-5 py-4 border-b border-border">
+              <p className="text-caption text-muted-foreground">Agence</p>
+              <p className="text-body-sm font-medium text-foreground truncate">
                 {profile?.nom_agence ?? "Mon Agence"}
               </p>
             </div>
 
-            {/* Liens de navigation */}
-            <nav className="flex-1 px-4 py-4 space-y-1">
+            {/* Nav links */}
+            <nav className="flex-1 px-3 py-3 space-y-0.5">
               {liens.map((lien) => (
                 <Link
                   key={lien.href}
                   href={lien.href}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-white/10 transition-colors"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-body-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 >
-                  <lien.icon className="h-5 w-5 text-or" />
+                  <lien.icon className="h-4 w-4" />
                   {lien.label}
                 </Link>
               ))}
             </nav>
 
-            {/* Lien vers la page publique */}
-            <div className="px-4 py-4 border-t border-white/10 space-y-2">
+            {/* Bottom */}
+            <div className="px-3 py-4 border-t border-border space-y-1">
               {profile?.slug_url && (
                 <Link
-                  href={`/${profile.slug_url}`}
+                  href={`/fr/${profile.slug_url}`}
                   target="_blank"
-                  className="block text-xs text-gray-400 hover:text-or transition-colors text-center"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-caption text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 >
-                  Voir ma page publique
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Voir ma vitrine
                 </Link>
               )}
               <form action="/auth/logout" method="POST">
                 <Button
                   variant="ghost"
-                  className="w-full text-gray-400 hover:text-white hover:bg-white/10"
+                  size="sm"
+                  className="w-full justify-start text-muted-foreground hover:text-foreground"
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
+                  <LogOut className="h-3.5 w-3.5 mr-2" />
                   Déconnexion
                 </Button>
               </form>
@@ -130,8 +134,10 @@ export default async function DashboardLayout({
           </div>
         </aside>
 
-        {/* Contenu principal */}
-        <main className="flex-1 md:ml-64 p-4 md:p-8">{children}</main>
+        {/* Main content */}
+        <main className="flex-1 md:ml-60">
+          <div className="p-5 md:p-8 max-w-6xl">{children}</div>
+        </main>
       </div>
     </div>
   );

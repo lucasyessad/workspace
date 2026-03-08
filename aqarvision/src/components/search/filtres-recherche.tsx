@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { wilayas } from "@/lib/wilayas";
+import { WILAYAS } from "@/lib/wilayas";
 
 export interface FiltresRecherche {
   query: string;
@@ -141,7 +141,7 @@ export default function FiltresRechercheComponent({ onSearch, initialFiltres }: 
             <SelectValue placeholder="Wilaya" />
           </SelectTrigger>
           <SelectContent>
-            {wilayas.map((w) => (
+            {WILAYAS.map((w) => (
               <SelectItem key={w.code} value={w.code}>
                 <span className="flex items-center gap-1">
                   <MapPin className="h-3 w-3" />

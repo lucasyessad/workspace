@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Inter, Cairo } from "next/font/google";
+import { Plus_Jakarta_Sans, Cairo } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-jakarta",
 });
 
 const cairo = Cairo({
@@ -26,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" dir="ltr">
-      <body className={`${inter.variable} ${cairo.variable} font-sans antialiased`}>
+      <body className={`${jakarta.variable} ${cairo.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

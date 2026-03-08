@@ -8,13 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -24,7 +17,6 @@ import {
 import { WILAYAS } from "@/lib/wilayas";
 import { validerTelephoneAlgerien } from "@/lib/validation";
 
-/** Page de gestion du profil de l'agence */
 export default function ProfilPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -77,7 +69,6 @@ export default function ProfilPage() {
     setMessage(null);
     setErreurTel(null);
 
-    // Valider le numéro de téléphone algérien
     const validationTel = validerTelephoneAlgerien(profil.telephone_whatsapp);
     if (!validationTel.valide) {
       setErreurTel(validationTel.message);
@@ -115,38 +106,43 @@ export default function ProfilPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-or" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-bleu-nuit mb-6">Mon profil</h1>
+    <div className="max-w-2xl">
+      <h1 className="text-heading-3 font-bold text-foreground mb-8">Profil</h1>
 
       <form onSubmit={handleSave}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Informations de l&apos;agence</CardTitle>
-            <CardDescription>
-              Ces informations apparaissent sur votre page publique
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="rounded-2xl border border-border bg-white">
+          <div className="px-6 py-5 border-b border-border">
+            <h2 className="text-body font-semibold text-foreground">
+              Informations de l&apos;agence
+            </h2>
+            <p className="text-caption text-muted-foreground mt-0.5">
+              Ces informations apparaissent sur votre page publique.
+            </p>
+          </div>
+
+          <div className="p-6 space-y-5">
             {message && (
               <div
-                className={`p-3 text-sm rounded-md ${
+                className={`p-3 text-body-sm rounded-lg ${
                   message.startsWith("Erreur")
-                    ? "text-red-600 bg-red-50"
-                    : "text-green-600 bg-green-50"
+                    ? "text-red-600 bg-red-50 border border-red-100"
+                    : "text-emerald-700 bg-emerald-50 border border-emerald-100"
                 }`}
               >
                 {message}
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="nom">Nom de l&apos;agence</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="nom" className="text-body-sm font-medium">
+                Nom de l&apos;agence
+              </Label>
               <Input
                 id="nom"
                 value={profil.nom_agence}
@@ -157,8 +153,10 @@ export default function ProfilPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="tel">Téléphone / WhatsApp</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="tel" className="text-body-sm font-medium">
+                Téléphone / WhatsApp
+              </Label>
               <Input
                 id="tel"
                 type="tel"
@@ -173,14 +171,14 @@ export default function ProfilPage() {
               {erreurTel && (
                 <p className="text-xs text-red-500">{erreurTel}</p>
               )}
-              <p className="text-xs text-gray-400">
+              <p className="text-caption text-muted-foreground">
                 Format : +213 5/6/7XX XX XX XX ou 05/06/07XX XX XX XX
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Wilaya</Label>
+              <div className="space-y-1.5">
+                <Label className="text-body-sm font-medium">Wilaya</Label>
                 <Select
                   value={profil.wilaya_id}
                   onValueChange={(v) =>
@@ -199,8 +197,10 @@ export default function ProfilPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="commune">Commune</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="commune" className="text-body-sm font-medium">
+                  Commune
+                </Label>
                 <Input
                   id="commune"
                   value={profil.commune}
@@ -211,8 +211,10 @@ export default function ProfilPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="adresse">Adresse</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="adresse" className="text-body-sm font-medium">
+                Adresse
+              </Label>
               <Input
                 id="adresse"
                 value={profil.adresse}
@@ -222,8 +224,10 @@ export default function ProfilPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="desc">Description de l&apos;agence</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="desc" className="text-body-sm font-medium">
+                Description de l&apos;agence
+              </Label>
               <Textarea
                 id="desc"
                 value={profil.description}
@@ -235,33 +239,35 @@ export default function ProfilPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>URL de votre page publique</Label>
-              <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+            <div className="space-y-1.5">
+              <Label className="text-body-sm font-medium">
+                URL de votre page publique
+              </Label>
+              <div className="flex items-center gap-2 text-body-sm text-muted-foreground bg-muted p-3 rounded-lg">
                 <span>aqarvision.dz/</span>
-                <span className="font-medium text-bleu-nuit">
+                <span className="font-medium text-foreground">
                   {profil.slug_url}
                 </span>
               </div>
             </div>
+          </div>
 
-            <div className="flex justify-end">
-              <Button type="submit" variant="or" disabled={saving}>
-                {saving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Enregistrement...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Enregistrer
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          <div className="px-6 py-4 border-t border-border flex justify-end">
+            <Button type="submit" disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Enregistrement...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Enregistrer
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </form>
     </div>
   );

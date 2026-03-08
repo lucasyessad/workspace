@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Loader2, Save, Trash2, ArrowLeft } from "lucide-react";
+import { Loader2, Save, Trash2, ArrowLeft, Upload, X } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { WILAYAS } from "@/lib/wilayas";
+import { compresserImage, formaterTailleFichier, FORMATS_IMAGE_ACCEPTES } from "@/lib/compression-image";
 import type {
   TypeBien,
   TypeTransaction,
@@ -55,6 +56,11 @@ export default function EditerAnnoncePage() {
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
+  const [newPhotosFiles, setNewPhotosFiles] = useState<File[]>([]);
+  const [newPhotosPreviews, setNewPhotosPreviews] = useState<string[]>([]);
+  const [compression, setCompression] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     titre: "",
@@ -120,6 +126,7 @@ export default function EditerAnnoncePage() {
         jardin: data.jardin || false,
         est_active: data.est_active ?? true,
       });
+      setExistingPhotos(data.photos || []);
       setLoading(false);
     }
     chargerAnnonce();
@@ -127,6 +134,51 @@ export default function EditerAnnoncePage() {
 
   function updateField(field: string, value: string | boolean) {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  }
+
+  /** Gestion de l'ajout de nouvelles photos */
+  async function handlePhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const fichiers = e.target.files;
+    if (!fichiers) return;
+
+    setCompression("Compression en cours...");
+    const fichiersArray = Array.from(fichiers);
+    const nouvelles: string[] = [];
+    const nouveauxFiles: File[] = [];
+
+    for (const fichier of fichiersArray) {
+      try {
+        const compresse = await compresserImage(fichier, {
+          maxLargeur: 1200,
+          maxHauteur: 1200,
+          qualite: 0.8,
+          tailleMaxOctets: 500 * 1024,
+        });
+        nouveauxFiles.push(compresse);
+        nouvelles.push(URL.createObjectURL(compresse));
+        setCompression(
+          `Compressé : ${formaterTailleFichier(fichier.size)} → ${formaterTailleFichier(compresse.size)}`
+        );
+      } catch {
+        nouveauxFiles.push(fichier);
+        nouvelles.push(URL.createObjectURL(fichier));
+      }
+    }
+
+    setNewPhotosPreviews((prev) => [...prev, ...nouvelles]);
+    setNewPhotosFiles((prev) => [...prev, ...nouveauxFiles]);
+    setTimeout(() => setCompression(null), 3000);
+    // Reset input so same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function supprimerPhotoExistante(index: number) {
+    setExistingPhotos((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function supprimerNouvellePhoto(index: number) {
+    setNewPhotosPreviews((prev) => prev.filter((_, i) => i !== index));
+    setNewPhotosFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
   /** Sauvegarder les modifications */
@@ -141,6 +193,28 @@ export default function EditerAnnoncePage() {
     } = await supabase.auth.getUser();
 
     if (!user) return;
+
+    // Upload new photos
+    const uploadedUrls: string[] = [];
+    for (const fichier of newPhotosFiles) {
+      const nomFichier = `${user.id}/${Date.now()}-${fichier.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("listing-photos")
+        .upload(nomFichier, fichier);
+
+      if (uploadError) {
+        console.error("Erreur upload:", uploadError);
+        continue;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("listing-photos")
+        .getPublicUrl(uploadData.path);
+
+      uploadedUrls.push(urlData.publicUrl);
+    }
+
+    const allPhotos = [...existingPhotos, ...uploadedUrls];
 
     const { error } = await supabase
       .from("listings")
@@ -162,6 +236,7 @@ export default function EditerAnnoncePage() {
         garage: formData.garage,
         jardin: formData.jardin,
         est_active: formData.est_active,
+        photos: allPhotos,
       })
       .eq("id", id)
       .eq("agent_id", user.id);
@@ -170,6 +245,9 @@ export default function EditerAnnoncePage() {
       setMessage("Erreur : " + error.message);
     } else {
       setMessage("Annonce mise à jour avec succès !");
+      setExistingPhotos(allPhotos);
+      setNewPhotosFiles([]);
+      setNewPhotosPreviews([]);
     }
     setSaving(false);
   }
@@ -424,6 +502,99 @@ export default function EditerAnnoncePage() {
               rows={6}
               required
             />
+          </CardContent>
+        </Card>
+
+        {/* Photos */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Photos</CardTitle>
+            <CardDescription>
+              Gérez les photos de votre annonce
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Photos existantes */}
+            {existingPhotos.length > 0 && (
+              <div>
+                <Label className="mb-2 block">Photos actuelles</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {existingPhotos.map((photo, i) => (
+                    <div key={i} className="relative group">
+                      <img
+                        src={photo}
+                        alt={`Photo ${i + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => supprimerPhotoExistante(i)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Nouvelles photos (previews) */}
+            {newPhotosPreviews.length > 0 && (
+              <div>
+                <Label className="mb-2 block">Nouvelles photos à ajouter</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {newPhotosPreviews.map((photo, i) => (
+                    <div key={i} className="relative group">
+                      <img
+                        src={photo}
+                        alt={`Nouvelle ${i + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border border-green-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => supprimerNouvellePhoto(i)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Upload zone */}
+            <div className="border-2 border-dashed rounded-lg p-4 text-center">
+              <Upload className="h-6 w-6 text-gray-400 mx-auto mb-1" />
+              <p className="text-sm text-gray-600 mb-2">
+                Ajouter des photos
+              </p>
+              <input
+                type="file"
+                multiple
+                accept={FORMATS_IMAGE_ACCEPTES}
+                onChange={handlePhotos}
+                className="hidden"
+                ref={fileInputRef}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Choisir des fichiers
+              </Button>
+            </div>
+            {compression && (
+              <p className="text-xs text-green-600 bg-green-50 p-2 rounded">
+                {compression}
+              </p>
+            )}
+            <p className="text-xs text-gray-400">
+              {existingPhotos.length + newPhotosPreviews.length} photo(s) au total
+            </p>
           </CardContent>
         </Card>
 

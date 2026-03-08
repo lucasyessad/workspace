@@ -1,9 +1,8 @@
 import Stripe from "stripe";
 
-/** Client Stripe côté serveur */
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-06-20",
-  typescript: true,
+/** Client Stripe côté serveur (guard pour éviter erreur au build sans env) */
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_placeholder", {
+  apiVersion: "2026-02-25.clover",
 });
 
 /** Plans tarifaires avec leurs prix Stripe */

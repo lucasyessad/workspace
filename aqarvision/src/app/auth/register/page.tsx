@@ -3,19 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, Loader2 } from "lucide-react";
+import { Building2, Loader2, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -26,7 +18,7 @@ import {
 import { WILAYAS } from "@/lib/wilayas";
 import { slugify } from "@/lib/utils";
 
-/** Page d'inscription */
+/** Page d'inscription moderne */
 export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -70,41 +62,54 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-blanc-casse flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <Link href="/" className="flex items-center justify-center gap-2 mb-4">
-            <Building2 className="h-8 w-8 text-or" />
-            <span className="text-xl font-bold text-bleu-nuit">
-              Aqar<span className="text-or">Vision</span>
-            </span>
-          </Link>
-          <CardTitle className="text-2xl">Créer votre agence</CardTitle>
-          <CardDescription>
-            Inscrivez-vous pour commencer à gérer vos biens
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleRegister}>
-          <CardContent className="space-y-4">
+    <div className="min-h-screen flex items-center justify-center bg-blanc-casse px-4 py-8">
+      <div className="w-full max-w-md animate-fade-in-up">
+        <div className="rounded-2xl border border-border bg-white shadow-card p-8">
+          <div className="flex justify-center mb-8">
+            <Link href="/" className="inline-flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-bleu-nuit rounded-lg flex items-center justify-center">
+                <Building2 className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-lg font-bold text-foreground">
+                AqarVision
+              </span>
+            </Link>
+          </div>
+
+          <h1 className="text-heading-3 font-bold text-foreground text-center">
+            Creer votre agence
+          </h1>
+          <p className="text-body-sm text-muted-foreground text-center mt-1.5 mb-6">
+            Inscrivez-vous et commencez a publier vos annonces
+          </p>
+
+          <form onSubmit={handleRegister} className="space-y-4">
             {erreur && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+              <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-100">
                 {erreur}
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="nom_agence">Nom de l&apos;agence</Label>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="nom_agence" className="text-body-sm font-medium text-foreground">
+                Nom de l&apos;agence
+              </Label>
               <Input
                 id="nom_agence"
-                placeholder="Ex: Immobilière El Djazair"
+                placeholder="Ex: Immobiliere El Djazair"
                 value={formData.nom_agence}
                 onChange={(e) =>
                   setFormData({ ...formData, nom_agence: e.target.value })
                 }
                 required
+                className="rounded-lg"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-body-sm font-medium text-foreground">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -114,24 +119,32 @@ export default function RegisterPage() {
                   setFormData({ ...formData, email: e.target.value })
                 }
                 required
+                className="rounded-lg"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Mot de passe</Label>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-body-sm font-medium text-foreground">
+                Mot de passe
+              </Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Min. 6 caractères"
+                placeholder="Min. 6 caracteres"
                 value={formData.password}
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
                 minLength={6}
                 required
+                className="rounded-lg"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="telephone">Téléphone / WhatsApp</Label>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="telephone" className="text-body-sm font-medium text-foreground">
+                Telephone / WhatsApp
+              </Label>
               <Input
                 id="telephone"
                 type="tel"
@@ -141,18 +154,20 @@ export default function RegisterPage() {
                   setFormData({ ...formData, telephone: e.target.value })
                 }
                 required
+                className="rounded-lg"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Wilaya</Label>
+
+            <div className="space-y-1.5">
+              <Label className="text-body-sm font-medium text-foreground">Wilaya</Label>
               <Select
                 value={formData.wilaya_id}
                 onValueChange={(value) =>
                   setFormData({ ...formData, wilaya_id: value })
                 }
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez votre wilaya" />
+                <SelectTrigger className="rounded-lg">
+                  <SelectValue placeholder="Selectionnez votre wilaya" />
                 </SelectTrigger>
                 <SelectContent>
                   {WILAYAS.map((wilaya) => (
@@ -163,32 +178,38 @@ export default function RegisterPage() {
                 </SelectContent>
               </Select>
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
+
             <Button
               type="submit"
-              variant="or"
+              variant="default"
               className="w-full"
               disabled={loading}
             >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Création en cours...
+                  Creation en cours...
                 </>
               ) : (
-                "Créer mon agence"
+                <>
+                  Creer mon agence
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
               )}
             </Button>
-            <p className="text-sm text-center text-gray-600">
-              Déjà inscrit ?{" "}
-              <Link href="/auth/login" className="text-or font-medium hover:underline">
+
+            <p className="text-body-sm text-center text-muted-foreground pt-2">
+              Deja inscrit ?{" "}
+              <Link
+                href="/auth/login"
+                className="text-or font-semibold hover:underline"
+              >
                 Se connecter
               </Link>
             </p>
-          </CardFooter>
-        </form>
-      </Card>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

@@ -3,21 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, Loader2 } from "lucide-react";
+import { Building2, Loader2, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
-/** Page de connexion */
+/** Page de connexion moderne */
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -48,29 +40,38 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-blanc-casse flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <Link href="/" className="flex items-center justify-center gap-2 mb-4">
-            <Building2 className="h-8 w-8 text-or" />
-            <span className="text-xl font-bold text-bleu-nuit">
-              Aqar<span className="text-or">Vision</span>
-            </span>
-          </Link>
-          <CardTitle className="text-2xl">Connexion</CardTitle>
-          <CardDescription>
-            Accédez à votre tableau de bord
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleLogin}>
-          <CardContent className="space-y-4">
+    <div className="min-h-screen flex items-center justify-center bg-blanc-casse px-4">
+      <div className="w-full max-w-md animate-fade-in-up">
+        <div className="rounded-2xl border border-border bg-white shadow-card p-8">
+          <div className="flex justify-center mb-8">
+            <Link href="/" className="inline-flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-bleu-nuit rounded-lg flex items-center justify-center">
+                <Building2 className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-lg font-bold text-foreground">
+                AqarVision
+              </span>
+            </Link>
+          </div>
+
+          <h1 className="text-heading-3 font-bold text-foreground text-center">
+            Connexion
+          </h1>
+          <p className="text-body-sm text-muted-foreground text-center mt-1.5 mb-6">
+            Accedez a votre tableau de bord
+          </p>
+
+          <form onSubmit={handleLogin} className="space-y-4">
             {erreur && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+              <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-100">
                 {erreur}
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-body-sm font-medium text-foreground">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -78,10 +79,14 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="rounded-lg"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Mot de passe</Label>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-body-sm font-medium text-foreground">
+                Mot de passe
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -89,13 +94,13 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="rounded-lg"
               />
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
+
             <Button
               type="submit"
-              variant="or"
+              variant="default"
               className="w-full"
               disabled={loading}
             >
@@ -105,18 +110,25 @@ export default function LoginPage() {
                   Connexion...
                 </>
               ) : (
-                "Se connecter"
+                <>
+                  Se connecter
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
               )}
             </Button>
-            <p className="text-sm text-center text-gray-600">
+
+            <p className="text-body-sm text-center text-muted-foreground pt-2">
               Pas encore de compte ?{" "}
-              <Link href="/auth/register" className="text-or font-medium hover:underline">
-                S&apos;inscrire
+              <Link
+                href="/auth/register"
+                className="text-or font-semibold hover:underline"
+              >
+                S&apos;inscrire gratuitement
               </Link>
             </p>
-          </CardFooter>
-        </form>
-      </Card>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

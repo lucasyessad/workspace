@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Sparkles, Upload, X, Languages, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -8,13 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -24,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { WILAYAS } from "@/lib/wilayas";
 import { validerPrix, validerSurface } from "@/lib/validation";
-import { compresserImage, formaterTailleFichier } from "@/lib/compression-image";
+import { compresserImage, formaterTailleFichier, FORMATS_IMAGE_ACCEPTES } from "@/lib/compression-image";
 import type { Locale } from "@/lib/i18n";
 import type {
   TypeBien,
@@ -46,13 +39,12 @@ const STATUTS_DOCUMENT: StatutDocument[] = [
   "Acte", "Livret foncier", "Concession", "Promesse de vente", "Timbré", "Autre",
 ];
 
-const LANGUES_IA: { code: Locale; label: string; drapeau: string }[] = [
-  { code: "fr", label: "Français", drapeau: "FR" },
-  { code: "ar", label: "العربية", drapeau: "AR" },
-  { code: "en", label: "English", drapeau: "EN" },
+const LANGUES_IA: { code: Locale; label: string }[] = [
+  { code: "fr", label: "Français" },
+  { code: "ar", label: "العربية" },
+  { code: "en", label: "English" },
 ];
 
-/** Formulaire "Smart" de création d'annonce - Avec IA trilingue et compression d'images */
 export default function NouvelleAnnoncePage() {
   const router = useRouter();
   const [etape, setEtape] = useState(1);
@@ -63,6 +55,7 @@ export default function NouvelleAnnoncePage() {
   const [photosPreviews, setPhotosPreviews] = useState<string[]>([]);
   const [photosFiles, setPhotosFiles] = useState<File[]>([]);
   const [compression, setCompression] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     titre: "",
@@ -88,7 +81,6 @@ export default function NouvelleAnnoncePage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }
 
-  /** Générer une description trilingue avec l'IA */
   async function genererAvecIA() {
     if (!formData.points_cles.trim()) return;
     setGenereIA(true);
@@ -129,7 +121,6 @@ export default function NouvelleAnnoncePage() {
     setGenereIA(false);
   }
 
-  /** Gestion de l'upload des photos avec compression automatique */
   async function handlePhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const fichiers = e.target.files;
     if (!fichiers) return;
@@ -168,6 +159,7 @@ export default function NouvelleAnnoncePage() {
     setPhotosPreviews((prev) => [...prev, ...nouvelles]);
     setPhotosFiles((prev) => [...prev, ...nouveauxFiles]);
     setTimeout(() => setCompression(null), 3000);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   function supprimerPhoto(index: number) {
@@ -175,37 +167,23 @@ export default function NouvelleAnnoncePage() {
     setPhotosFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
-  /** Valider l'étape avant de passer à la suivante */
   function validerEtape(etapeCible: number): boolean {
     if (etapeCible > 1 && etape === 1) {
-      if (!formData.titre.trim()) {
-        setErreur("Le titre est requis");
-        return false;
-      }
-      if (!formData.type_bien) {
-        setErreur("Le type de bien est requis");
-        return false;
-      }
+      if (!formData.titre.trim()) { setErreur("Le titre est requis"); return false; }
+      if (!formData.type_bien) { setErreur("Le type de bien est requis"); return false; }
       if (formData.prix) {
         const validPrix = validerPrix(Number(formData.prix), formData.type_transaction);
-        if (!validPrix.valide) {
-          setErreur(validPrix.message);
-          return false;
-        }
+        if (!validPrix.valide) { setErreur(validPrix.message); return false; }
       }
       if (formData.surface) {
         const validSurface = validerSurface(Number(formData.surface));
-        if (!validSurface.valide) {
-          setErreur(validSurface.message);
-          return false;
-        }
+        if (!validSurface.valide) { setErreur(validSurface.message); return false; }
       }
     }
     setErreur(null);
     return true;
   }
 
-  /** Soumettre le formulaire */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -222,7 +200,6 @@ export default function NouvelleAnnoncePage() {
       return;
     }
 
-    // Upload des photos compressées vers Supabase Storage
     const photosUrls: string[] = [];
     for (const fichier of photosFiles) {
       const nomFichier = `${user.id}/${Date.now()}-${fichier.name}`;
@@ -230,10 +207,7 @@ export default function NouvelleAnnoncePage() {
         .from("listing-photos")
         .upload(nomFichier, fichier);
 
-      if (uploadError) {
-        console.error("Erreur upload:", uploadError);
-        continue;
-      }
+      if (uploadError) { console.error("Erreur upload:", uploadError); continue; }
 
       const { data: urlData } = supabase.storage
         .from("listing-photos")
@@ -274,55 +248,57 @@ export default function NouvelleAnnoncePage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-bleu-nuit mb-6">
+    <div className="max-w-2xl">
+      <h1 className="text-heading-3 font-bold text-foreground mb-8">
         Nouvelle annonce
       </h1>
 
-      {/* Indicateur d'étapes */}
-      <div className="flex items-center gap-2 mb-8">
-        {[1, 2, 3].map((step) => (
-          <div key={step} className="flex items-center gap-2 flex-1">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                etape > step
-                  ? "bg-green-500 text-white"
-                  : etape === step
-                  ? "bg-or text-bleu-nuit"
-                  : "bg-gray-200 text-gray-500"
-              }`}
-            >
-              {etape > step ? <Check className="h-4 w-4" /> : step}
+      {/* Steps indicator */}
+      <div className="flex items-center gap-3 mb-8">
+        {[
+          { n: 1, label: "Informations" },
+          { n: 2, label: "Détails" },
+          { n: 3, label: "Photos" },
+        ].map(({ n, label }, i) => (
+          <div key={n} className="flex items-center gap-3 flex-1">
+            <div className="flex items-center gap-2.5">
+              <div
+                className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium transition-colors ${
+                  etape > n
+                    ? "bg-emerald-100 text-emerald-700"
+                    : etape === n
+                    ? "bg-bleu-nuit text-white"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {etape > n ? <Check className="h-3.5 w-3.5" /> : n}
+              </div>
+              <span className="text-caption text-muted-foreground hidden sm:inline">
+                {label}
+              </span>
             </div>
-            <span className="text-sm text-gray-600 hidden sm:inline">
-              {step === 1 && "Informations"}
-              {step === 2 && "Détails"}
-              {step === 3 && "Photos & Description"}
-            </span>
-            {step < 3 && <div className="flex-1 h-px bg-gray-200" />}
+            {i < 2 && <div className="flex-1 h-px bg-border" />}
           </div>
         ))}
       </div>
 
       <form onSubmit={handleSubmit}>
         {erreur && (
-          <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md mb-4">
+          <div className="p-3 text-body-sm text-red-600 bg-red-50 rounded-lg border border-red-100 mb-5">
             {erreur}
           </div>
         )}
 
-        {/* Étape 1 : Informations de base */}
+        {/* Step 1 */}
         {etape === 1 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Informations du bien</CardTitle>
-              <CardDescription>
-                Renseignez les informations principales
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="titre">Titre de l&apos;annonce</Label>
+          <div className="rounded-2xl border border-border bg-white">
+            <div className="px-6 py-5 border-b border-border">
+              <h2 className="text-body font-semibold text-foreground">Informations du bien</h2>
+              <p className="text-caption text-muted-foreground mt-0.5">Renseignez les informations principales</p>
+            </div>
+            <div className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <Label htmlFor="titre" className="text-body-sm font-medium">Titre de l&apos;annonce</Label>
                 <Input
                   id="titre"
                   placeholder="Ex: Villa F4 avec jardin à Hydra"
@@ -333,39 +309,24 @@ export default function NouvelleAnnoncePage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Type de bien</Label>
-                  <Select
-                    value={formData.type_bien}
-                    onValueChange={(v) => updateField("type_bien", v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choisir" />
-                    </SelectTrigger>
+                <div className="space-y-1.5">
+                  <Label className="text-body-sm font-medium">Type de bien</Label>
+                  <Select value={formData.type_bien} onValueChange={(v) => updateField("type_bien", v)}>
+                    <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
                     <SelectContent>
                       {TYPES_BIEN.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div className="space-y-2">
-                  <Label>Type de transaction</Label>
-                  <Select
-                    value={formData.type_transaction}
-                    onValueChange={(v) => updateField("type_transaction", v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                <div className="space-y-1.5">
+                  <Label className="text-body-sm font-medium">Transaction</Label>
+                  <Select value={formData.type_transaction} onValueChange={(v) => updateField("type_transaction", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {TYPES_TRANSACTION.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -373,264 +334,220 @@ export default function NouvelleAnnoncePage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="prix">Prix (DA)</Label>
-                  <Input
-                    id="prix"
-                    type="number"
-                    placeholder="Ex: 15000000"
-                    value={formData.prix}
-                    onChange={(e) => updateField("prix", e.target.value)}
-                    required
-                  />
+                <div className="space-y-1.5">
+                  <Label htmlFor="prix" className="text-body-sm font-medium">Prix (DA)</Label>
+                  <Input id="prix" type="number" placeholder="15000000" value={formData.prix} onChange={(e) => updateField("prix", e.target.value)} required />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="surface">Surface (m²)</Label>
-                  <Input
-                    id="surface"
-                    type="number"
-                    placeholder="Ex: 120"
-                    value={formData.surface}
-                    onChange={(e) => updateField("surface", e.target.value)}
-                    required
-                  />
+                <div className="space-y-1.5">
+                  <Label htmlFor="surface" className="text-body-sm font-medium">Surface (m²)</Label>
+                  <Input id="surface" type="number" placeholder="120" value={formData.surface} onChange={(e) => updateField("surface", e.target.value)} required />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Type de papier / Document</Label>
-                <Select
-                  value={formData.statut_document}
-                  onValueChange={(v) => updateField("statut_document", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+              <div className="space-y-1.5">
+                <Label className="text-body-sm font-medium">Document</Label>
+                <Select value={formData.statut_document} onValueChange={(v) => updateField("statut_document", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {STATUTS_DOCUMENT.map((doc) => (
-                      <SelectItem key={doc} value={doc}>
-                        {doc}
-                      </SelectItem>
+                      <SelectItem key={doc} value={doc}>{doc}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  variant="or"
-                  onClick={() => {
-                    if (validerEtape(2)) setEtape(2);
-                  }}
-                >
+              <div className="flex justify-end pt-2">
+                <Button type="button" onClick={() => { if (validerEtape(2)) setEtape(2); }}>
                   Suivant
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
-        {/* Étape 2 : Détails spécifiques au marché algérien */}
+        {/* Step 2 */}
         {etape === 2 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Détails du bien</CardTitle>
-              <CardDescription>
-                Informations spécifiques et localisation
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="rounded-2xl border border-border bg-white">
+            <div className="px-6 py-5 border-b border-border">
+              <h2 className="text-body font-semibold text-foreground">Détails du bien</h2>
+              <p className="text-caption text-muted-foreground mt-0.5">Localisation et caractéristiques</p>
+            </div>
+            <div className="p-6 space-y-5">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Wilaya</Label>
-                  <Select
-                    value={formData.wilaya_id}
-                    onValueChange={(v) => updateField("wilaya_id", v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner" />
-                    </SelectTrigger>
+                <div className="space-y-1.5">
+                  <Label className="text-body-sm font-medium">Wilaya</Label>
+                  <Select value={formData.wilaya_id} onValueChange={(v) => updateField("wilaya_id", v)}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                     <SelectContent>
                       {WILAYAS.map((w) => (
-                        <SelectItem key={w.id} value={String(w.id)}>
-                          {w.code} - {w.nom_fr}
-                        </SelectItem>
+                        <SelectItem key={w.id} value={String(w.id)}>{w.code} - {w.nom_fr}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="commune">Commune</Label>
-                  <Input
-                    id="commune"
-                    placeholder="Ex: Hydra"
-                    value={formData.commune}
-                    onChange={(e) => updateField("commune", e.target.value)}
-                  />
+                <div className="space-y-1.5">
+                  <Label htmlFor="commune" className="text-body-sm font-medium">Commune</Label>
+                  <Input id="commune" placeholder="Hydra" value={formData.commune} onChange={(e) => updateField("commune", e.target.value)} />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="quartier">Quartier</Label>
-                <Input
-                  id="quartier"
-                  placeholder="Ex: Cité des 200 lgts"
-                  value={formData.quartier}
-                  onChange={(e) => updateField("quartier", e.target.value)}
-                />
+              <div className="space-y-1.5">
+                <Label htmlFor="quartier" className="text-body-sm font-medium">Quartier</Label>
+                <Input id="quartier" placeholder="Cité des 200 lgts" value={formData.quartier} onChange={(e) => updateField("quartier", e.target.value)} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="etage">Étage</Label>
-                  <Input
-                    id="etage"
-                    type="number"
-                    placeholder="RDC = 0"
-                    value={formData.etage}
-                    onChange={(e) => updateField("etage", e.target.value)}
-                  />
+                <div className="space-y-1.5">
+                  <Label htmlFor="etage" className="text-body-sm font-medium">Étage</Label>
+                  <Input id="etage" type="number" placeholder="RDC = 0" value={formData.etage} onChange={(e) => updateField("etage", e.target.value)} />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="nb_pieces">Nombre de pièces</Label>
-                  <Input
-                    id="nb_pieces"
-                    type="number"
-                    placeholder="Ex: 4"
-                    value={formData.nb_pieces}
-                    onChange={(e) => updateField("nb_pieces", e.target.value)}
-                  />
+                <div className="space-y-1.5">
+                  <Label htmlFor="nb_pieces" className="text-body-sm font-medium">Pièces</Label>
+                  <Input id="nb_pieces" type="number" placeholder="4" value={formData.nb_pieces} onChange={(e) => updateField("nb_pieces", e.target.value)} />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Caractéristiques</Label>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-body-sm font-medium">Caractéristiques</Label>
+                <div className="grid grid-cols-2 gap-2">
                   {[
                     { field: "ascenseur", label: "Ascenseur" },
-                    { field: "citerne", label: "Citerne / Réservoir" },
+                    { field: "citerne", label: "Citerne" },
                     { field: "garage", label: "Garage" },
                     { field: "jardin", label: "Jardin" },
                   ].map(({ field, label }) => (
                     <label
                       key={field}
-                      className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                      className="flex items-center gap-2.5 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted transition-colors"
                     >
                       <input
                         type="checkbox"
                         checked={formData[field as keyof typeof formData] as boolean}
                         onChange={(e) => updateField(field, e.target.checked)}
-                        className="w-4 h-4 text-or"
+                        className="w-4 h-4 rounded"
                       />
-                      <span className="text-sm">{label}</span>
+                      <span className="text-body-sm">{label}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
-              <div className="flex justify-between">
-                <Button type="button" variant="outline" onClick={() => setEtape(1)}>
-                  Précédent
-                </Button>
-                <Button type="button" variant="or" onClick={() => setEtape(3)}>
-                  Suivant
-                </Button>
+              <div className="flex justify-between pt-2">
+                <Button type="button" variant="outline" onClick={() => setEtape(1)}>Précédent</Button>
+                <Button type="button" onClick={() => setEtape(3)}>Suivant</Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
-        {/* Étape 3 : Photos et Description IA trilingue */}
+        {/* Step 3 */}
         {etape === 3 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Photos & Description</CardTitle>
-              <CardDescription>
-                Photos compressées automatiquement + génération IA trilingue
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Upload de photos avec compression */}
+          <div className="rounded-2xl border border-border bg-white">
+            <div className="px-6 py-5 border-b border-border">
+              <h2 className="text-body font-semibold text-foreground">Photos & Description</h2>
+              <p className="text-caption text-muted-foreground mt-0.5">Compression auto + génération IA trilingue</p>
+            </div>
+            <div className="p-6 space-y-5">
+              {/* Upload */}
               <div className="space-y-2">
-                <Label>Photos du bien</Label>
-                <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600 mb-1">
-                    Glissez vos photos ici ou cliquez pour sélectionner
+                <Label className="text-body-sm font-medium">Photos du bien</Label>
+                <div
+                  className="border border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-muted-foreground/30 hover:bg-muted/30 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (e.dataTransfer.files?.length) {
+                      const input = fileInputRef.current;
+                      if (input) {
+                        const dt = new DataTransfer();
+                        Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+                        input.files = dt.files;
+                        input.dispatchEvent(new Event("change", { bubbles: true }));
+                      }
+                    }
+                  }}
+                >
+                  <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-body-sm text-foreground mb-0.5">
+                    Glissez vos photos ici
                   </p>
-                  <p className="text-xs text-gray-400 mb-2">
+                  <p className="text-caption text-muted-foreground mb-3">
                     Compression automatique pour les connexions mobiles
                   </p>
                   <input
                     type="file"
                     multiple
-                    accept="image/*"
+                    accept={FORMATS_IMAGE_ACCEPTES}
                     onChange={handlePhotos}
                     className="hidden"
+                    ref={fileInputRef}
                     id="photos-upload"
                   />
-                  <label htmlFor="photos-upload">
-                    <Button type="button" variant="outline" size="sm" asChild>
-                      <span>Choisir des fichiers</span>
-                    </Button>
-                  </label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                  >
+                    Parcourir
+                  </Button>
                 </div>
                 {compression && (
-                  <p className="text-xs text-green-600 bg-green-50 p-2 rounded">
+                  <p className="text-caption text-emerald-600 bg-emerald-50 p-2 rounded-lg">
                     {compression}
                   </p>
                 )}
                 {photosPreviews.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2 mt-3">
-                    {photosPreviews.map((photo, i) => (
-                      <div key={i} className="relative group">
-                        <img
-                          src={photo}
-                          alt={`Photo ${i + 1}`}
-                          className="w-full h-24 object-cover rounded-lg"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => supprimerPhoto(i)}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                  <>
+                    <div className="grid grid-cols-4 gap-2 mt-3">
+                      {photosPreviews.map((photo, i) => (
+                        <div key={i} className="relative group rounded-lg overflow-hidden">
+                          <img src={photo} alt={`Photo ${i + 1}`} className="w-full h-20 object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => supprimerPhoto(i)}
+                            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-4 w-4 text-white" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-caption text-muted-foreground">
+                      {photosPreviews.length} photo(s)
+                    </p>
+                  </>
                 )}
               </div>
 
-              {/* Génération IA trilingue */}
+              {/* IA */}
               <div className="space-y-2">
-                <Label htmlFor="points_cles">Points clés (pour génération IA)</Label>
+                <Label htmlFor="points_cles" className="text-body-sm font-medium">Points clés (pour IA)</Label>
                 <Textarea
                   id="points_cles"
-                  placeholder="Ex: Vue sur mer, 3 chambres spacieuses, cuisine équipée, parking, proche commodités..."
+                  placeholder="Vue sur mer, 3 chambres, cuisine équipée, parking..."
                   value={formData.points_cles}
                   onChange={(e) => updateField("points_cles", e.target.value)}
                   rows={3}
                 />
 
-                {/* Sélecteur de langue */}
                 <div className="flex items-center gap-2">
-                  <Languages className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-500">Langue :</span>
+                  <Languages className="h-3.5 w-3.5 text-muted-foreground" />
                   <div className="flex gap-1">
                     {LANGUES_IA.map((langue) => (
                       <button
                         key={langue.code}
                         type="button"
                         onClick={() => setLangueIA(langue.code)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        className={`px-2.5 py-1 rounded-md text-caption font-medium transition-colors ${
                           langueIA === langue.code
-                            ? "bg-or text-bleu-nuit"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            ? "bg-bleu-nuit text-white"
+                            : "bg-muted text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        {langue.drapeau} {langue.label}
+                        {langue.label}
                       </button>
                     ))}
                   </div>
@@ -638,28 +555,22 @@ export default function NouvelleAnnoncePage() {
 
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="outline"
                   size="sm"
                   onClick={genererAvecIA}
                   disabled={genereIA || !formData.points_cles.trim()}
                 >
                   {genereIA ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Génération en cours...
-                    </>
+                    <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Génération...</>
                   ) : (
-                    <>
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Générer ({LANGUES_IA.find((l) => l.code === langueIA)?.label})
-                    </>
+                    <><Sparkles className="h-3.5 w-3.5 mr-1.5" /> Générer avec l&apos;IA</>
                   )}
                 </Button>
               </div>
 
               {/* Description */}
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="description" className="text-body-sm font-medium">Description</Label>
                 <Textarea
                   id="description"
                   placeholder="Décrivez votre bien en détail..."
@@ -671,23 +582,18 @@ export default function NouvelleAnnoncePage() {
                 />
               </div>
 
-              <div className="flex justify-between">
-                <Button type="button" variant="outline" onClick={() => setEtape(2)}>
-                  Précédent
-                </Button>
-                <Button type="submit" variant="or" disabled={loading}>
+              <div className="flex justify-between pt-2">
+                <Button type="button" variant="outline" onClick={() => setEtape(2)}>Précédent</Button>
+                <Button type="submit" disabled={loading}>
                   {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Publication...
-                    </>
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Publication...</>
                   ) : (
                     "Publier l'annonce"
                   )}
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
       </form>
     </div>

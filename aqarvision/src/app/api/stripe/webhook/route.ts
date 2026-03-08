@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   const signature = headers().get("stripe-signature");
 
   if (!signature) {
-    return NextResponse.json({ erreur: "Signature manquante" }, { status: 400 });
+    return NextResponse.json({ error: "Signature manquante" }, { status: 400 });
   }
 
   let event;
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (err) {
     console.error("Erreur vérification webhook:", err);
-    return NextResponse.json({ erreur: "Signature invalide" }, { status: 400 });
+    return NextResponse.json({ error: "Signature invalide" }, { status: 400 });
   }
 
   try {
@@ -40,26 +40,35 @@ export async function POST(request: NextRequest) {
         const planType = session.metadata?.plan_type;
 
         if (userId && planType) {
-          await supabaseAdmin
+          const { error: subError } = await supabaseAdmin
             .from("subscriptions")
             .update({
-              stripe_subscription_id: session.subscription as string,
-              stripe_customer_id: session.customer as string,
+              stripe_subscription_id: (session.subscription as string) || null,
+              stripe_customer_id: (session.customer as string) || null,
               plan_type: planType,
               status: "active",
               current_period_start: new Date().toISOString(),
             })
             .eq("user_id", userId);
 
+          if (subError) {
+            console.error("Erreur mise à jour abonnement:", subError);
+            return NextResponse.json({ error: "Erreur mise à jour abonnement" }, { status: 500 });
+          }
+
           // Enregistrer le paiement
-          await supabaseAdmin.from("payments").insert({
+          const { error: payError } = await supabaseAdmin.from("payments").insert({
             user_id: userId,
-            stripe_payment_id: session.payment_intent as string,
+            stripe_payment_id: (session.payment_intent as string) || null,
             amount: session.amount_total ?? 0,
             currency: session.currency ?? "eur",
             status: "succeeded",
             plan_type: planType,
           });
+
+          if (payError) {
+            console.error("Erreur enregistrement paiement:", payError);
+          }
         }
         break;
       }
@@ -81,10 +90,10 @@ export async function POST(request: NextRequest) {
             .update({
               status: subscription.status,
               current_period_start: new Date(
-                subscription.current_period_start * 1000
+                (subscription as any).current_period_start * 1000
               ).toISOString(),
               current_period_end: new Date(
-                subscription.current_period_end * 1000
+                (subscription as any).current_period_end * 1000
               ).toISOString(),
             })
             .eq("user_id", sub.user_id);
@@ -136,10 +145,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Erreur traitement webhook:", error);
     return NextResponse.json(
-      { erreur: "Erreur interne" },
+      { error: "Erreur interne" },
       { status: 500 }
     );
   }
 
-  return NextResponse.json({ recu: true });
+  return NextResponse.json({ received: true });
 }

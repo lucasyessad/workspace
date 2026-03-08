@@ -1,15 +1,14 @@
-import { Building2, Eye, List, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { Building2, Eye, List, TrendingUp, ArrowRight, PlusCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
-/** Page principale du Dashboard - Vue d'ensemble */
 export default async function DashboardPage() {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Statistiques des annonces
   const { count: totalAnnonces } = await supabase
     .from("listings")
     .select("*", { count: "exact", head: true })
@@ -21,7 +20,6 @@ export default async function DashboardPage() {
     .eq("agent_id", user?.id)
     .eq("est_active", true);
 
-  // Récupérer les analytics du mois
   const { data: vuesCeMois } = await supabase.rpc("vues_ce_mois", {
     p_agent_id: user?.id,
   });
@@ -29,78 +27,107 @@ export default async function DashboardPage() {
     p_agent_id: user?.id,
   });
 
+  // Dernières annonces
+  const { data: dernieres } = await supabase
+    .from("listings")
+    .select("id, titre, est_active, created_at")
+    .eq("agent_id", user?.id)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
   const stats = [
-    {
-      titre: "Total annonces",
-      valeur: totalAnnonces ?? 0,
-      icon: List,
-      couleur: "text-blue-600",
-      bg: "bg-blue-100",
-    },
-    {
-      titre: "Annonces actives",
-      valeur: annoncesActives ?? 0,
-      icon: Eye,
-      couleur: "text-green-600",
-      bg: "bg-green-100",
-    },
-    {
-      titre: "Vues ce mois",
-      valeur: vuesCeMois ?? 0,
-      icon: TrendingUp,
-      couleur: "text-or",
-      bg: "bg-yellow-100",
-    },
-    {
-      titre: "Contacts reçus",
-      valeur: contactsCeMois ?? 0,
-      icon: Building2,
-      couleur: "text-purple-600",
-      bg: "bg-purple-100",
-    },
+    { titre: "Total annonces", valeur: totalAnnonces ?? 0, icon: List },
+    { titre: "Actives", valeur: annoncesActives ?? 0, icon: Eye },
+    { titre: "Vues ce mois", valeur: vuesCeMois ?? 0, icon: TrendingUp },
+    { titre: "Contacts", valeur: contactsCeMois ?? 0, icon: Building2 },
   ];
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-bleu-nuit mb-6">
-        Tableau de bord
-      </h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-heading-3 font-bold text-foreground">
+          Vue d&apos;ensemble
+        </h1>
+        <Link href="/dashboard/annonces/nouvelle">
+          <Button size="sm">
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Nouvelle annonce
+          </Button>
+        </Link>
+      </div>
 
-      {/* Cartes de statistiques */}
+      {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {stats.map((stat) => (
-          <Card key={stat.titre}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+          <div
+            key={stat.titre}
+            className="p-5 rounded-2xl border border-border bg-white"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-caption text-muted-foreground">
                 {stat.titre}
-              </CardTitle>
-              <div className={`p-2 rounded-lg ${stat.bg}`}>
-                <stat.icon className={`h-4 w-4 ${stat.couleur}`} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-bleu-nuit">
-                {stat.valeur}
-              </p>
-            </CardContent>
-          </Card>
+              </span>
+              <stat.icon className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <p className="text-heading-3 font-bold text-foreground">
+              {stat.valeur}
+            </p>
+          </div>
         ))}
       </div>
 
-      {/* Section d'accueil */}
-      <Card>
-        <CardContent className="py-12 text-center">
-          <Building2 className="h-12 w-12 text-or mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-bleu-nuit mb-2">
-            Bienvenue sur AqarVision
+      {/* Dernières annonces */}
+      <div className="rounded-2xl border border-border bg-white">
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+          <h2 className="text-body font-semibold text-foreground">
+            Annonces récentes
           </h2>
-          <p className="text-gray-600 max-w-md mx-auto">
-            Commencez par ajouter votre première annonce immobilière.
-            Utilisez l&apos;IA pour générer des descriptions professionnelles
-            et attirez plus de clients.
-          </p>
-        </CardContent>
-      </Card>
+          <Link href="/dashboard/annonces" className="text-caption text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+            Tout voir
+            <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+
+        {!dernieres || dernieres.length === 0 ? (
+          <div className="px-5 py-12 text-center">
+            <div className="w-12 h-12 mx-auto mb-4 bg-muted rounded-2xl flex items-center justify-center">
+              <Building2 className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <p className="text-body-sm font-medium text-foreground mb-1">
+              Aucune annonce
+            </p>
+            <p className="text-caption text-muted-foreground mb-4">
+              Publiez votre première annonce pour commencer.
+            </p>
+            <Link href="/dashboard/annonces/nouvelle">
+              <Button variant="outline" size="sm">
+                <PlusCircle className="h-3.5 w-3.5 mr-1.5" />
+                Créer une annonce
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {dernieres.map((annonce) => (
+              <Link
+                key={annonce.id}
+                href={`/dashboard/annonces/${annonce.id}/edit`}
+                className="flex items-center justify-between px-5 py-3.5 hover:bg-muted/50 transition-colors"
+              >
+                <span className="text-body-sm text-foreground truncate mr-4">
+                  {annonce.titre}
+                </span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className={`h-1.5 w-1.5 rounded-full ${annonce.est_active ? "bg-emerald-400" : "bg-muted-foreground/30"}`} />
+                  <span className="text-caption text-muted-foreground">
+                    {annonce.est_active ? "Active" : "Inactive"}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

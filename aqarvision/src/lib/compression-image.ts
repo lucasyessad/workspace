@@ -1,6 +1,33 @@
 /** Compression d'images côté client avant upload
  * Optimisé pour les connexions 3G/4G algériennes
+ * Supporte les formats iPhone (HEIC/HEIF) via conversion automatique
  */
+
+/** Formats HEIC/HEIF d'iPhone */
+const HEIC_TYPES = ["image/heic", "image/heif", "image/heic-sequence", "image/heif-sequence"];
+
+/** Convertir un fichier HEIC/HEIF en JPEG */
+async function convertirHeic(fichier: File): Promise<File> {
+  const heic2any = (await import("heic2any")).default;
+  const blob = await heic2any({
+    blob: fichier,
+    toType: "image/jpeg",
+    quality: 0.9,
+  });
+
+  const result = Array.isArray(blob) ? blob[0] : blob;
+  return new File(
+    [result],
+    fichier.name.replace(/\.hei[cf]$/i, ".jpg"),
+    { type: "image/jpeg", lastModified: Date.now() }
+  );
+}
+
+/** Vérifier si un fichier est au format HEIC/HEIF */
+function estFormatHeic(fichier: File): boolean {
+  if (HEIC_TYPES.includes(fichier.type.toLowerCase())) return true;
+  return /\.hei[cf]$/i.test(fichier.name);
+}
 
 /** Options de compression */
 interface OptionsCompression {
@@ -28,14 +55,20 @@ export async function compresserImage(
 ): Promise<File> {
   const opts = { ...OPTIONS_DEFAUT, ...options };
 
+  // Convertir HEIC/HEIF (iPhone) en JPEG d'abord
+  let fichierSource = fichier;
+  if (estFormatHeic(fichier)) {
+    fichierSource = await convertirHeic(fichier);
+  }
+
   // Si le fichier est déjà petit, pas besoin de compresser
-  if (fichier.size <= opts.tailleMaxOctets) {
-    return fichier;
+  if (fichierSource.size <= opts.tailleMaxOctets) {
+    return fichierSource;
   }
 
   return new Promise((resolve, reject) => {
     const img = new Image();
-    const url = URL.createObjectURL(fichier);
+    const url = URL.createObjectURL(fichierSource);
 
     img.onload = () => {
       URL.revokeObjectURL(url);
@@ -146,6 +179,9 @@ export async function genererMiniature(
     img.src = url;
   });
 }
+
+/** Liste des formats d'image acceptés (pour l'attribut accept des inputs) */
+export const FORMATS_IMAGE_ACCEPTES = "image/*,.heic,.heif";
 
 /** Formater la taille du fichier pour l'affichage */
 export function formaterTailleFichier(octets: number): string {
