@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ADEME forest green palette */
+    --brand-50:  #e8f5ee;
+    --brand-100: #c5e8d3;
+    --brand-200: #9ed9b5;
+    --brand-300: #6dc897;
+    --brand-400: #3fb877;
+    --brand-500: #18753c;
+    --brand-600: #115d2f;
+    --brand-700: #0b4a24;
+    --brand-800: #073618;
+    --brand-900: #04220e;
+
+    /* Sidebar — dérivé de la brand color via applyBrandTheme() en JS.
+       Ces valeurs sont les défauts ADEME forest-green (recalculées si brand change). */
+    --sidebar-bg:      #0e1f15;
+    --sidebar-hover:   #182d1f;
+    --sidebar-active:  #1d3325;
+    --sidebar-border:  #27432f;
+    --sidebar-text:    #96bfa8;
+    --sidebar-label:   #578060;
+  }
+
+  body {
+    @apply bg-[#f4f4f4] text-[#1e1e1e] antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+/* Dynamic brand colors — overridden via JS (applyBrandTheme) */
+.bg-brand-50  { background-color: var(--brand-50)  !important; }
+.bg-brand-100 { background-color: var(--brand-100) !important; }
+.bg-brand-200 { background-color: var(--brand-200) !important; }
+.bg-brand-500 { background-color: var(--brand-500) !important; }
+.bg-brand-600 { background-color: var(--brand-600) !important; }
+.bg-brand-700 { background-color: var(--brand-700) !important; }
+.bg-brand-800 { background-color: var(--brand-800) !important; }
+.bg-brand-900 { background-color: var(--brand-900) !important; }
+.text-brand-200 { color: var(--brand-200) !important; }
+.text-brand-300 { color: var(--brand-300) !important; }
+.text-brand-400 { color: var(--brand-400) !important; }
+.text-brand-500 { color: var(--brand-500) !important; }
+.text-brand-600 { color: var(--brand-600) !important; }
+.text-brand-700 { color: var(--brand-700) !important; }
+.border-brand-200 { border-color: var(--brand-200) !important; }
+.border-brand-300 { border-color: var(--brand-300) !important; }
+.border-brand-400 { border-color: var(--brand-400) !important; }
+.border-brand-800 { border-color: var(--brand-800) !important; }
+.ring-brand-200 { --tw-ring-color: var(--brand-200) !important; }
+.focus\:ring-brand-500:focus { --tw-ring-color: var(--brand-500) !important; }
+.shadow-brand-200 { --tw-shadow-color: var(--brand-200) !important; }
+.from-brand-500 { --tw-gradient-from: var(--brand-500) !important; }
+.to-brand-400  { --tw-gradient-to:   var(--brand-400) !important; }
+.border-brand-500 { border-color: var(--brand-500) !important; }
+
+@layer components {
+  /* Cards — flat, minimal shadow, subtle border, ADEME-style */
+  .card {
+    @apply bg-white border border-[#e0e0e0] shadow-[0_1px_3px_rgba(0,0,0,0.06)] rounded-md;
+  }
+
+  /* Primary button — filled green, squared */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 font-semibold text-sm text-white
+           rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    background-color: var(--brand-500);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--brand-600);
+  }
+
+  /* Secondary button — outlined */
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-white text-[#1e1e1e] border
+           border-[#cccccc] rounded font-medium text-sm hover:bg-[#f0f0f0] transition-colors;
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full px-3 py-2 border border-[#cccccc] rounded text-sm bg-white
+           text-[#1e1e1e] placeholder-[#999999]
+           focus:outline-none focus:ring-2 focus:border-transparent;
+    --tw-ring-color: var(--brand-500);
+  }
+
+  .label {
+    @apply block text-sm font-medium text-[#444444] mb-1;
+  }
+
+  /* Badge / tag */
+  .badge {
+    @apply inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-sm;
+  }
+  .badge-green { @apply badge bg-[#e8f5ee] text-[#18753c] border border-[#c5e8d3]; }
+  .badge-blue  { @apply badge bg-[#e8eeff] text-[#000091] border border-[#c5d0f5]; }
+  .badge-amber { @apply badge bg-amber-50 text-amber-700 border border-amber-200; }
+  .badge-gray  { @apply badge bg-gray-100 text-gray-600 border border-gray-200; }
+  .badge-red   { @apply badge bg-red-50 text-red-700 border border-red-200; }
+}

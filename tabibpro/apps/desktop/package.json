@@ -1,0 +1,30 @@
+{
+  "name": "tabibpro-desktop",
+  "version": "1.0.0",
+  "description": "TabibPro — Logiciel de gestion médicale avec IA diagnostique",
+  "main": "dist/main.js",
+  "author": "TabibPro <contact@tabibpro.dz>",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "dev": "tsc && electron .",
+    "build": "tsc",
+    "package:win": "npm run build && electron-builder --win --x64",
+    "package:mac": "npm run build && electron-builder --mac",
+    "package:mac:universal": "npm run build && electron-builder --mac --universal",
+    "package:all": "npm run build && electron-builder --win --mac"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "electron-log": "^5.2.4",
+    "electron-updater": "^6.3.9"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["electron"]
+  }
+}

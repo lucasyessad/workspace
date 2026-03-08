@@ -1,0 +1,41 @@
+{
+  "name": "tabibpro",
+  "version": "1.0.0",
+  "description": "TabibPro — Logiciel de gestion médicale avec IA diagnostique — Édition Algérie",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "type-check": "turbo type-check",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "db:migrate": "turbo db:migrate",
+    "db:seed": "turbo db:seed",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "desktop:dev": "cd apps/desktop && npm run dev",
+    "desktop:build": "cd apps/desktop && npm run build",
+    "desktop:package:win": "cd apps/desktop && npm run package:win",
+    "desktop:package:mac": "cd apps/desktop && npm run package:mac",
+    "desktop:package:all": "cd apps/desktop && npm run package:all"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "prettier": "^3.4.0",
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.16.0",
+    "husky": "^9.1.0",
+    "lint-staged": "^15.3.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "packageManager": "pnpm@9.14.0"
+}

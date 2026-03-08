@@ -1,0 +1,75 @@
+version: '3.8'
+
+# ============================================================
+# TabibPro — Docker Compose DÉVELOPPEMENT
+# Surcharge du docker-compose.yml pour le dev local
+# ============================================================
+
+name: tabibpro-dev
+
+services:
+
+  postgres-medical:
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_medical_dev:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=dev-medical-password
+
+  postgres-service:
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_service_dev:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=dev-service-password
+    profiles: []  # Active le service en dev sans profil
+
+  redis:
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass dev-redis-password
+
+  meilisearch:
+    environment:
+      - MEILI_MASTER_KEY=dev-meili-key
+      - MEILI_ENV=development
+      - MEILI_NO_ANALYTICS=true
+
+  minio:
+    environment:
+      - MINIO_ROOT_USER=dev-access-key
+      - MINIO_ROOT_PASSWORD=dev-secret-key
+
+  # En dev, pas de backup ni de traefik
+  backup:
+    profiles: ["backup-dev"]
+
+  traefik:
+    profiles: ["traefik-dev"]
+
+  # En dev, hot-reload pour l'API
+  api:
+    build:
+      target: development
+    command: ["pnpm", "run", "dev"]
+    volumes:
+      - ../../apps/api:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+
+  app:
+    build:
+      target: development
+    volumes:
+      - ../../apps/web:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+
+volumes:
+  pg_medical_dev:
+  pg_service_dev:

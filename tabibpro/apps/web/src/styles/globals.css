@@ -1,0 +1,201 @@
+/* ============================================================
+ * TabibPro — Design System Global
+ * Support RTL natif + 4 langues (FR, AR, BER, EN)
+ * ============================================================ */
+
+@import 'tailwindcss';
+
+/* ---- Variables CSS — Thème clair ---- */
+:root {
+  /* Couleurs primaires — Bleu médical confiant */
+  --color-primary-50: oklch(97% 0.01 240);
+  --color-primary-100: oklch(94% 0.03 240);
+  --color-primary-200: oklch(88% 0.06 240);
+  --color-primary-300: oklch(79% 0.12 240);
+  --color-primary-400: oklch(68% 0.17 240);
+  --color-primary-500: oklch(58% 0.20 240);
+  --color-primary-600: oklch(49% 0.20 240);
+  --color-primary-700: oklch(40% 0.18 240);
+  --color-primary-800: oklch(32% 0.15 240);
+  --color-primary-900: oklch(24% 0.11 240);
+
+  /* Accent — Vert algérien (discret, palette drapeau DZ) */
+  --color-accent-500: oklch(52% 0.16 162);
+  --color-accent-100: oklch(95% 0.04 162);
+
+  /* Surfaces */
+  --background: oklch(100% 0 0);
+  --foreground: oklch(9% 0 0);
+  --card: oklch(100% 0 0);
+  --card-foreground: oklch(9% 0 0);
+  --popover: oklch(100% 0 0);
+  --popover-foreground: oklch(9% 0 0);
+  --muted: oklch(96% 0.005 240);
+  --muted-foreground: oklch(45% 0.01 240);
+  --border: oklch(90% 0.01 240);
+  --input: oklch(90% 0.01 240);
+  --ring: oklch(58% 0.20 240);
+
+  /* États */
+  --destructive: oklch(60% 0.22 29);
+  --destructive-foreground: oklch(98% 0 0);
+  --warning: oklch(75% 0.18 60);
+  --warning-foreground: oklch(20% 0.05 60);
+  --success: oklch(52% 0.16 162);
+  --success-foreground: oklch(98% 0 0);
+
+  /* Typographie */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-arabic: 'Noto Sans Arabic', 'Amiri', serif;
+  --font-tifinagh: 'Noto Sans Tifinagh', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Radius */
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+/* ---- Thème sombre ---- */
+.dark {
+  --background: oklch(7% 0.01 240);
+  --foreground: oklch(98% 0 0);
+  --card: oklch(11% 0.01 240);
+  --card-foreground: oklch(98% 0 0);
+  --popover: oklch(11% 0.01 240);
+  --popover-foreground: oklch(98% 0 0);
+  --muted: oklch(16% 0.01 240);
+  --muted-foreground: oklch(65% 0.01 240);
+  --border: oklch(20% 0.01 240);
+  --input: oklch(20% 0.01 240);
+}
+
+/* ---- RTL — Arabe ---- */
+[dir="rtl"] {
+  --font-sans: 'Noto Sans Arabic', 'Amiri', system-ui, serif;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+/* ---- Tamazight (Tifinagh) ---- */
+[lang="ber"] {
+  --font-sans: 'Noto Sans Tifinagh', 'Noto Sans', sans-serif;
+}
+
+/* ---- Base ---- */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---- Scrollbar personnalisée ---- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* ---- Utilitaires médicaux ---- */
+
+.medical-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+[dir="rtl"] .medical-label {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* ---- Badges d'alerte stock ---- */
+.badge-rupture {
+  background-color: oklch(95% 0.06 29);
+  color: oklch(45% 0.18 29);
+  border: 1px solid oklch(85% 0.10 29);
+}
+
+.badge-stock-faible {
+  background-color: oklch(97% 0.06 60);
+  color: oklch(45% 0.18 60);
+  border: 1px solid oklch(87% 0.10 60);
+}
+
+/* ---- Connectivité ---- */
+.connectivity-online {
+  color: var(--success);
+}
+
+.connectivity-syncing {
+  color: var(--warning);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.connectivity-offline {
+  color: var(--destructive);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ---- Ordonnance — Impression ---- */
+@media print {
+  .no-print { display: none !important; }
+  .ordonnance-print {
+    font-family: 'Times New Roman', serif;
+    font-size: 11pt;
+    line-height: 1.4;
+    color: black;
+    background: white;
+  }
+}
+
+/* ---- IA Disclaimer ---- */
+.ia-disclaimer {
+  background: oklch(97% 0.04 60);
+  border-inline-start: 3px solid var(--warning);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: oklch(35% 0.10 60);
+}
+
+/* ---- Indicateur hors ligne ---- */
+.offline-banner {
+  background: oklch(97% 0.04 240);
+  border-bottom: 1px solid var(--border);
+  padding: 0.375rem 1rem;
+  font-size: 0.8rem;
+  text-align: center;
+  color: var(--muted-foreground);
+}

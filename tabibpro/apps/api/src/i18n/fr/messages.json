@@ -1,0 +1,67 @@
+{
+  "app": {
+    "name": "TabibPro",
+    "tagline": "Gestion médicale intelligente — Édition Algérie"
+  },
+  "auth": {
+    "login_success": "Connexion réussie",
+    "login_failed": "Email ou mot de passe incorrect",
+    "logout_success": "Déconnexion réussie",
+    "mfa_required": "Code d'authentification à deux facteurs requis",
+    "mfa_invalid": "Code MFA invalide",
+    "account_locked": "Compte verrouillé. Réessayez dans {minutes} minutes.",
+    "session_expired": "Votre session a expiré. Veuillez vous reconnecter.",
+    "unauthorized": "Accès non autorisé",
+    "forbidden": "Vous n'avez pas les droits pour cette action"
+  },
+  "patients": {
+    "created": "Patient créé avec succès",
+    "updated": "Dossier patient mis à jour",
+    "not_found": "Patient introuvable",
+    "consent_required": "Le consentement du patient est requis (Loi 18-07)",
+    "chifa_invalid": "Numéro de carte Chifa invalide",
+    "phone_invalid": "Numéro de téléphone algérien invalide"
+  },
+  "consultations": {
+    "created": "Consultation créée",
+    "updated": "Consultation mise à jour",
+    "closed": "Consultation terminée",
+    "not_found": "Consultation introuvable"
+  },
+  "ordonnances": {
+    "created": "Ordonnance créée",
+    "signed": "Ordonnance signée",
+    "printed": "Ordonnance imprimée",
+    "expired": "Cette ordonnance est expirée",
+    "stupefiant_restricted": "Ordonnance stupéfiant : procédure réglementaire obligatoire (carnet à souches)"
+  },
+  "ia": {
+    "disabled": "L'IA médicale est indisponible en mode hors ligne",
+    "budget_exceeded": "Budget IA journalier atteint. Réessayez demain.",
+    "disclaimer": "⚠️ Aide au diagnostic — Cette suggestion est indicative. Le médecin est le seul décisionnaire.",
+    "darija_detected": "Darija algérien détecté — Traduction automatique proposée",
+    "processing": "L'IA analyse votre requête..."
+  },
+  "offline": {
+    "mode": "Mode hors ligne — Données sauvegardées localement",
+    "syncing": "Synchronisation en cours...",
+    "synced": "Synchronisation terminée",
+    "pending": "{count} modification(s) en attente de synchronisation"
+  },
+  "cnas": {
+    "tiers_payant": "Tiers payant CNAS activé",
+    "not_eligible": "Patient non éligible au tiers payant CNAS",
+    "feuille_generee": "Feuille de soins CNAS générée"
+  },
+  "stock": {
+    "low_stock": "⚠️ Stock faible : {medicament} ({quantite} unités restantes)",
+    "rupture_nationale": "⚠️ Ce médicament est en rupture sur le marché algérien",
+    "expired": "Médicament périmé : vérifiez votre stock"
+  },
+  "errors": {
+    "server_error": "Erreur serveur. Veuillez réessayer.",
+    "validation_error": "Données invalides",
+    "not_found": "Ressource introuvable",
+    "network_error": "Erreur réseau. Vérifiez votre connexion."
+  }
+}

@@ -1,0 +1,9 @@
+TabibPro - Logiciel de Gestion Médicale
+Copyright © 2024 TabibPro. Tous droits réservés.
+
+Ce logiciel est fourni à titre de licence d'utilisation personnelle et professionnelle.
+Toute reproduction, distribution ou modification non autorisée est interdite.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.

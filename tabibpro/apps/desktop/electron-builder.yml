@@ -1,0 +1,92 @@
+appId: dz.tabibpro.desktop
+productName: TabibPro
+copyright: "Copyright © 2024 TabibPro. Tous droits réservés."
+
+directories:
+  output: release
+  buildResources: resources
+
+files:
+  - dist/**/*
+  - node_modules/**/*
+  - "!node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}"
+  - "!node_modules/*/{test,__tests__,tests,powered-test,example,examples}"
+  - "!node_modules/.bin"
+
+# Fichiers supplémentaires bundlés dans resources/
+extraResources:
+  - from: "../../docker-compose.desktop.yml"
+    to: "docker-compose.desktop.yml"
+  - from: "../../.env.desktop.example"
+    to: ".env.desktop.example"
+
+# ---- Windows (.exe via NSIS) ----
+# Build natif sur Windows (GitHub Actions runner windows-latest)
+# Pour tester en local sur Linux : pnpm exec electron-builder --win zip
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: zip         # Fallback sans wine (test local uniquement)
+      arch:
+        - x64
+  icon: resources/icon.ico
+  signtoolOptions:
+    publisherName: TabibPro
+    signingHashAlgorithms:
+      - sha256
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  allowElevation: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: TabibPro
+  installerIcon: resources/icon.ico
+  uninstallerIcon: resources/icon.ico
+  installerHeaderIcon: resources/icon.ico
+  license: resources/LICENSE.txt
+  language: "1036"  # French
+  warningsAsErrors: false
+  runAfterFinish: true
+
+# ---- macOS (.dmg) ----
+# Build natif sur macOS (GitHub Actions runner macos-14)
+# Pour signer : set APPLE_ID + APPLE_TEAM_ID + APPLE_ID_PASSWORD dans les secrets CI
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+    - target: zip
+      arch:
+        - arm64
+  icon: resources/icon.icns
+  category: public.app-category.medical
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: resources/entitlements.mac.plist
+  entitlementsInherit: resources/entitlements.mac.plist
+
+dmg:
+  title: "TabibPro ${version}"
+  icon: resources/icon.icns
+  background: null
+  contents:
+    - x: 410
+      y: 150
+      type: link
+      path: /Applications
+    - x: 130
+      y: 150
+      type: file
+  window:
+    width: 540
+    height: 300
+
+# ---- Auto-update ----
+publish:
+  provider: generic
+  url: https://releases.tabibpro.dz/desktop

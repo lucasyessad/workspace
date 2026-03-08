@@ -1,0 +1,879 @@
+// ============================================================
+// MedGest Pro — Schéma Prisma — Base de données MÉDICALE
+// Stockage LOCAL exclusif (données sensibles — Loi 18-07)
+// ============================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "./generated/client"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DB_MEDICAL_URL")
+  extensions = [pgvector(map: "vector"), unaccent, pg_trgm]
+}
+
+// ============================================================
+// PATIENTS
+// ============================================================
+
+model Patient {
+  id              String   @id @default(uuid())
+  numeroPatient   String   @unique // PAT-2024-00001
+  civilite        Civilite
+  nomFr           String
+  prenomFr        String
+  nomAr           String?  // النسخة العربية
+  prenomAr        String?
+  dateNaissance   DateTime @db.Date
+  lieuNaissance   String?
+  wilayaNaissance String?  // Code 01-58
+  sexe            Sexe
+
+  // Adresse
+  adresseLigne1   String?
+  adresseLigne2   String?
+  commune         String?
+  daira           String?
+  wilaya          String?  // Code 01-58
+  codePostal      String?
+
+  // Contact
+  telephoneMobile String
+  telephoneFixe   String?
+  email           String?
+
+  // Sécurité sociale algérienne
+  numeroSecuCnas  String? // Numéro CNAS
+  numeroCasnos    String? // Numéro CASNOS (non-salariés)
+  organismeAssurance OrganismeAssurance @default(AUCUN)
+  numeroCarteChifa String? // Carte Chifa (20 chiffres)
+
+  // Données médicales de base
+  groupeSanguin   GroupeSanguin?
+  rhesus          Rhesus?
+  allergiesConnues Json   @default("[]")
+  antecedentsMedicaux Json @default("{}")
+  antecedentsFamiliaux Json @default("{}")
+
+  // Liens
+  medecinTraitantId String?
+  medecinTraitant   MedecinProfil? @relation(fields: [medecinTraitantId], references: [id])
+
+  // Contacts d'urgence
+  personneConfianceNom String?
+  personneConfanceTel  String?
+  lienParente          String?
+  contactUrgenceNom    String?
+  contactUrgenceTel    String?
+
+  // Données sociodémographiques
+  profession       String?
+  situationFamiliale SituationFamiliale?
+  nombreEnfants    Int?
+
+  // Préférences
+  languePreferee   Locale @default(FR)
+
+  // Conformité Loi 18-07 (Algérie)
+  consentementDonnees Boolean @default(false)
+  dateConsentement    DateTime?
+
+  // Médias
+  photoProfilPath  String?
+  notesAdministratives String?
+
+  // Statut
+  statut           StatutPatient @default(ACTIF)
+
+  // Métadonnées
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  creePar          String?
+  modifiePar       String?
+
+  // Relations
+  consultations    Consultation[]
+  ordonnances      Ordonnance[]
+  documents        Document[]
+  vaccinations     Vaccination[]
+  protocolesSuivi  ProtocoleSuivi[]
+  sessionsIA       SessionIA[]
+  factures         Facture[]
+
+  @@index([nomFr, prenomFr])
+  @@index([nomAr, prenomAr])
+  @@index([telephoneMobile])
+  @@index([numeroCarteChifa])
+  @@index([statut])
+  @@map("patients")
+}
+
+// ============================================================
+// MÉDECINS (profil médical — données médicales)
+// ============================================================
+
+model MedecinProfil {
+  id                      String  @id @default(uuid())
+  userId                  String  @unique // Lien vers Users en DB service
+  numeroCnom              String  @unique // Conseil National de l'Ordre des Médecins DZ
+  numeroInpe              String? // Identifiant National Praticien État
+  nomFr                   String
+  prenomFr                String
+  nomAr                   String?
+  prenomAr                String?
+  specialite              String
+  secteur                 SecteurMedical @default(PRIVE)
+  conventionCnas          Boolean @default(false)
+  tarifConsultationDzd    Decimal @db.Decimal(10, 2) @default(0)
+  tarifConsultationCnasDzd Decimal? @db.Decimal(10, 2)
+  wilayaExercice          String
+  cachetNumerisePath      String? // Image du cachet — obligatoire ordonnances DZ
+  signatureNumerisePath   String?
+  emailPro                String @unique // dr.nom@medgestpro.dz
+
+  // Relations
+  consultations           Consultation[]
+  ordonnances             Ordonnance[]
+  patientsTraites         Patient[]
+  suggestionsIA           SuggestionIA[]
+  sessionsIA              SessionIA[]
+  vaccinations            Vaccination[]
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("medecins_profils")
+}
+
+// ============================================================
+// CONSULTATIONS
+// ============================================================
+
+model Consultation {
+  id                     String   @id @default(uuid())
+  numeroConsultation     String   @unique // CONS-202401-00001
+  patientId              String
+  patient                Patient  @relation(fields: [patientId], references: [id])
+  medecinId              String
+  medecin                MedecinProfil @relation(fields: [medecinId], references: [id])
+  dateHeure              DateTime
+  motifConsultation      String
+  type                   TypeConsultation @default(CONSULTATION)
+
+  // Constantes vitales
+  tensionSystolique      Int?
+  tensionDiastolique     Int?
+  pouls                  Int?
+  temperature            Decimal? @db.Decimal(4, 1)
+  poids                  Decimal? @db.Decimal(5, 1)
+  taille                 Decimal? @db.Decimal(5, 1)
+  imc                    Decimal? @db.Decimal(4, 1)
+  saturationO2           Decimal? @db.Decimal(4, 1)
+  glycemieCapillaire     Decimal? @db.Decimal(4, 1)
+  perimetreAbdominal     Decimal? @db.Decimal(5, 1)
+
+  // Données cliniques
+  examenClinique         String?  // HTML riche (Tiptap)
+  diagnosticPrincipal    String?
+  diagnosticsSecondaires Json     @default("[]")
+  codeCim10Principal     String?
+  codesCim10Secondaires  Json     @default("[]")
+  notesConfidentielles   String?  // Chiffrées en base
+  conclusion             String?
+  conduiteATenir         String?
+  actesRealises          Json     @default("[]") // [{code, libelle, tarif_cnas}]
+
+  consultationSuivantePrevue DateTime?
+  statut                 StatutConsultation @default(EN_COURS)
+  dureeMinutes           Int?
+
+  // Métadonnées
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  // Relations
+  ordonnances            Ordonnance[]
+  documents              Document[]
+  suggestionsIA          SuggestionIA[]
+  factures               Facture[]
+
+  @@index([patientId])
+  @@index([medecinId])
+  @@index([dateHeure])
+  @@index([statut])
+  @@map("consultations")
+}
+
+// ============================================================
+// ORDONNANCES — Format algérien réglementaire
+// ============================================================
+
+model Ordonnance {
+  id                      String   @id @default(uuid())
+  numeroOrdonnance        String   @unique // ORD-2024-000001
+  consultationId          String?
+  consultation            Consultation? @relation(fields: [consultationId], references: [id])
+  patientId               String
+  patient                 Patient  @relation(fields: [patientId], references: [id])
+  medecinId               String
+  medecin                 MedecinProfil @relation(fields: [medecinId], references: [id])
+
+  dateCreation            DateTime @default(now())
+  dateValidite            DateTime
+
+  typeOrdonnance          TypeOrdonnance @default(STANDARD)
+  instructionsGenerales   String?
+
+  estRenouvellement       Boolean  @default(false)
+  ordonnanceOriginaleId   String?
+  nombreRenouvAutorise    Int?
+  renouvellementRestants  Int?
+
+  // Signature & authenticité
+  signatureElectronique   String?
+  cachetMedecinPath       String? // Obligatoire sur ordonnances DZ
+  qrCodeData              String? // Pour vérification authenticité
+
+  statut                  StatutOrdonnance @default(BROUILLON)
+  tiersPayantCnas         Boolean @default(false)
+  templateId              String?
+
+  // Relations
+  lignes                  LigneOrdonnance[]
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([medecinId])
+  @@index([dateCreation])
+  @@map("ordonnances")
+}
+
+model LigneOrdonnance {
+  id                      String      @id @default(uuid())
+  ordonnanceId            String
+  ordonnance              Ordonnance  @relation(fields: [ordonnanceId], references: [id], onDelete: Cascade)
+  medicamentId            String?     // FK vers pharmacopée DZ (nullable si médicament non répertorié)
+  medicamentPharmacope    MedicamentPharmacpoe? @relation(fields: [medicamentId], references: [id])
+
+  nomMedicament           String      // Nom tel qu'en Algérie
+  dci                     String?     // Dénomination Commune Internationale
+  dosage                  String?
+  formeGalenique          String?
+
+  posologieMatin          Decimal?    @db.Decimal(5, 2)
+  posologieMidi           Decimal?    @db.Decimal(5, 2)
+  posologieSoir           Decimal?    @db.Decimal(5, 2)
+  posologieCoucher        Decimal?    @db.Decimal(5, 2)
+  posologieTexteLibre     String?
+
+  dureeTraitementJours    Int?
+  quantite                Int         @default(1)
+  instructionsSpecifiques String?
+
+  estGenerique            Boolean     @default(false)
+  substitutionAutorisee   Boolean     @default(true)
+  remboursableCnas        Boolean     @default(false)
+  tauxRemboursementCnas   Int?        // 0, 80, ou 100 (%)
+  siBesoin                Boolean     @default(false)
+  ordreAffichage          Int         @default(0)
+
+  @@index([ordonnanceId])
+  @@map("lignes_ordonnances")
+}
+
+// ============================================================
+// PHARMACOPÉE ALGÉRIENNE (ANPP)
+// ============================================================
+
+model MedicamentPharmacpoe {
+  id                      String   @id @default(uuid())
+  nomCommercial           String
+  nomCommercialAr         String?  // Nom en arabe
+  dci                     String   // Dénomination Commune Internationale
+  forme                   String
+  dosageUnitaire          String
+  uniteDosage             String
+  codeAtc                 String?
+
+  // Origine
+  fabricant               String
+  paysOrigine             String
+  estFabriqueLocalement   Boolean @default(false)
+  estGenerique            Boolean @default(false)
+  princepsReferenceId     String? // Si générique : médicament de référence
+
+  // Prix DZD
+  prixPublicAlgerie       Decimal? @db.Decimal(10, 2)
+  prixHospitalier         Decimal? @db.Decimal(10, 2)
+  tarifReferenceCnas      Decimal? @db.Decimal(10, 2)
+  tauxRemboursement       Int?     // 0, 80, ou 100 (%)
+
+  // Classification
+  listeClassification     ListeMedicament?
+  statutEnregistrement    StatutEnregistrement @default(ENREGISTRE_ANPP)
+  numeroEnregistrementAnpp String?
+  disponibleMarcheDz      Boolean @default(true) // Certains médicaments en rupture nationale
+
+  voieAdministration      String?
+  contreIndications       Json    @default("[]")
+  interactionsConnues     Json    @default("[]")
+
+  // Embeddings pour recherche sémantique
+  embeddingVector         Unsupported("vector(1536)")?
+
+  dateMAJ                 DateTime @updatedAt
+
+  // Relations
+  lignesOrdonnances       LigneOrdonnance[]
+  stocksCabinet           StockCabinet[]
+
+  @@index([nomCommercial])
+  @@index([dci])
+  @@index([disponibleMarcheDz])
+  @@map("medicaments_pharmacopee_dz")
+}
+
+// ============================================================
+// STOCK CABINET
+// ============================================================
+
+model StockCabinet {
+  id                      String  @id @default(uuid())
+  medicamentPharmacpoeId  String?
+  medicamentPharmacpoe    MedicamentPharmacpoe? @relation(fields: [medicamentPharmacpoeId], references: [id])
+  nomMedicament           String  // Au cas où non répertorié
+  stockActuel             Int     @default(0)
+  stockMinimumAlerte      Int     @default(5)
+  stockMaximum            Int?
+
+  prixAchatUnitaireDzd    Decimal? @db.Decimal(10, 2)
+  prixVenteUnitaireDzd    Decimal? @db.Decimal(10, 2)
+
+  fournisseur             String? // Grossiste (ex: Hydrapharm)
+  datePeremption          DateTime? @db.Date
+  numeroLot               String?
+  dateReception           DateTime? @db.Date
+  conditionsConservation  String?
+
+  statut                  StatutStock @default(DISPONIBLE)
+
+  mouvements              MouvementStock[]
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("stocks_cabinet")
+}
+
+model MouvementStock {
+  id                      String       @id @default(uuid())
+  stockCabinetId          String
+  stockCabinet            StockCabinet @relation(fields: [stockCabinetId], references: [id])
+  typeOperation           TypeOperationStock
+  quantite                Int
+  quantiteAvant           Int
+  quantiteApres           Int
+  motif                   String?
+  referenceDocument       String?
+  userId                  String
+
+  createdAt               DateTime @default(now())
+
+  @@map("mouvements_stock")
+}
+
+// ============================================================
+// DOCUMENTS & FICHIERS
+// ============================================================
+
+model Document {
+  id                      String   @id @default(uuid())
+  patientId               String
+  patient                 Patient  @relation(fields: [patientId], references: [id])
+  consultationId          String?
+  consultation            Consultation? @relation(fields: [consultationId], references: [id])
+
+  typeDocument            TypeDocument
+  nomFichierOriginal      String
+  nomFichierStockage      String  @unique
+  cheminStockage          String
+  tailleFichier           Int
+  mimeType                String
+  extension               String
+
+  source                  SourceDocument @default(IMPORT_FICHIER)
+
+  // OCR bilingue (fréquent en Algérie : documents FR+AR)
+  texteOcrFr              String?
+  texteOcrAr              String?
+
+  description             String?
+  tags                    Json    @default("[]")
+  estConfidentiel         Boolean @default(false)
+
+  uploadeParUserId        String
+  dateUpload              DateTime @default(now())
+  dateDocument            DateTime? @db.Date
+
+  // Embedding pour recherche sémantique
+  embeddingVector         Unsupported("vector(1536)")?
+
+  @@index([patientId])
+  @@index([typeDocument])
+  @@map("documents")
+}
+
+// ============================================================
+// VACCINATIONS — Calendrier vaccinal algérien
+// ============================================================
+
+model Vaccination {
+  id                      String  @id @default(uuid())
+  patientId               String
+  patient                 Patient @relation(fields: [patientId], references: [id])
+  medecinVaccinateurId    String
+  medecinVaccinateur      MedecinProfil @relation(fields: [medecinVaccinateurId], references: [id])
+
+  nomVaccin               String
+  typeVaccin              String
+  estObligatoireDz        Boolean @default(false) // Calendrier DZ obligatoire
+  programmeNational       Boolean @default(false) // Programme Élargi de Vaccination (PEV)
+
+  numeroLot               String?
+  fabricant               String?
+  dateVaccination         DateTime @db.Date
+  dateRappelPrevu         DateTime? @db.Date
+  doseNumero              Int     @default(1)
+  siteInjection           String?
+  effetsSecondairesNotes  String?
+
+  statut                  StatutVaccination @default(EFFECTUEE)
+
+  createdAt               DateTime @default(now())
+
+  @@index([patientId])
+  @@map("vaccinations")
+}
+
+// ============================================================
+// PROTOCOLES SUIVI MALADIES CHRONIQUES
+// ============================================================
+
+model ProtocoleSuivi {
+  id                      String  @id @default(uuid())
+  patientId               String
+  patient                 Patient @relation(fields: [patientId], references: [id])
+  medecinId               String
+
+  pathologie              String  // Diabète, HTA, Asthme...
+  dateDebut               DateTime @db.Date
+  dateFinPrevue           DateTime? @db.Date
+
+  objectifs               Json    @default("[]")
+  parametresSuivis        Json    @default("[]")
+  frequenceConsultations  String? // "Mensuelle", "Trimestrielle"
+
+  dernierBilan            DateTime? @db.Date
+  prochainBilan           DateTime? @db.Date
+
+  statut                  StatutProtocole @default(ACTIF)
+  notes                   String?
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([patientId])
+  @@map("protocoles_suivi")
+}
+
+// ============================================================
+// INTELLIGENCE ARTIFICIELLE — Journal
+// (Stocké en LOCAL — fait partie du dossier médical)
+// ============================================================
+
+model SuggestionIA {
+  id                      String   @id @default(uuid())
+  patientId               String
+  patient                 Patient  @relation(fields: [patientId], references: [id])
+  consultationId          String?
+  consultation            Consultation? @relation(fields: [consultationId], references: [id])
+  medecinId               String
+  medecin                 MedecinProfil @relation(fields: [medecinId], references: [id])
+
+  typeRequete             TypeRequeteIA
+  promptEnvoye            String   @db.Text // Anonymisé
+  reponseRecue            String   @db.Text
+  tokensUtilises          Int?
+  modeleUtilise           String?
+  tempsReponseMs          Int?
+
+  decisionMedecin         DecisionIA @default(EN_ATTENTE)
+  notesMedecin            String?
+  estAnonyme              Boolean  @default(true)
+
+  createdAt               DateTime @default(now())
+
+  @@index([patientId])
+  @@index([medecinId])
+  @@index([typeRequete])
+  @@map("suggestions_ia")
+}
+
+model SessionIA {
+  id                      String   @id @default(uuid())
+  medecinId               String
+  medecin                 MedecinProfil @relation(fields: [medecinId], references: [id])
+  patientId               String?
+  patient                 Patient? @relation(fields: [patientId], references: [id])
+
+  tokensTotal             Int      @default(0)
+  coutEstimeDzd           Decimal? @db.Decimal(10, 4)
+  debutSession            DateTime @default(now())
+  finSession              DateTime?
+
+  @@map("sessions_ia")
+}
+
+// ============================================================
+// BASE DE CONNAISSANCES MÉDICALES (RAG)
+// ============================================================
+
+model BaseConnaissancesMedicale {
+  id                      String  @id @default(uuid())
+  titre                   String
+  contenu                 String  @db.Text
+  source                  SourceMedicale
+  urlSource               String?
+  specialite              String?
+  tags                    Json    @default("[]")
+  langue                  Locale  @default(FR)
+  dateMaj                 DateTime @updatedAt
+
+  // Embedding pour RAG
+  embeddingVector         Unsupported("vector(1536)")?
+
+  @@index([source])
+  @@index([specialite])
+  @@map("base_connaissances_medicales")
+}
+
+// ============================================================
+// TABLES DE RÉFÉRENCE ALGÉRIENNES
+// ============================================================
+
+model Wilaya {
+  code      String @id // 01-58
+  nomFr     String
+  nomAr     String
+  nomBer    String?
+  chefLieu  String
+  communes  Commune[]
+
+  @@map("wilayas")
+}
+
+model Commune {
+  code        String @id
+  nomFr       String
+  nomAr       String
+  wilayaCode  String
+  wilaya      Wilaya @relation(fields: [wilayaCode], references: [code])
+  daira       String
+
+  @@index([wilayaCode])
+  @@map("communes")
+}
+
+model JourFerieDZ {
+  id          String   @id @default(uuid())
+  date        DateTime @db.Date
+  nomFr       String
+  nomAr       String
+  type        TypeJourFerie
+  estVariable Boolean  @default(false) // Fêtes religieuses — dates variables (calendrier hégirien)
+  annee       Int
+
+  @@unique([date, annee])
+  @@index([annee])
+  @@map("jours_feries_dz")
+}
+
+model NomenclatureActesMedicaux {
+  id                      String  @id @default(uuid())
+  codeActe                String  @unique
+  libelleFr               String
+  libelleAr               String?
+  lettreCle               String?
+  coefficient             Decimal? @db.Decimal(8, 2)
+  tarifSecteurPublicDzd   Decimal? @db.Decimal(10, 2)
+  tarifSecteurPriveDzd    Decimal? @db.Decimal(10, 2)
+  tarifConventionneCnasDzd Decimal? @db.Decimal(10, 2)
+  specialiteConcernee     String?
+
+  @@map("nomenclature_actes_medicaux_dz")
+}
+
+// ============================================================
+// FACTURATION
+// ============================================================
+
+model Facture {
+  id                      String   @id @default(uuid())
+  numeroFacture           String   @unique // FACT-2024-000001
+  patientId               String
+  patient                 Patient  @relation(fields: [patientId], references: [id])
+  medecinId               String
+  consultationId          String?
+  consultation            Consultation? @relation(fields: [consultationId], references: [id])
+
+  dateFacture             DateTime @default(now())
+
+  lignes                  LigneFacture[]
+
+  montantTotalDzd         Decimal  @db.Decimal(10, 2) @default(0)
+  montantRemboursableCnasDzd Decimal @db.Decimal(10, 2) @default(0)
+  resteAChargePatientDzd  Decimal  @db.Decimal(10, 2) @default(0)
+
+  modePaiement            ModePaiementDZ
+  feuillesSoinsCnas       Boolean  @default(false)
+  numeroBordereauCnas     String?
+
+  statut                  StatutFacture @default(BROUILLON)
+  notes                   String?
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([dateFacture])
+  @@map("factures")
+}
+
+model LigneFacture {
+  id                      String   @id @default(uuid())
+  factureId               String
+  facture                 Facture  @relation(fields: [factureId], references: [id], onDelete: Cascade)
+  description             String
+  codeActe                String?
+  quantite                Int      @default(1)
+  prixUnitaireDzd         Decimal  @db.Decimal(10, 2)
+  montantDzd              Decimal  @db.Decimal(10, 2)
+  remboursableCnas        Boolean  @default(false)
+  tauxRemboursement       Int?
+
+  @@map("lignes_factures")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Civilite {
+  M
+  MME
+  MLLE
+}
+
+enum Sexe {
+  M
+  F
+}
+
+enum OrganismeAssurance {
+  CNAS
+  CASNOS
+  MUTUELLE_PRIVEE
+  AUCUN
+}
+
+enum GroupeSanguin {
+  A_POS
+  A_NEG
+  B_POS
+  B_NEG
+  AB_POS
+  AB_NEG
+  O_POS
+  O_NEG
+}
+
+enum Rhesus {
+  POS
+  NEG
+}
+
+enum SituationFamiliale {
+  CELIBATAIRE
+  MARIE
+  DIVORCE
+  VEUF
+}
+
+enum Locale {
+  FR
+  AR
+  BER
+  EN
+}
+
+enum StatutPatient {
+  ACTIF
+  ARCHIVE
+  DECEDE
+}
+
+enum TypeConsultation {
+  CONSULTATION
+  URGENCE
+  CONTROLE
+  SUIVI_CHRONIQUE
+  TELECONSULTATION
+  VISITE_DOMICILE
+}
+
+enum StatutConsultation {
+  EN_COURS
+  TERMINEE
+  ANNULEE
+}
+
+enum TypeOrdonnance {
+  STANDARD
+  BIZONE
+  CHRONIQUE
+  STUPEFIANT
+  MAGISTRALE
+}
+
+enum StatutOrdonnance {
+  BROUILLON
+  VALIDEE
+  SIGNEE
+  IMPRIMEE
+  ENVOYEE
+  EXPIREE
+}
+
+enum ListeMedicament {
+  LISTE_I
+  LISTE_II
+  STUPEFIANT
+  PSYCHOTROPE
+  EN_VENTE_LIBRE
+}
+
+enum StatutEnregistrement {
+  ENREGISTRE_ANPP
+  EN_COURS
+  RETIRE
+}
+
+enum StatutStock {
+  DISPONIBLE
+  STOCK_FAIBLE
+  EN_RUPTURE
+  PERIME
+  RETIRE
+}
+
+enum TypeOperationStock {
+  ENTREE
+  SORTIE
+  AJUSTEMENT
+  PEREMPTION
+}
+
+enum TypeDocument {
+  SCAN
+  RADIO
+  IRM
+  ECHOGRAPHIE
+  ANALYSE_SANG
+  COURRIER_CONFRERE
+  ORDONNANCE
+  CERTIFICAT
+  COMPTE_RENDU_OPERATOIRE
+  ECG
+  PHOTO_CLINIQUE
+  AUTRE
+}
+
+enum SourceDocument {
+  SCANNER
+  APPAREIL_PHOTO
+  IMPORT_FICHIER
+  GENERATION_PDF
+}
+
+enum StatutVaccination {
+  EFFECTUEE
+  PLANIFIEE
+  REFUSEE
+  EN_RETARD
+}
+
+enum StatutProtocole {
+  ACTIF
+  SUSPENDU
+  TERMINE
+}
+
+enum TypeRequeteIA {
+  DIAGNOSTIC
+  INTERACTIONS
+  LITTERATURE
+  ANALYSE_RESULTATS
+  PROTOCOLES
+  REDACTION
+  DICTEE
+  DARIJA_TRADUCTION
+}
+
+enum DecisionIA {
+  ACCEPTEE
+  MODIFIEE
+  REFUSEE
+  EN_ATTENTE
+}
+
+enum SourceMedicale {
+  PUBMED
+  OMS_WHO
+  MSPRH
+  ANPP
+  SAMG
+  INTERNATIONAL
+}
+
+enum TypeJourFerie {
+  NATIONAL
+  RELIGIEUX
+}
+
+enum SecteurMedical {
+  PRIVE
+  PUBLIC
+  CONVENTIONNE_CNAS
+}
+
+enum ModePaiementDZ {
+  ESPECES
+  CHEQUE
+  CCP
+  CIB
+  EDAHABIA
+  BARIDIMOB
+  VIREMENT_BANCAIRE
+}
+
+enum StatutFacture {
+  BROUILLON
+  EMISE
+  PAYEE
+  ANNULEE
+}

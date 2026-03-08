@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TabibPro</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 480px;
+      height: 320px;
+      background: linear-gradient(135deg, #0f4c81 0%, #1a6da8 50%, #0d8a6f 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: white;
+      border-radius: 12px;
+      overflow: hidden;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+
+    .logo {
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 4px;
+    }
+
+    .logo span {
+      color: rgba(255, 255, 255, 0.6);
+      font-weight: 300;
+    }
+
+    .tagline {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 40px;
+      letter-spacing: 0.5px;
+    }
+
+    .status {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 12px;
+      min-height: 20px;
+      transition: opacity 0.3s;
+    }
+
+    .progress-bar-container {
+      width: 280px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+
+    .version {
+      position: absolute;
+      bottom: 16px;
+      right: 20px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="logo">Tabib<span>Pro</span></div>
+  <div class="tagline">Gestion médicale intelligente — Algérie</div>
+  <div class="status" id="status">Démarrage des services…</div>
+  <div class="progress-bar-container">
+    <div class="progress-bar" id="progress"></div>
+  </div>
+  <div class="version" id="version">v1.0.0</div>
+
+  <script>
+    const statusEl = document.getElementById('status')
+    const progressEl = document.getElementById('progress')
+    const versionEl = document.getElementById('version')
+
+    // Animate progress bar on load
+    let currentProgress = 5
+    function animateTo(target) {
+      if (currentProgress < target) {
+        currentProgress = Math.min(currentProgress + 1, target)
+        progressEl.style.width = currentProgress + '%'
+        if (currentProgress < target) requestAnimationFrame(() => animateTo(target))
+      }
+    }
+    animateTo(15)
+
+    // Listen for status updates from main process via preload
+    if (window.tabibpro) {
+      window.tabibpro.getVersion().then(v => { versionEl.textContent = 'v' + v })
+
+      window.tabibpro.onStatus((message, progress) => {
+        statusEl.textContent = message
+        animateTo(progress)
+      })
+    }
+  </script>
+</body>
+</html>

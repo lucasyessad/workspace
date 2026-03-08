@@ -1,0 +1,55 @@
+{
+  "app": {
+    "name": "TabibPro",
+    "tagline": "Smart Medical Management — Algeria Edition"
+  },
+  "auth": {
+    "login_success": "Login successful",
+    "login_failed": "Invalid email or password",
+    "logout_success": "Logged out successfully",
+    "mfa_required": "Two-factor authentication code required",
+    "mfa_invalid": "Invalid MFA code",
+    "account_locked": "Account locked. Try again in {minutes} minutes.",
+    "session_expired": "Your session has expired. Please log in again.",
+    "unauthorized": "Unauthorized access",
+    "forbidden": "You don't have permission for this action"
+  },
+  "patients": {
+    "created": "Patient created successfully",
+    "updated": "Patient record updated",
+    "not_found": "Patient not found",
+    "consent_required": "Patient consent is required (Law 18-07)",
+    "chifa_invalid": "Invalid Chifa card number",
+    "phone_invalid": "Invalid Algerian phone number"
+  },
+  "consultations": {
+    "created": "Consultation created",
+    "updated": "Consultation updated",
+    "closed": "Consultation completed",
+    "not_found": "Consultation not found"
+  },
+  "ia": {
+    "disabled": "Medical AI is unavailable in offline mode",
+    "budget_exceeded": "Daily AI budget reached. Try again tomorrow.",
+    "disclaimer": "⚠️ Diagnostic aid — This suggestion is for guidance only. The physician is the sole decision-maker.",
+    "darija_detected": "Algerian Darija detected — Automatic translation proposed",
+    "processing": "AI is analyzing your request..."
+  },
+  "offline": {
+    "mode": "Offline mode — Data saved locally",
+    "syncing": "Syncing...",
+    "synced": "Sync complete",
+    "pending": "{count} pending change(s) waiting to sync"
+  },
+  "stock": {
+    "low_stock": "⚠️ Low stock: {medicament} ({quantite} units remaining)",
+    "rupture_nationale": "⚠️ This medication is out of stock on the Algerian market",
+    "expired": "Expired medication: check your stock"
+  },
+  "errors": {
+    "server_error": "Server error. Please try again.",
+    "validation_error": "Invalid data",
+    "not_found": "Resource not found",
+    "network_error": "Network error. Check your connection."
+  }
+}

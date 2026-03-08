@@ -1,0 +1,29 @@
+{
+  "name": "@tabibpro/shared",
+  "version": "1.0.0",
+  "description": "Types et utilitaires partagés — TabibPro",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./constants": "./dist/constants/index.js",
+    "./types": "./dist/types/index.js",
+    "./validators": "./dist/validators/index.js",
+    "./utils": "./dist/utils/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "zod": "^3.23.0"
+  }
+}

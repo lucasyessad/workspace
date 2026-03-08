@@ -1,0 +1,41 @@
+{
+  "app": {
+    "name": "ⵎⴻⴷⵊⴻⵙⵜ ⴱⵔⵓ",
+    "tagline": "Asefru n uselmed amagzan — Algérie"
+  },
+  "auth": {
+    "login_success": "Tkemmled azday s wul yelhan",
+    "login_failed": "Imayl neɣ awal uffir d aselmed",
+    "logout_success": "Teffɣeḍ s wul yelhan",
+    "mfa_required": "Isem n usestebded s snat n tewwilin yettwasra",
+    "mfa_invalid": "Acode n MFA mačči d asdawan",
+    "account_locked": "Akunad yettwaḥbes. Ɛreḍ-d ticki {minutes} timutnin.",
+    "session_expired": "Asrag-nnek ifna. Snulfu-d azday.",
+    "unauthorized": "Ur d-teggem ara tasiregt n uxdem",
+    "forbidden": "Ur tesɛid ara tilas i umahil-agi"
+  },
+  "patients": {
+    "created": "Adlis n yemraden yettwa-snulfu s wul yelhan",
+    "updated": "Adlis n yemraden yettwa-leqqem",
+    "not_found": "Amraden ur yettwaf ara",
+    "consent_required": "Taffirent n umraden tella d waṭṭan (Loi 18-07)",
+    "chifa_invalid": "Uṭṭun n tkaṛd Chifa d aselmed",
+    "phone_invalid": "Uṭṭun n tiliɣri n Lezzayer d aselmed"
+  },
+  "ia": {
+    "disabled": "AI n uselmed ur yelli ara s wudem n ur ttuqqen",
+    "disclaimer": "⚠️ Tallalt i usteqsi — Tamawt-agi d taneqqist kan. Aqraw d netta i yettakken tazwart."
+  },
+  "offline": {
+    "mode": "Awudem n ur ttuqqen — Isefka ttwaḥfaẓen dagi",
+    "syncing": "Tilawt tettaɣ...",
+    "synced": "Tilawt tekfa",
+    "pending": "{count} asleḍ(en) ittimett i tilawt"
+  },
+  "errors": {
+    "server_error": "Tuccḍa n uqeddac. Ɛreḍ-d ticki.",
+    "validation_error": "Isefka mačči d isdawan",
+    "not_found": "Amdan ur yettwaf ara",
+    "network_error": "Tuccḍa n uceṛṛeḍ. Senqed tuqqna-k."
+  }
+}

@@ -1,0 +1,70 @@
+# ============================================================
+# TabibPro — Configuration Traefik v3.2
+# Reverse proxy + SSL Let's Encrypt automatique
+# ============================================================
+
+# ---- API Traefik (dashboard désactivé en prod) ----
+api:
+  dashboard: false
+  insecure: false
+
+# ---- Points d'entrée ----
+entryPoints:
+  web:
+    address: ":80"
+    # Redirection automatique HTTP → HTTPS
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
+
+# ---- Fournisseurs ----
+providers:
+  # Découverte automatique via Docker labels
+  docker:
+    exposedByDefault: false
+    network: medgest-external
+    watch: true
+
+  # Fichier de config statique (règles supplémentaires si besoin)
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+
+# ---- Certificats SSL (Let's Encrypt) ----
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: admin@tabibpro.dz
+      storage: /certs/acme.json
+      # Challenge HTTP (port 80 doit être accessible)
+      httpChallenge:
+        entryPoint: web
+
+# ---- Logs ----
+log:
+  level: INFO
+  format: json
+
+accessLog:
+  format: json
+  fields:
+    headers:
+      defaultMode: drop
+      names:
+        X-Forwarded-For: keep
+        User-Agent: keep
+
+# ---- Métriques (optionnel) ----
+# metrics:
+#   prometheus:
+#     addEntryPointsLabels: true
+#     addServicesLabels: true

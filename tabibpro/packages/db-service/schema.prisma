@@ -1,0 +1,454 @@
+// ============================================================
+// MedGest Pro — Schéma Prisma — Base de données SERVICE
+// Stockage LOCAL ou CLOUD selon choix du client
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DB_SERVICE_URL")
+}
+
+// ============================================================
+// UTILISATEURS & AUTHENTIFICATION
+// ============================================================
+
+model User {
+  id               String   @id @default(uuid())
+  email            String   @unique
+  emailPro         String?  @unique // dr.nom@medgestpro.dz
+  passwordHash     String
+  role             UserRole
+  isActive         Boolean  @default(true)
+  isEmailVerified  Boolean  @default(false)
+  mfaEnabled       Boolean  @default(false)
+  mfaSecret        String?
+  languePreferee   Locale   @default(FR)
+  pays             String   @default("DZ")
+  wilaya           String?  // Code wilaya 01-58
+  fuseauHoraire    String   @default("Africa/Algiers")
+
+  // Sécurité
+  passwordChangedAt DateTime?
+  loginAttempts    Int      @default(0)
+  lockedUntil      DateTime?
+  lastLoginAt      DateTime?
+  lastLoginIp      String?
+
+  // Profil de base
+  nomComplet       String
+  telephone        String?
+  photoPath        String?
+
+  // Métadonnées
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  sessions         Session[]
+  refreshTokens    RefreshToken[]
+  notifications    Notification[]
+  conversationsComme ConversationParticipant[]
+  messagesSent     Message[]
+  auditLogs        AuditLog[]
+  configIA         ConfigIACabinet[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Session {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token       String   @unique
+  deviceInfo  String?
+  ipAddress   String?
+  userAgent   String?
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  lastUsedAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token       String   @unique
+  expiresAt   DateTime
+  isRevoked   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ============================================================
+// CABINET
+// ============================================================
+
+model Cabinet {
+  id                    String  @id @default(uuid())
+  nomFr                 String
+  nomAr                 String?
+  adresseLigne1         String
+  adresseLigne2         String?
+  commune               String
+  daira                 String?
+  wilaya                String  // Code 01-58
+  codePostal            String?
+
+  telephone             String?
+  email                 String?
+  siteWeb               String?
+
+  // Légal (Algérie)
+  numeroRegistreCommerce String?
+  nif                   String? // Numéro d'Identification Fiscale
+  conventionCnas        Boolean @default(false)
+
+  // Personnalisation
+  logoPath              String?
+  couleurPrimaire       String? // Hex color pour personnalisation
+  devise                String  @default("DZD")
+
+  // Horaires — Adapté Algérie (repos VEN-SAM)
+  joursOuverture        Json    @default("[0,1,2,3,4]") // 0=Dim, 1=Lun, 2=Mar, 3=Mer, 4=Jeu
+  heureOuverture        String  @default("08:00")
+  heureFermeture        String  @default("20:00")
+  pauseDebut            String? // Pause déjeuner
+  pauseFin              String?
+
+  // Tarification
+  tarification          Json    @default("{}")
+
+  // Config technique
+  domaineName           String? // Domaine personnalisé si applicable
+  planAbonnement        PlanAbonnement @default(STARTER)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  rendezVous            RendezVous[]
+  configIA              ConfigIACabinet[]
+  remplacants           Remplacant[]
+
+  @@map("cabinets")
+}
+
+// ============================================================
+// RENDEZ-VOUS
+// ============================================================
+
+model RendezVous {
+  id                    String   @id @default(uuid())
+  cabinetId             String
+  cabinet               Cabinet  @relation(fields: [cabinetId], references: [id])
+  patientId             String   // ID patient (DB médicale — référence croisée)
+  medecinId             String   // ID médecin
+
+  dateHeure             DateTime
+  dureePrevueMinutes    Int      @default(30)
+  typeRdv               String
+  motif                 String?
+  notes                 String?
+
+  statut                StatutRdv @default(PLANIFIE)
+  rappelEnvoye          Boolean  @default(false)
+  dateRappel            DateTime?
+
+  // Confirmation patient
+  confirmePar           String?   // 'patient' | 'secretaire' | 'medecin'
+  confirmeAt            DateTime?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([cabinetId])
+  @@index([medecinId])
+  @@index([patientId])
+  @@index([dateHeure])
+  @@map("rendez_vous")
+}
+
+// ============================================================
+// MESSAGERIE (avec support darija)
+// ============================================================
+
+model Conversation {
+  id            String   @id @default(uuid())
+  sujet         String?
+  type          TypeConversation @default(PATIENT_MEDECIN)
+  patientId     String?  // ID patient (DB médicale)
+  cabinetId     String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  dernierMessageAt DateTime?
+
+  messages      Message[]
+  participants  ConversationParticipant[]
+
+  @@index([patientId])
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  lastReadAt     DateTime?
+
+  @@unique([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  expediteurId   String
+  expediteur     User         @relation(fields: [expediteurId], references: [id])
+
+  contenu        String       @db.Text
+  contenuHtml    String?      @db.Text
+
+  // Darija → Traduction IA
+  langueDetectee String?      // darija_latin, darija_arabe, francais, arabe_standard
+  traductionFr   String?      @db.Text // Traduction automatique si darija
+  symptomesExtraits Json?     @default("[]")
+
+  type           TypeMessage  @default(TEXTE)
+  fichierPath    String?
+  estLu          Boolean      @default(false)
+
+  // File d'attente pour mode offline
+  enAttente      Boolean      @default(false)
+  syncPending    Boolean      @default(false)
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([conversationId])
+  @@index([expediteurId])
+  @@map("messages")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  type           TypeNotification
+  titre          String
+  corps          String
+  donnees        Json?
+  isLue          Boolean  @default(false)
+  lueAt          DateTime?
+
+  // File d'attente offline
+  enAttente      Boolean  @default(false)
+  envoyeeEmail   Boolean  @default(false)
+  envoyeeSms     Boolean  @default(false)
+
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([isLue])
+  @@map("notifications")
+}
+
+// ============================================================
+// AUDIT TRAIL (conformité Loi 18-07)
+// ============================================================
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id])
+  action         String   // CREATE, UPDATE, DELETE, VIEW, LOGIN, etc.
+  entite         String   // Patient, Consultation, Ordonnance...
+  entiteId       String?
+  anciennesValeurs Json?
+  nouvellesValeurs Json?
+  ipAddress      String?
+  userAgent      String?
+  sessionId      String?
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entite, entiteId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================================
+// CONFIGURATION IA
+// ============================================================
+
+model ConfigIACabinet {
+  id                      String  @id @default(uuid())
+  cabinetId               String
+  cabinet                 Cabinet @relation(fields: [cabinetId], references: [id])
+  configuredById          String
+  configuredBy            User    @relation(fields: [configuredById], references: [id])
+
+  iaEnabled               Boolean @default(true)
+  diagnosticEnabled       Boolean @default(true)
+  interactionsEnabled     Boolean @default(true)
+  litteratureEnabled      Boolean @default(true)
+  analyseResultatsEnabled Boolean @default(true)
+  protocolesEnabled       Boolean @default(true)
+  redactionEnabled        Boolean @default(true)
+  dicteeEnabled           Boolean @default(true)
+  darijaEnabled           Boolean @default(true) // Traduction darija — spécifique Algérie
+
+  budgetJournalierDzd     Decimal? @db.Decimal(10, 2) @default(5000)
+  modeleDefaut            String   @default("claude-sonnet-4-6")
+
+  // Politique acceptée par le médecin
+  politiqueIaAcceptee     Boolean @default(false)
+  datePolitiqueAcceptee   DateTime?
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@unique([cabinetId])
+  @@map("configs_ia_cabinet")
+}
+
+// ============================================================
+// REMPLAÇANTS
+// ============================================================
+
+model Remplacant {
+  id              String   @id @default(uuid())
+  cabinetId       String
+  cabinet         Cabinet  @relation(fields: [cabinetId], references: [id])
+  medecinId       String   // Médecin remplacé (DB médicale)
+  remplacantId    String   // Médecin remplaçant (DB médicale)
+
+  dateDebut       DateTime @db.Date
+  dateFin         DateTime? @db.Date
+  motif           String?
+
+  statut          StatutRemplacement @default(EN_ATTENTE)
+  droitsAcces     Json @default("{}")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("remplacants")
+}
+
+// ============================================================
+// SYNCHRONISATION OFFLINE
+// ============================================================
+
+model SyncQueue {
+  id             String   @id @default(uuid())
+  deviceId       String
+  userId         String
+  table          String
+  operation      OperationSync
+  recordId       String
+  data           Json
+  timestamp      DateTime @default(now())
+  synced         Boolean  @default(false)
+  syncedAt       DateTime?
+  conflictData   Json?
+  conflictResolved Boolean @default(false)
+
+  @@index([deviceId])
+  @@index([synced])
+  @@map("sync_queue")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserRole {
+  ADMIN
+  MEDECIN
+  SECRETAIRE
+  INFIRMIER
+  PATIENT
+}
+
+enum Locale {
+  FR
+  AR
+  BER
+  EN
+}
+
+enum PlanAbonnement {
+  STARTER
+  PROFESSIONNEL
+  CLINIQUE
+  ENTREPRISE
+}
+
+enum StatutRdv {
+  PLANIFIE
+  CONFIRME
+  EN_COURS
+  TERMINE
+  ANNULE
+  ABSENT
+}
+
+enum TypeConversation {
+  PATIENT_MEDECIN
+  INTERNE
+  EQUIPE
+}
+
+enum TypeMessage {
+  TEXTE
+  FICHIER
+  ORDONNANCE
+  IMAGE
+  SYSTEME
+}
+
+enum TypeNotification {
+  RDV_RAPPEL
+  RDV_CONFIRME
+  RDV_ANNULE
+  MESSAGE_RECU
+  RESULTAT_LABO
+  RAPPEL_TRAITEMENT
+  ALERTE_STOCK
+  SYSTEME
+}
+
+enum StatutRemplacement {
+  EN_ATTENTE
+  ACTIF
+  TERMINE
+  ANNULE
+}
+
+enum OperationSync {
+  CREATE
+  UPDATE
+  DELETE
+}

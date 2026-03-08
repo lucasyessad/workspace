@@ -1,0 +1,76 @@
+{
+  "expo": {
+    "name": "TabibPro",
+    "slug": "tabibpro",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2563EB"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "dz.tabibpro.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "TabibPro utilise la caméra pour scanner des documents médicaux.",
+        "NSMicrophoneUsageDescription": "TabibPro utilise le microphone pour la dictée médicale.",
+        "NSFaceIDUsageDescription": "TabibPro utilise Face ID pour sécuriser l'accès.",
+        "NSPhotoLibraryUsageDescription": "TabibPro accède à vos photos pour importer des documents."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#2563EB"
+      },
+      "package": "dz.tabibpro.app",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store",
+      "expo-local-authentication",
+      [
+        "expo-camera",
+        { "cameraPermission": "TabibPro utilise la caméra pour scanner des documents." }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#2563EB",
+          "sounds": ["./assets/notification.wav"]
+        }
+      ]
+    ],
+    "scheme": "tabibpro",
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "tabibpro-app"
+      }
+    }
+  }
+}

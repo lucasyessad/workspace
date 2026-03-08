@@ -1,0 +1,58 @@
+# ============================================================
+# TabibPro — Traefik — Middlewares dynamiques
+# ============================================================
+
+http:
+  middlewares:
+
+    # Sécurité : headers HTTP stricts
+    secure-headers:
+      headers:
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        forceSTSHeader: true
+        frameDeny: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        permissionsPolicy: "camera=self, microphone=self"
+        customResponseHeaders:
+          X-Powered-By: ""
+
+    # Rate limiting global (anti-brute force)
+    rate-limit:
+      rateLimit:
+        average: 100
+        period: 1m
+        burst: 50
+
+    # Rate limiting strict pour l'auth
+    rate-limit-auth:
+      rateLimit:
+        average: 10
+        period: 1m
+        burst: 5
+
+    # Compression gzip
+    compress:
+      compress: {}
+
+    # CORS pour l'API
+    cors-api:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        accessControlAllowHeaders:
+          - Authorization
+          - Content-Type
+          - X-Requested-With
+        accessControlAllowOriginList:
+          - "https://app.tabibpro.dz"
+          - "https://patient.tabibpro.dz"
+        accessControlMaxAge: 3600
