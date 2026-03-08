@@ -6,13 +6,15 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
+    "@supabase/supabase-js": "^2.98.0",
     "@types/node": "^25.3.5",
     "@types/react": "^19.2.14",
     "autoprefixer": "^10.4.27",
@@ -29,5 +31,10 @@
     "remark-gfm": "^4.0.1",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6"
   }
 }

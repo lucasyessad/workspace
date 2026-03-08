@@ -91,23 +91,46 @@ export default function ModuleScreen({ route, navigation }: Props) {
         return;
       }
 
-      const text = await response.text();
+      // Real SSE streaming using ReadableStream
       let accumulated = "";
-
-      const lines = text.split("\n");
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          const data = line.slice(6);
-          if (data === "[DONE]") break;
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.text) accumulated += parsed.text;
-            if (parsed.error) accumulated += `\n\n**Erreur**: ${parsed.error}`;
-          } catch {}
+      const reader = response.body?.getReader();
+      if (reader) {
+        const decoder = new TextDecoder();
+        let buffer = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const data = line.slice(6);
+              if (data === "[DONE]") break;
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.text) { accumulated += parsed.text; setAiResult(accumulated); }
+                if (parsed.error) { accumulated += `\n\n**Erreur**: ${parsed.error}`; setAiResult(accumulated); }
+              } catch {}
+            }
+          }
         }
+      } else {
+        // Fallback: read all at once
+        const text = await response.text();
+        for (const line of text.split("\n")) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+            if (data === "[DONE]") break;
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.text) accumulated += parsed.text;
+            } catch {}
+          }
+        }
+        setAiResult(accumulated);
       }
 
-      setAiResult(accumulated);
       await saveModuleState(moduleId, { formData, aiResult: accumulated, completed: true });
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== "AbortError") {

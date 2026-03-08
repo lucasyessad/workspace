@@ -37,13 +37,38 @@ export interface CalculationResult {
   color?: "success" | "warning" | "danger" | "accent";
 }
 
+export interface HistoryEntry {
+  date: string;
+  formData: FormData;
+  aiResult?: string;
+  calculationResults?: CalculationResult[];
+}
+
 export interface ModuleState {
   formData: FormData;
   aiResult?: string;
   completed: boolean;
   calculationResults?: CalculationResult[];
+  history?: HistoryEntry[];
 }
+
+export interface OnboardingData {
+  age?: number;
+  revenus_mensuels?: number;
+  depenses_mensuelles?: number;
+  epargne_totale?: number;
+  dettes_totales?: number;
+  investissements?: number;
+  revenus_annuels?: number;
+  statut_fiscal?: string;
+  lieu_residence?: string;
+  completed: boolean;
+}
+
+export type Theme = "dark" | "light";
 
 export interface AppState {
   modules: { [moduleId: number]: ModuleState };
+  onboarding?: OnboardingData;
+  theme?: Theme;
 }

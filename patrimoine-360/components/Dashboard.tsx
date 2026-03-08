@@ -2,17 +2,29 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { modules } from "@/lib/modules";
+import { AppState } from "@/types";
+import ThemeToggle from "./ThemeToggle";
+import BilanComplet from "./BilanComplet";
+import { useTheme } from "./ThemeProvider";
 
 interface DashboardProps {
   completedModules: number[];
+  appState: AppState;
 }
 
-export default function Dashboard({ completedModules }: DashboardProps) {
+export default function Dashboard({ completedModules, appState }: DashboardProps) {
   const total = modules.length;
   const done = completedModules.length;
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Top bar */}
+      <div className="flex justify-end items-center gap-3 mb-4">
+        <BilanComplet appState={appState} />
+        <ThemeToggle theme={theme} onToggle={toggleTheme} />
+      </div>
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -40,9 +52,12 @@ export default function Dashboard({ completedModules }: DashboardProps) {
         </div>
         <div className="flex gap-1">
           {modules.map((m) => (
-            <div
+            <motion.div
               key={m.id}
-              className={`h-2 flex-1 rounded-full transition-all duration-500 ${
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: m.id * 0.05, duration: 0.4 }}
+              className={`h-2 flex-1 rounded-full transition-all duration-500 origin-left ${
                 completedModules.includes(m.id) ? "bg-green-400" : "bg-white/[0.08]"
               }`}
             />
@@ -60,13 +75,19 @@ export default function Dashboard({ completedModules }: DashboardProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
             >
               <Link href={`/module/${m.id}`}>
                 <div className="group relative rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 hover:border-indigo-500/40 hover:bg-white/[0.04] transition-all duration-300 cursor-pointer h-full">
                   {isComplete && (
-                    <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-green-400/20 flex items-center justify-center">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute top-3 right-3 w-6 h-6 rounded-full bg-green-400/20 flex items-center justify-center"
+                    >
                       <span className="text-green-400 text-xs">&#10003;</span>
-                    </div>
+                    </motion.div>
                   )}
                   <div className="flex items-start gap-3 mb-3">
                     <span className="text-2xl">{m.icon}</span>
