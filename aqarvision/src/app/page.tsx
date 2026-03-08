@@ -22,6 +22,9 @@ export default function HomePage() {
             </span>
           </Link>
           <div className="flex items-center gap-4">
+            <Link href="/pricing" className="text-sm text-gray-600 hover:text-bleu-nuit hidden sm:inline">
+              Tarifs
+            </Link>
             <Link href="/auth/login">
               <Button variant="ghost">Connexion</Button>
             </Link>

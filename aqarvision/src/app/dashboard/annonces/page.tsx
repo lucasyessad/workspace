@@ -112,12 +112,11 @@ export default async function AnnoncesPage() {
 
                     {/* Actions */}
                     <div className="flex gap-2 flex-shrink-0">
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" className="text-red-600 hover:bg-red-50">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <Link href={`/dashboard/annonces/${annonce.id}/edit`}>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </CardContent>
