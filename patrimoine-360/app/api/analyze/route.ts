@@ -1,8 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { getPromptConfig } from "@/lib/prompts";
 import { apiSecurityCheck } from "@/lib/api-security";
-import { sanitizeFormData, isValidModuleId } from "@/lib/sanitize";
+import { sanitizeFormData } from "@/lib/sanitize";
 import { logAuditEvent, AuditActions } from "@/lib/audit-log";
+import { analyzeRequestSchema, formatZodErrors } from "@/lib/validation";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
@@ -18,20 +20,17 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { moduleId, formData } = body;
 
-    // === Input validation ===
-    if (!moduleId || !formData) {
-      await logAuditEvent(AuditActions.SECURITY_INVALID_INPUT, { ip: security.ip, metadata: { reason: "missing fields" } });
-      return Response.json({ error: "moduleId et formData sont requis" }, { status: 400 });
+    // === Validation Zod ===
+    const validation = analyzeRequestSchema.safeParse(body);
+    if (!validation.success) {
+      const errors = formatZodErrors(validation.error);
+      await logAuditEvent(AuditActions.SECURITY_INVALID_INPUT, { ip: security.ip, metadata: { reason: "validation", errors } });
+      logger.warn("Entrée invalide pour analyse", "api.analyze", { errors });
+      return Response.json({ error: `Données invalides: ${errors.join(", ")}` }, { status: 400 });
     }
 
-    if (!isValidModuleId(moduleId)) {
-      await logAuditEvent(AuditActions.SECURITY_INVALID_INPUT, { ip: security.ip, metadata: { reason: "invalid moduleId", moduleId } });
-      return Response.json({ error: "moduleId invalide (1-12)" }, { status: 400 });
-    }
-
-    // Sanitize form data
+    const { moduleId, formData } = validation.data;
     const sanitizedData = sanitizeFormData(formData);
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -98,6 +97,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (err) {
+    logger.error("Erreur analyse", "api.analyze", { error: String(err) });
     await logAuditEvent(AuditActions.API_ANALYZE_ERROR, { metadata: { error: String(err) } });
     return Response.json({ error: String(err) }, { status: 500 });
   }

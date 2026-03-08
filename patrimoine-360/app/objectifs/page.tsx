@@ -4,7 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Plus, Target, Trash2, Edit3, Check, X } from "lucide-react";
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { useTheme } from "@/components/ThemeProvider";
+import { useToast } from "@/components/Toast";
+import { generateId } from "@/lib/storage";
 
 interface Objective {
   id: string;
@@ -43,9 +46,11 @@ function saveObjectives(objectives: Objective[]) {
 
 export default function ObjectifsPage() {
   const { theme, toggleTheme } = useTheme();
+  const { toast } = useToast();
   const [objectives, setObjectives] = useState<Objective[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "", category: "epargne", targetAmount: "", currentAmount: "", targetDate: "", priority: "3", notes: "",
   });
@@ -54,7 +59,7 @@ export default function ObjectifsPage() {
 
   const handleSave = () => {
     const obj: Objective = {
-      id: editingId || Date.now().toString(),
+      id: editingId || generateId(),
       title: form.title,
       category: form.category,
       targetAmount: parseFloat(form.targetAmount) || 0,
@@ -77,6 +82,7 @@ export default function ObjectifsPage() {
     setShowForm(false);
     setEditingId(null);
     setForm({ title: "", category: "epargne", targetAmount: "", currentAmount: "", targetDate: "", priority: "3", notes: "" });
+    toast(editingId ? "Objectif modifié" : "Objectif créé", "success");
   };
 
   const handleEdit = (obj: Objective) => {
@@ -92,6 +98,8 @@ export default function ObjectifsPage() {
     const updated = objectives.filter((o) => o.id !== id);
     setObjectives(updated);
     saveObjectives(updated);
+    setDeleteConfirmId(null);
+    toast("Objectif supprimé", "info");
   };
 
   const handleToggleStatus = (id: string) => {
@@ -223,7 +231,7 @@ export default function ObjectifsPage() {
                     </div>
                     <div className="flex gap-1">
                       <button onClick={() => handleEdit(obj)} className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition"><Edit3 size={14} /></button>
-                      <button onClick={() => handleDelete(obj.id)} className="p-1.5 text-[var(--color-text-muted)] hover:text-danger-500 transition"><Trash2 size={14} /></button>
+                      <button onClick={() => setDeleteConfirmId(obj.id)} className="p-1.5 text-[var(--color-text-muted)] hover:text-danger-500 transition"><Trash2 size={14} /></button>
                     </div>
                   </div>
                 </motion.div>
@@ -231,6 +239,15 @@ export default function ObjectifsPage() {
             })}
           </div>
         )}
+        <ConfirmDialog
+          open={deleteConfirmId !== null}
+          onConfirm={() => deleteConfirmId && handleDelete(deleteConfirmId)}
+          onCancel={() => setDeleteConfirmId(null)}
+          title="Supprimer l'objectif"
+          description="Cet objectif sera définitivement supprimé. Cette action est irréversible."
+          confirmLabel="Supprimer"
+          variant="danger"
+        />
       </div>
     </div>
   );

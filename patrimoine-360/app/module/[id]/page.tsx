@@ -1,41 +1,33 @@
 "use client";
 import { useParams } from "next/navigation";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, Copy, RotateCcw, Check } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { getModule } from "@/lib/modules";
 import { getPromptConfig } from "@/lib/prompts";
 import { calculate } from "@/lib/calculators";
-import { FormData as FData, CalculationResult, AppState, HistoryEntry } from "@/types";
+import { FormData as FData, CalculationResult, HistoryEntry } from "@/types";
 import ModuleForm from "@/components/ModuleForm";
 import LocalCalculations from "@/components/LocalCalculations";
 import AIResult from "@/components/AIResult";
 import ExportButtons from "@/components/ExportButtons";
 import Sidebar from "@/components/Sidebar";
-import Charts from "@/components/Charts";
 import HistoryPanel from "@/components/HistoryPanel";
-import ScenariosPanel from "@/components/ScenariosPanel";
 import ThemeToggle from "@/components/ThemeToggle";
 import Breadcrumb from "@/components/Breadcrumb";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import MobileNav from "@/components/MobileNav";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { useTheme } from "@/components/ThemeProvider";
 import { useToast } from "@/components/Toast";
+import { useStreamingResponse } from "@/hooks/useStreamingResponse";
+import { loadAppState, saveAppState } from "@/lib/storage";
 import { trackEvent, Events } from "@/lib/analytics";
 
-function loadState(): AppState {
-  try {
-    const stored = localStorage.getItem("patrimoine360_state");
-    if (stored) return JSON.parse(stored);
-  } catch {}
-  return { modules: {} };
-}
-
-function saveState(state: AppState) {
-  try {
-    localStorage.setItem("patrimoine360_state", JSON.stringify(state));
-  } catch {}
-}
+const Charts = dynamic(() => import("@/components/Charts"), { ssr: false });
+const ScenariosPanel = dynamic(() => import("@/components/ScenariosPanel"), { ssr: false });
 
 const pageVariants = {
   initial: { opacity: 0, x: 20 },
@@ -53,14 +45,48 @@ export default function ModulePage() {
   const [formData, setFormData] = useState<FData>({});
   const [calculations, setCalculations] = useState<CalculationResult[] | null>(null);
   const [aiResult, setAiResult] = useState("");
-  const [isStreaming, setIsStreaming] = useState(false);
   const [copied, setCopied] = useState(false);
   const [completedModules, setCompletedModules] = useState<number[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const abortRef = useRef<AbortController | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  const { isStreaming, start: startStream } = useStreamingResponse({
+    url: "/api/analyze",
+    onComplete: (text) => {
+      setAiResult(text);
+      const state = loadAppState();
+      if (!state.modules[moduleId]) state.modules[moduleId] = { formData, completed: false };
+      state.modules[moduleId].aiResult = text;
+      state.modules[moduleId].completed = true;
+
+      const existingHistory = state.modules[moduleId].history || [];
+      const entry: HistoryEntry = {
+        date: new Date().toISOString(),
+        formData: { ...formData },
+        aiResult: text,
+        calculationResults: calculations ? [...calculations] : undefined,
+        version: existingHistory.length + 1,
+        modelUsed: "claude-sonnet-4-20250514",
+      };
+      if (!state.modules[moduleId].history) state.modules[moduleId].history = [];
+      state.modules[moduleId].history!.push(entry);
+
+      trackEvent(Events.MODULE_ANALYSIS_COMPLETE, { moduleId });
+      if (state.modules[moduleId].history!.length > 10) {
+        state.modules[moduleId].history = state.modules[moduleId].history!.slice(-10);
+      }
+      setHistory(state.modules[moduleId].history!);
+      saveAppState(state);
+      setCompletedModules((prev) => [...new Set([...prev, moduleId])]);
+      toast("Analyse terminée avec succès", "success");
+    },
+    onError: () => {
+      toast("L'analyse a échoué. Veuillez réessayer.", "error");
+    },
+  });
 
   useEffect(() => {
-    const state = loadState();
+    const state = loadAppState();
     const moduleState = state.modules[moduleId];
     if (moduleState) {
       setFormData(moduleState.formData || {});
@@ -84,12 +110,12 @@ export default function ModulePage() {
   }, [formData, moduleId, mod?.hasCalculator]);
 
   useEffect(() => {
-    const state = loadState();
+    const state = loadAppState();
     if (!state.modules[moduleId]) {
       state.modules[moduleId] = { formData: {}, completed: false };
     }
     state.modules[moduleId].formData = formData;
-    saveState(state);
+    saveAppState(state);
   }, [formData, moduleId]);
 
   const handleFieldChange = useCallback((id: string, value: string | number) => {
@@ -97,83 +123,9 @@ export default function ModulePage() {
   }, []);
 
   const handleAnalyze = async () => {
-    setIsStreaming(true);
     setAiResult("");
-    abortRef.current = new AbortController();
-
-    try {
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ moduleId, formData }),
-        signal: abortRef.current.signal,
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        setAiResult(`**Erreur**: ${err.error || "Une erreur est survenue"}`);
-        toast("L'analyse a échoué. Veuillez réessayer.", "error");
-        setIsStreaming(false);
-        return;
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) return;
-      const decoder = new TextDecoder();
-      let accumulated = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split("\n")) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6);
-            if (data === "[DONE]") break;
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.text) { accumulated += parsed.text; setAiResult(accumulated); }
-              if (parsed.error) { accumulated += `\n\n**Erreur**: ${parsed.error}`; setAiResult(accumulated); }
-            } catch {}
-          }
-        }
-      }
-
-      const state = loadState();
-      if (!state.modules[moduleId]) state.modules[moduleId] = { formData, completed: false };
-      state.modules[moduleId].aiResult = accumulated;
-      state.modules[moduleId].completed = true;
-
-      const existingHistory = state.modules[moduleId].history || [];
-      const nextVersion = existingHistory.length + 1;
-
-      const entry: HistoryEntry = {
-        date: new Date().toISOString(),
-        formData: { ...formData },
-        aiResult: accumulated,
-        calculationResults: calculations ? [...calculations] : undefined,
-        version: nextVersion,
-        modelUsed: "claude-sonnet-4-20250514",
-      };
-      if (!state.modules[moduleId].history) state.modules[moduleId].history = [];
-      state.modules[moduleId].history!.push(entry);
-
-      trackEvent(Events.MODULE_ANALYSIS_COMPLETE, { moduleId });
-      if (state.modules[moduleId].history!.length > 10) {
-        state.modules[moduleId].history = state.modules[moduleId].history!.slice(-10);
-      }
-      setHistory(state.modules[moduleId].history!);
-      saveState(state);
-      setCompletedModules((prev) => [...new Set([...prev, moduleId])]);
-      toast("Analyse terminée avec succès", "success");
-    } catch (err: unknown) {
-      if (err instanceof Error && err.name !== "AbortError") {
-        setAiResult(`**Erreur**: ${err.message}`);
-        toast("Erreur lors de l'analyse", "error");
-      }
-    } finally {
-      setIsStreaming(false);
-    }
+    const text = await startStream({ moduleId, formData });
+    if (text) setAiResult(text);
   };
 
   const handleCopyPrompt = () => {
@@ -187,9 +139,9 @@ export default function ModulePage() {
 
   const handleReset = () => {
     setFormData({}); setAiResult(""); setCalculations(null); setHistory([]);
-    const state = loadState();
+    const state = loadAppState();
     delete state.modules[moduleId];
-    saveState(state);
+    saveAppState(state);
     setCompletedModules((prev) => prev.filter((id) => id !== moduleId));
     toast("Module réinitialisé", "info");
   };
@@ -211,10 +163,13 @@ export default function ModulePage() {
             <motion.div key={moduleId} variants={pageVariants} initial="initial" animate="animate" exit="exit" className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
               {/* Topbar */}
               <div className="flex justify-between items-center mb-4">
-                <Breadcrumb items={[
-                  { label: "Modules", href: "/" },
-                  { label: `${String(mod.id).padStart(2, "0")} — ${mod.title}` },
-                ]} />
+                <div className="flex items-center gap-3">
+                  <MobileNav completedModules={completedModules} />
+                  <Breadcrumb items={[
+                    { label: "Modules", href: "/" },
+                    { label: `${String(mod.id).padStart(2, "0")} — ${mod.title}` },
+                  ]} />
+                </div>
                 <ThemeToggle theme={theme} onToggle={toggleTheme} />
               </div>
 
@@ -234,7 +189,7 @@ export default function ModulePage() {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="mb-8">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-heading font-serif text-[var(--color-text-primary)] section-marker">Vos informations</h2>
-                  <button onClick={handleReset} className="btn-ghost text-caption text-[var(--color-text-muted)]" aria-label="Réinitialiser le formulaire">
+                  <button onClick={() => setShowResetConfirm(true)} className="btn-ghost text-caption text-[var(--color-text-muted)]" aria-label="Réinitialiser le formulaire">
                     <RotateCcw size={12} /> Réinitialiser
                   </button>
                 </div>
@@ -300,6 +255,17 @@ export default function ModulePage() {
               </nav>
             </motion.div>
           </AnimatePresence>
+
+          {/* Modale de confirmation reset */}
+          <ConfirmDialog
+            open={showResetConfirm}
+            onConfirm={handleReset}
+            onCancel={() => setShowResetConfirm(false)}
+            title="Réinitialiser le module"
+            description="Toutes les données saisies, les résultats d'analyse et l'historique de ce module seront supprimés. Cette action est irréversible."
+            confirmLabel="Réinitialiser"
+            variant="danger"
+          />
         </ErrorBoundary>
       </main>
     </div>

@@ -1,30 +1,23 @@
 "use client";
 import { useState, useEffect } from "react";
-import Dashboard from "@/components/Dashboard";
+import dynamic from "next/dynamic";
 import OnboardingWizard, { mapOnboardingToModules } from "@/components/OnboardingWizard";
+import { DashboardSkeleton } from "@/components/Skeleton";
 import { OnboardingData, AppState } from "@/types";
+import { loadAppState, saveAppState } from "@/lib/storage";
 
-function loadState(): AppState {
-  try {
-    const stored = localStorage.getItem("patrimoine360_state");
-    if (stored) return JSON.parse(stored);
-  } catch {}
-  return { modules: {} };
-}
-
-function saveState(state: AppState) {
-  try {
-    localStorage.setItem("patrimoine360_state", JSON.stringify(state));
-  } catch {}
-}
+const Dashboard = dynamic(() => import("@/components/Dashboard"), {
+  loading: () => <DashboardSkeleton />,
+});
 
 export default function HomePage() {
   const [completedModules, setCompletedModules] = useState<number[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [appState, setAppState] = useState<AppState>({ modules: {} });
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const state = loadState();
+    const state = loadAppState();
     setAppState(state);
     const completed = Object.entries(state.modules || {})
       .filter(([, v]) => (v as { completed: boolean }).completed)
@@ -34,10 +27,17 @@ export default function HomePage() {
     if (!state.onboarding?.completed && Object.keys(state.modules).length === 0) {
       setShowOnboarding(true);
     }
+
+    // Enregistrement du service worker
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+
+    setMounted(true);
   }, []);
 
   const handleOnboardingComplete = (data: OnboardingData) => {
-    const state = loadState();
+    const state = loadAppState();
     state.onboarding = data;
     const mapped = mapOnboardingToModules(data);
     for (const [moduleId, fields] of Object.entries(mapped)) {
@@ -47,17 +47,19 @@ export default function HomePage() {
       }
       state.modules[id].formData = { ...state.modules[id].formData, ...fields };
     }
-    saveState(state);
+    saveAppState(state);
     setAppState(state);
     setShowOnboarding(false);
   };
 
   const handleSkipOnboarding = () => {
-    const state = loadState();
+    const state = loadAppState();
     state.onboarding = { completed: true };
-    saveState(state);
+    saveAppState(state);
     setShowOnboarding(false);
   };
+
+  if (!mounted) return <DashboardSkeleton />;
 
   return (
     <>

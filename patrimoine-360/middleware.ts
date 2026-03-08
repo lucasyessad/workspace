@@ -31,19 +31,24 @@ export function middleware(request: NextRequest) {
   );
 
   // Content Security Policy
+  const isDev = process.env.NODE_ENV === "development";
   response.headers.set(
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // Next.js requires unsafe-eval in dev
+      isDev
+        ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'" // Next.js en dev nécessite unsafe-eval
+        : "script-src 'self'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob:",
       "connect-src 'self' https://*.supabase.co https://api.anthropic.com",
+      "worker-src 'self'",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
       "object-src 'none'",
+      "upgrade-insecure-requests",
     ].join("; ")
   );
 

@@ -50,6 +50,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr" className="dark">
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "Patrimoine 360°",
+              description: "Copilote financier intelligent pour visualiser, analyser et optimiser ton patrimoine.",
+              applicationCategory: "FinanceApplication",
+              operatingSystem: "Web",
+              offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+              inLanguage: "fr",
+            }),
+          }}
+        />
       </head>
       <body className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text-primary)]">
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] btn-primary">

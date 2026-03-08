@@ -2,6 +2,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { apiSecurityCheck } from "@/lib/api-security";
 import { sanitizeChatMessage, sanitizeForPrompt } from "@/lib/sanitize";
 import { logAuditEvent, AuditActions } from "@/lib/audit-log";
+import { chatRequestSchema, formatZodErrors } from "@/lib/validation";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
@@ -47,20 +49,17 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { messages, context } = body as {
-      messages: ChatMessage[];
-      context?: string;
-    };
 
-    // === Input validation ===
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      await logAuditEvent(AuditActions.SECURITY_INVALID_INPUT, { ip: security.ip, metadata: { reason: "no messages" } });
-      return Response.json({ error: "Messages requis" }, { status: 400 });
+    // === Validation Zod ===
+    const validation = chatRequestSchema.safeParse(body);
+    if (!validation.success) {
+      const errors = formatZodErrors(validation.error);
+      await logAuditEvent(AuditActions.SECURITY_INVALID_INPUT, { ip: security.ip, metadata: { reason: "validation", errors } });
+      logger.warn("Entrée invalide pour chat", "api.chat", { errors });
+      return Response.json({ error: `Données invalides: ${errors.join(", ")}` }, { status: 400 });
     }
 
-    if (messages.length > MAX_MESSAGES) {
-      return Response.json({ error: `Maximum ${MAX_MESSAGES} messages par conversation` }, { status: 400 });
-    }
+    const { messages, context } = validation.data;
 
     // === Sanitize all messages ===
     const sanitizedMessages: ChatMessage[] = [];
@@ -142,6 +141,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (err) {
+    logger.error("Erreur chat", "api.chat", { error: String(err) });
     return Response.json({ error: String(err) }, { status: 500 });
   }
 }
