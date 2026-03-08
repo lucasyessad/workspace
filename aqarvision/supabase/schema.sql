@@ -240,7 +240,7 @@ INSERT INTO wilayas (id, nom_fr, nom_ar, code) VALUES
   (25, 'Constantine', 'قسنطينة', '25'),
   (26, 'Médéa', 'المدية', '26'),
   (27, 'Mostaganem', 'مستغانم', '27'),
-  (28, "M'Sila", 'المسيلة', '28'),
+  (28, 'M''Sila', 'المسيلة', '28'),
   (29, 'Mascara', 'معسكر', '29'),
   (30, 'Ouargla', 'ورقلة', '30'),
   (31, 'Oran', 'وهران', '31'),

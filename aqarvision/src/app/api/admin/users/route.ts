@@ -50,8 +50,10 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + limit - 1);
 
     if (search) {
+      // Sanitize search input to prevent filter injection
+      const sanitizedSearch = search.replace(/[%_\\]/g, "\\$&").replace(/[,()]/g, "");
       query = query.or(
-        `nom_agence.ilike.%${search}%,email.ilike.%${search}%`
+        `nom_agence.ilike.%${sanitizedSearch}%,email.ilike.%${sanitizedSearch}%`
       );
     }
 
@@ -132,7 +134,7 @@ export async function PATCH(request: NextRequest) {
         );
     }
 
-    return NextResponse.json({ succes: true });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Erreur admin PATCH user:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

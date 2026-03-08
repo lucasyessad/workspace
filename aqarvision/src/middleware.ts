@@ -24,11 +24,13 @@ function detecterLocale(request: NextRequest): string {
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // Ignorer les routes internes
+  // Ignorer les routes internes et les pages statiques
   if (
     pathname.startsWith("/api/") ||
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/auth/") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/pricing") ||
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/favicon") ||
     pathname.match(/\.(svg|png|jpg|jpeg|gif|webp|ico)$/)

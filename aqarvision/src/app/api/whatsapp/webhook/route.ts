@@ -6,7 +6,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "aqarvision_verify";
+const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
+if (!VERIFY_TOKEN) {
+  console.warn("WHATSAPP_VERIFY_TOKEN non configuré — webhook WhatsApp désactivé");
+}
 
 /** GET : Vérification du webhook WhatsApp (challenge) */
 export async function GET(request: NextRequest) {
@@ -15,7 +18,7 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get("hub.verify_token");
   const challenge = searchParams.get("hub.challenge");
 
-  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+  if (mode === "subscribe" && VERIFY_TOKEN && token === VERIFY_TOKEN) {
     return new Response(challenge, { status: 200 });
   }
 
@@ -46,12 +49,12 @@ export async function POST(request: NextRequest) {
           const { data: profile } = await supabase
             .from("profiles")
             .select("id, nom_agence")
-            .eq("telephone", value.metadata?.display_phone_number)
+            .eq("telephone_whatsapp", value.metadata?.display_phone_number)
             .single();
 
           if (profile) {
             // Logger le message entrant
-            await supabase.from("whatsapp_messages").insert({
+            const { error: msgError } = await supabase.from("whatsapp_messages").insert({
               agent_id: profile.id,
               prospect_phone: from,
               prospect_name: contactName,
@@ -61,14 +64,25 @@ export async function POST(request: NextRequest) {
               status: "received",
             });
 
-            // Enregistrer comme contact
-            await supabase.from("contacts").insert({
-              agent_id: profile.id,
-              nom: contactName,
-              telephone: from,
-              type_contact: "whatsapp",
-              source: "whatsapp_api",
-            });
+            if (msgError) {
+              console.error("Erreur insertion message WhatsApp:", msgError);
+            }
+
+            // Enregistrer comme contact (upsert pour éviter les doublons)
+            const { error: contactError } = await supabase.from("contacts").upsert(
+              {
+                agent_id: profile.id,
+                nom: contactName,
+                telephone: from,
+                type_contact: "whatsapp",
+                source: "whatsapp_api",
+              },
+              { onConflict: "agent_id,telephone" }
+            );
+
+            if (contactError) {
+              console.error("Erreur insertion contact WhatsApp:", contactError);
+            }
           }
         }
       }
