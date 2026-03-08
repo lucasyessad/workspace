@@ -16,6 +16,7 @@ class User(Base, UUIDMixin, TimestampMixin):
     job_title = Column(String(255))
     phone = Column(String(50))
     status = Column(String(50), default="active")
+    role = Column(String(50), default="member", nullable=False)  # owner | admin | member
     last_login_at = Column(DateTime(timezone=True), nullable=True)
 
     organization = relationship("Organization", back_populates="users")

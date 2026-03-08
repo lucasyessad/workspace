@@ -5,6 +5,7 @@ from app.models.audit import Audit, AuditInput, AuditIssue
 from app.models.scenario import RenovationScenario, RenovationMeasure, ScenarioMeasureLink
 from app.models.report import GeneratedReport, ReportSection
 from app.models.api_key import ApiKey
+from app.models.audit_log import AuditLog
 
 __all__ = [
     "Organization",
@@ -23,4 +24,5 @@ __all__ = [
     "GeneratedReport",
     "ReportSection",
     "ApiKey",
+    "AuditLog",
 ]

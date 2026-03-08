@@ -40,6 +40,18 @@ def decode_token(token: str) -> dict:
         )
 
 
+def require_role(*roles: str):
+    """Dépendance FastAPI qui vérifie que l'utilisateur possède l'un des rôles donnés."""
+    def _check(current_user: "User" = Depends(get_current_user)):
+        if current_user.role not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Rôle requis : {' ou '.join(roles)}",
+            )
+        return current_user
+    return _check
+
+
 def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),

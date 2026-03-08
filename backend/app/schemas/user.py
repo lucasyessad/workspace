@@ -33,6 +33,7 @@ class UserRead(BaseModel):
     last_name: Optional[str]
     job_title: Optional[str]
     status: str
+    role: str
     organization_id: UUID
     created_at: datetime
 
@@ -47,5 +48,10 @@ class LoginRequest(BaseModel):
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
     user: UserRead
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str

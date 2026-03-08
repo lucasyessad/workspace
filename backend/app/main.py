@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from app.config import settings
 from app.database import Base, engine
 from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.core.limiter import limiter
 import app.models  # noqa: F401 — register all models
 
 # Import routers
@@ -31,6 +34,9 @@ app = FastAPI(
     redoc_url=_redoc_url,
     debug=settings.debug,
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Security headers sur toutes les réponses
 app.add_middleware(SecurityHeadersMiddleware)

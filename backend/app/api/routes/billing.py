@@ -2,14 +2,15 @@
 ThermoPilot AI — Billing & Subscription management
 Handles plan upgrades, usage tracking, and limits enforcement.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from pydantic import BaseModel
 from app.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_role
 from app.models.organization import Organization, PLAN_LIMITS
 from app.models.user import User
+from app.services.audit_log import log_event
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 
@@ -79,11 +80,12 @@ def get_subscription(
 
 @router.post("/upgrade")
 def upgrade_plan(
+    request: Request,
     payload: PlanUpgradeRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("owner", "admin")),
 ):
-    """Upgrade or downgrade the organisation's plan."""
+    """Upgrade or downgrade the organisation's plan (owner/admin uniquement)."""
     if payload.plan not in PLAN_LIMITS:
         raise HTTPException(status_code=400, detail=f"Plan inconnu : {payload.plan}")
 
@@ -94,6 +96,13 @@ def upgrade_plan(
     old_plan = org.plan
     org.plan = payload.plan
     db.commit()
+
+    log_event(
+        db, "plan_change", request,
+        user_id=current_user.id,
+        organization_id=current_user.organization_id,
+        details={"old_plan": old_plan, "new_plan": payload.plan},
+    )
 
     return {
         "success": True,
