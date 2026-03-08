@@ -28,7 +28,7 @@ class TestOrganizations:
 
 class TestRegisterLogin:
     def test_register_success(self, client, org_and_user):
-        assert "access_token" in org_and_user
+        assert "token" in org_and_user
         assert org_and_user["user"]["email"] == "alice@syndic.fr"
 
     def test_login_success(self, client, org_and_user):

@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { authApi, billingApi } from "@/lib/api";
 import { useToast } from "@/hooks/useToast";
-import { User, Building2, Mail, Globe, CreditCard, Save } from "lucide-react";
+import { User, Building2, Mail, Globe, CreditCard, Save, Palette } from "lucide-react";
+import { applyBrandTheme, storeBrandSettings } from "@/lib/theme";
 
 interface Profile {
   user_id: string;
@@ -34,15 +35,25 @@ export default function ProfilePage() {
   const [orgName, setOrgName] = useState("");
   const [billingEmail, setBillingEmail] = useState("");
   const [timezone, setTimezone] = useState("Europe/Paris");
+  const [brandColor, setBrandColor] = useState("#2563eb");
+  const [logoUrl, setLogoUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
 
   useEffect(() => {
     authApi.me().then((r) => {
-      const p = r.data as Profile;
+      const p = r.data as Profile & { brand_color?: string; logo_url?: string };
       setProfile(p);
       setOrgName(p.organization_name);
+      setBrandColor(p.brand_color ?? "#2563eb");
+      setLogoUrl(p.logo_url ?? "");
+      storeBrandSettings({
+        brand_color: p.brand_color ?? "#2563eb",
+        organization_name: p.organization_name,
+        logo_url: p.logo_url,
+      });
+      if (p.brand_color) applyBrandTheme(p.brand_color);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -50,9 +61,16 @@ export default function ProfilePage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await authApi.updateOrgProfile({ name: orgName, billing_email: billingEmail, timezone });
+      await authApi.updateOrgProfile({
+        name: orgName,
+        billing_email: billingEmail,
+        timezone,
+        brand_color: brandColor,
+        logo_url: logoUrl || null,
+      });
+      storeBrandSettings({ brand_color: brandColor, organization_name: orgName, logo_url: logoUrl || null });
+      applyBrandTheme(brandColor);
       addToast("Profil mis à jour", "success");
-      // Refresh profile
       const r = await authApi.me();
       setProfile(r.data as Profile);
     } catch {
@@ -159,6 +177,46 @@ export default function ProfilePage() {
                     <option value="America/Cayenne">Amérique/Cayenne (UTC-3)</option>
                     <option value="Indian/Reunion">La Réunion (UTC+4)</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-600 mb-2 flex items-center gap-1">
+                    <Palette size={12} /> Couleur de marque (thème de l&apos;interface)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={brandColor}
+                      onChange={(e) => { setBrandColor(e.target.value); applyBrandTheme(e.target.value); }}
+                      className="h-10 w-16 rounded cursor-pointer border border-gray-200"
+                    />
+                    <div className="flex gap-2 flex-wrap">
+                      {["#2563eb","#7c3aed","#059669","#dc2626","#d97706","#0891b2","#be185d","#1e293b"].map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => { setBrandColor(c); applyBrandTheme(c); }}
+                          className="w-7 h-7 rounded-full border-2 transition-transform hover:scale-110"
+                          style={{ backgroundColor: c, borderColor: brandColor === c ? "#111" : "transparent" }}
+                          title={c}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-xs text-gray-400 font-mono">{brandColor}</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Le thème s&apos;applique immédiatement à toute l&apos;interface.</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">URL du logo (optionnel)</label>
+                  <input
+                    type="url"
+                    className="input"
+                    placeholder="https://monentreprise.fr/logo.png"
+                    value={logoUrl}
+                    onChange={(e) => setLogoUrl(e.target.value)}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Affiché dans la barre latérale à la place de l&apos;icône 🌡️</p>
                 </div>
               </div>
 

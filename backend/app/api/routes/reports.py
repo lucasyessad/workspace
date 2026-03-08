@@ -73,7 +73,8 @@ def download_report_pdf(
             audit_data = {
                 "computed_energy_label": audit.computed_energy_label,
                 "computed_ghg_label": audit.computed_ghg_label,
-                "baseline_energy_consumption_kwh": audit.baseline_energy_consumption_kwh,
+                "baseline_energy_consumption_kwh": str(audit.baseline_energy_consumption_kwh) if audit.baseline_energy_consumption_kwh else None,
+                "baseline_energy_cost_eur": str(audit.baseline_energy_cost_eur) if audit.baseline_energy_cost_eur else None,
                 "result_snapshot": audit.result_snapshot or {},
             }
             building = db.query(Building).filter(Building.id == audit.building_id).first()
@@ -86,27 +87,48 @@ def download_report_pdf(
                     "construction_year": building.construction_year,
                     "heated_area_m2": str(building.heated_area_m2) if building.heated_area_m2 else None,
                     "building_type": building.building_type,
+                    "ownership_type": building.ownership_type,
+                    "floors_above_ground": building.floors_above_ground,
+                    "main_use_type": building.main_use_type,
                 }
 
-    if report.report_type == "comparatif_scenarios" and report.audit_id:
-        scenarios = db.query(RenovationScenario).filter(
+    # Charger les scénarios pour tous les types qui en ont besoin
+    scenario_list = []
+    if report.audit_id:
+        scenarios_db = db.query(RenovationScenario).filter(
             RenovationScenario.audit_id == report.audit_id
-        ).all()
+        ).order_by(RenovationScenario.created_at).all()
         scenario_list = [
             {
                 "name": s.name,
+                "works_description": s.description or "",
                 "estimated_total_cost_eur": str(s.estimated_total_cost_eur) if s.estimated_total_cost_eur else None,
                 "estimated_energy_savings_kwh": str(s.estimated_energy_savings_kwh) if s.estimated_energy_savings_kwh else None,
                 "simple_payback_years": str(s.simple_payback_years) if s.simple_payback_years else None,
                 "target_energy_label": s.target_energy_label,
             }
-            for s in scenarios
+            for s in scenarios_db
         ]
+
+    rtype = report.report_type
+
+    if rtype == "synthese_ag":
+        # Synthèse pour l'Assemblée Générale de copropriété
+        pdf_bytes = report_generator.generate_ag_synthesis(
+            audit_data, building_data, org_name,
+            scenarios=scenario_list or None,
+        )
+    elif rtype == "comparatif_scenarios":
+        # Comparatif des scénarios
         pdf_bytes = report_generator.generate_scenario_report(
-            audit_data, scenario_list, building_data, org_name
+            audit_data, scenario_list, building_data, org_name,
         )
     else:
-        pdf_bytes = report_generator.generate_audit_report(audit_data, building_data, org_name)
+        # audit_complet, fiche_travaux et tout autre type → rapport ANAH complet
+        pdf_bytes = report_generator.generate_audit_report(
+            audit_data, building_data, org_name,
+            scenarios=scenario_list or None,
+        )
 
     # Mark report as ready
     report.status = "ready"

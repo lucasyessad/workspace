@@ -1,13 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 from app.database import get_db
 from app.core.security import get_current_user
 from app.models.building import BuildingProject, Building, System, Envelope, EnergyBill
 from app.models.user import User
 from app.schemas.building import (
-    BuildingProjectCreate, BuildingProjectRead,
+    BuildingProjectCreate, BuildingProjectUpdate, BuildingProjectRead,
     BuildingCreate, BuildingRead,
     SystemCreate, SystemRead,
     EnvelopeCreate, EnvelopeRead,
@@ -71,16 +71,38 @@ def get_project(
     return project
 
 
+@router.patch("/projects/{project_id}", response_model=BuildingProjectRead)
+def update_project(
+    project_id: UUID,
+    payload: BuildingProjectUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    project = db.query(BuildingProject).filter(
+        BuildingProject.id == project_id,
+        BuildingProject.organization_id == current_user.organization_id,
+    ).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Projet non trouvé")
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(project, field, value)
+    db.commit()
+    db.refresh(project)
+    return project
+
+
 # ─── Buildings ────────────────────────────────────────────────────────────────
 
 @router.get("", response_model=List[BuildingRead])
 def list_buildings(
+    project_id: Optional[UUID] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return db.query(Building).filter(
-        Building.organization_id == current_user.organization_id
-    ).all()
+    q = db.query(Building).filter(Building.organization_id == current_user.organization_id)
+    if project_id:
+        q = q.filter(Building.project_id == project_id)
+    return q.all()
 
 
 @router.post("", response_model=BuildingRead, status_code=201)

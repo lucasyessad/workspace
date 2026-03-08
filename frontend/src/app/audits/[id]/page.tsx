@@ -7,7 +7,7 @@ import { useToastContext } from "@/components/ui/ToastProvider";
 import { auditsApi, buildingsApi, scenariosApi, reportsApi } from "@/lib/api";
 import { Audit, Building, SimulationResult } from "@/types";
 import { formatNumber, MEASURE_LABELS } from "@/lib/utils";
-import { ChevronLeft, Play, TrendingUp, FileText, Download } from "lucide-react";
+import { ChevronLeft, Play, TrendingUp, FileText, Download, Pencil, Lock } from "lucide-react";
 import Link from "next/link";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
@@ -95,12 +95,22 @@ export default function AuditDetailPage() {
             <h1 className="text-2xl font-bold text-gray-900">
               Audit — {building?.name ?? "…"}
             </h1>
-            <p className="text-gray-500 mt-1 capitalize">
+            <p className="text-gray-500 mt-1 capitalize flex items-center gap-2">
               Type : {audit.audit_type} · Créé le {new Date(audit.created_at).toLocaleDateString("fr-FR")}
+              {audit.status === "validated" && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold normal-case">
+                  <Lock size={10} />
+                  Validé
+                </span>
+              )}
             </p>
           </div>
           <div className="flex gap-2">
-            {!snap && (
+            <Link href={`/audits/${id}/edit`} className="btn-secondary">
+              {audit.status === "validated" ? <Lock size={15} /> : <Pencil size={15} />}
+              {audit.status === "validated" ? "Consulter" : "Modifier"}
+            </Link>
+            {!snap && audit.status !== "validated" && (
               <button className="btn-primary" onClick={runCalculation} disabled={calculating}>
                 <Play size={16} />
                 {calculating ? "Calcul en cours..." : "Lancer le calcul"}
@@ -108,7 +118,7 @@ export default function AuditDetailPage() {
             )}
             {snap && (
               <>
-                <button className="btn-secondary" onClick={runSimulation} disabled={simulating}>
+                <button className="btn-secondary" onClick={runSimulation} disabled={simulating || audit.status === "validated"}>
                   <TrendingUp size={16} />
                   {simulating ? "Simulation..." : "Simuler les travaux"}
                 </button>

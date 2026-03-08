@@ -116,6 +116,8 @@ class ProfileUpdate(BaseModel):
     name: str | None = None
     billing_email: str | None = None
     timezone: str | None = None
+    brand_color: str | None = None
+    logo_url: str | None = None
 
 
 class MeResponse(BaseModel):
@@ -129,6 +131,8 @@ class MeResponse(BaseModel):
     organization_name: str
     organization_type: str
     plan: str
+    brand_color: str
+    logo_url: str | None
 
 
 @router.get("/me", response_model=MeResponse)
@@ -148,6 +152,8 @@ def get_me(
         organization_name=org.name if org else "—",
         organization_type=org.organization_type if org else "—",
         plan=org.plan if org else "starter",
+        brand_color=org.brand_color if org and org.brand_color else "#2563eb",
+        logo_url=org.logo_url if org else None,
     )
 
 
@@ -166,6 +172,17 @@ def update_org_profile(
         org.billing_email = payload.billing_email
     if payload.timezone is not None:
         org.timezone = payload.timezone
+    if payload.brand_color is not None:
+        org.brand_color = payload.brand_color
+    if payload.logo_url is not None:
+        org.logo_url = payload.logo_url
     db.commit()
     db.refresh(org)
-    return {"id": str(org.id), "name": org.name, "billing_email": org.billing_email, "timezone": org.timezone}
+    return {
+        "id": str(org.id),
+        "name": org.name,
+        "billing_email": org.billing_email,
+        "timezone": org.timezone,
+        "brand_color": org.brand_color,
+        "logo_url": org.logo_url,
+    }

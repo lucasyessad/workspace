@@ -111,6 +111,12 @@ def update_audit(
     if not audit:
         raise HTTPException(status_code=404, detail="Audit non trouvé")
 
+    if audit.status == "validated":
+        raise HTTPException(
+            status_code=409,
+            detail="Cet audit est validé et ne peut plus être modifié.",
+        )
+
     for k, v in payload.model_dump(exclude_unset=True).items():
         setattr(audit, k, v)
     db.commit()
@@ -131,6 +137,12 @@ def calculate_audit(
     ).first()
     if not audit:
         raise HTTPException(status_code=404, detail="Audit non trouvé")
+
+    if audit.status == "validated":
+        raise HTTPException(
+            status_code=409,
+            detail="Cet audit est validé et ne peut plus être recalculé.",
+        )
 
     building = db.query(Building).filter(Building.id == audit.building_id).first()
     if not building:

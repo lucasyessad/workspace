@@ -14,6 +14,7 @@ export interface User {
   last_name?: string;
   job_title?: string;
   status: string;
+  role?: "admin" | "user";
   organization_id: string;
   created_at: string;
 }
@@ -24,6 +25,15 @@ export interface BuildingProject {
   name: string;
   project_code?: string;
   project_status: string;
+  workflow_stage?: string;
+  client_reference?: string;
+  description?: string;
+  calculation_method?: string;
+  climate_zone?: string;
+  contact_name?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  notes?: string;
   created_at: string;
 }
 

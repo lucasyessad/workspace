@@ -19,6 +19,8 @@ class Organization(Base, UUIDMixin, TimestampMixin):
     billing_email = Column(String(255))
     country_code = Column(String(2), default="FR")
     timezone = Column(String(64), default="Europe/Paris")
+    brand_color = Column(String(7), default="#2563eb")
+    logo_url = Column(String(512), nullable=True)
     is_active = Column(Boolean, default=True)
 
     # Subscription plan

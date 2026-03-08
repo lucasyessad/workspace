@@ -1,6 +1,6 @@
-from sqlalchemy import Column, String, Integer, Numeric, ForeignKey, Text, Boolean
+from sqlalchemy import Column, String, Integer, Numeric, ForeignKey, Text, Boolean, JSON, Uuid
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+
 from app.database import Base
 from app.models.base import UUIDMixin, TimestampMixin
 
@@ -8,8 +8,8 @@ from app.models.base import UUIDMixin, TimestampMixin
 class RenovationScenario(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "renovation_scenarios"
 
-    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
-    audit_id = Column(UUID(as_uuid=True), ForeignKey("audits.id"), nullable=False)
+    organization_id = Column(Uuid, ForeignKey("organizations.id"), nullable=False)
+    audit_id = Column(Uuid, ForeignKey("audits.id"), nullable=False)
     name = Column(String(255), nullable=False)
     scenario_type = Column(String(80), nullable=False, default="custom")
     # minimal, standard, performant, bbc_renovation
@@ -32,7 +32,7 @@ class RenovationScenario(Base, UUIDMixin, TimestampMixin):
 class RenovationMeasure(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "renovation_measures"
 
-    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
+    organization_id = Column(Uuid, ForeignKey("organizations.id"), nullable=False)
     measure_type = Column(String(80), nullable=False)
     # ite, isolation_toiture, isolation_plancher, remplacement_chaudiere, pac, vmc, menuiseries
     component_scope = Column(String(120))
@@ -45,7 +45,7 @@ class RenovationMeasure(Base, UUIDMixin, TimestampMixin):
     expected_co2_gain_kg = Column(Numeric(18, 3))
     execution_complexity = Column(String(50))   # simple, moderate, complex
     phasing_group = Column(String(80))
-    metadata_ = Column("metadata", JSONB, default=dict)
+    metadata_ = Column("metadata", JSON, default=dict)
 
     scenario_links = relationship("ScenarioMeasureLink", back_populates="measure")
 
@@ -53,8 +53,8 @@ class RenovationMeasure(Base, UUIDMixin, TimestampMixin):
 class ScenarioMeasureLink(Base, UUIDMixin):
     __tablename__ = "scenario_measure_links"
 
-    scenario_id = Column(UUID(as_uuid=True), ForeignKey("renovation_scenarios.id"), nullable=False)
-    measure_id = Column(UUID(as_uuid=True), ForeignKey("renovation_measures.id"), nullable=False)
+    scenario_id = Column(Uuid, ForeignKey("renovation_scenarios.id"), nullable=False)
+    measure_id = Column(Uuid, ForeignKey("renovation_measures.id"), nullable=False)
     sequence_order = Column(Integer, default=0)
     is_mandatory = Column(Boolean, default=True)
     created_at = Column(String(30))

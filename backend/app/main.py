@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.config import settings
@@ -19,8 +20,13 @@ from app.api.routes.api_keys import router as api_keys_router
 from app.api.routes.exports import router as exports_router
 from app.api.routes.ml import router as ml_router
 
-# Create all tables on startup (use Alembic in production)
-Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Create all tables on startup (use Alembic in production)
+    Base.metadata.create_all(bind=engine)
+    yield
+
 
 # Désactiver la doc Swagger/ReDoc en production
 _docs_url = None if settings.environment == "production" else "/docs"
@@ -33,6 +39,7 @@ app = FastAPI(
     docs_url=_docs_url,
     redoc_url=_redoc_url,
     debug=settings.debug,
+    lifespan=lifespan,
 )
 
 app.state.limiter = limiter

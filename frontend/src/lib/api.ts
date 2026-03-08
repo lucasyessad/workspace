@@ -41,8 +41,11 @@ export const authApi = {
 // ─── Buildings ────────────────────────────────────────────────────────────────
 export const buildingsApi = {
   listProjects: () => api.get("/buildings/projects"),
+  getProject: (id: string) => api.get(`/buildings/projects/${id}`),
   createProject: (data: object) => api.post("/buildings/projects", data),
-  listBuildings: () => api.get("/buildings"),
+  updateProject: (id: string, data: object) => api.patch(`/buildings/projects/${id}`, data),
+  listBuildings: (projectId?: string) =>
+    api.get("/buildings", { params: projectId ? { project_id: projectId } : {} }),
   getBuilding: (id: string) => api.get(`/buildings/${id}`),
   createBuilding: (data: object) => api.post("/buildings", data),
   updateBuilding: (id: string, data: object) => api.put(`/buildings/${id}`, data),

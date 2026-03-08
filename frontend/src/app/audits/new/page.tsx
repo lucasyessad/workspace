@@ -18,6 +18,8 @@ function NewAuditForm() {
     building_id: prefillBuildingId,
     project_id: "",
     audit_type: "standard",
+    calculation_method: "3CL_DPE_2021",
+    climate_zone: "H2b",
   });
   const [loading, setLoading] = useState(false);
 
@@ -82,12 +84,58 @@ function NewAuditForm() {
             onChange={(e) => setForm((f) => ({ ...f, audit_type: e.target.value }))}>
             <option value="standard">Standard</option>
             <option value="reglementaire">Réglementaire (DPE collectif)</option>
-            <option value="pppt">PPPT</option>
+            <option value="pppt">PPPT — Plan Pluriannuel de Travaux</option>
+            <option value="simplifie">Simplifié (pré-diagnostic)</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="label">Méthode de calcul réglementaire</label>
+          <select className="input" value={form.calculation_method}
+            onChange={(e) => setForm((f) => ({ ...f, calculation_method: e.target.value }))}>
+            <option value="3CL_DPE_2021">3CL-DPE 2021 — Logements résidentiels existants</option>
+            <option value="ThCE_Ex">Th-CE-Ex — Tertiaire existant</option>
+            <option value="RE2020">RE2020 — Constructions neuves (post-2022)</option>
+            <option value="RT2012">RT2012 / RTex — Référence pré-2022</option>
+          </select>
+          <p className="text-xs text-gray-400 mt-1">
+            {form.calculation_method === "3CL_DPE_2021" && "Méthode conventionnelle obligatoire pour le DPE et l'audit réglementaire résidentiel."}
+            {form.calculation_method === "ThCE_Ex" && "Méthode réglementaire pour les bâtiments tertiaires existants (bureaux, commerces, ERP)."}
+            {form.calculation_method === "RE2020" && "Réglementation environnementale 2020 — bâtiments neufs, intègre le bilan carbone ACV."}
+            {form.calculation_method === "RT2012" && "Référence thermique 2012 — utilisée pour les rénovations de bâtiments construits avant 2022."}
+          </p>
+        </div>
+
+        <div>
+          <label className="label">Zone climatique</label>
+          <select className="input" value={form.climate_zone}
+            onChange={(e) => setForm((f) => ({ ...f, climate_zone: e.target.value }))}>
+            <optgroup label="Zone H1 — Grand Nord / Est (froid)">
+              <option value="H1a">H1a — Strasbourg, Metz, Reims</option>
+              <option value="H1b">H1b — Paris, Lyon, Clermont-Ferrand</option>
+              <option value="H1c">H1c — Brest, Rennes, Nantes</option>
+            </optgroup>
+            <optgroup label="Zone H2 — Centre (tempéré)">
+              <option value="H2a">H2a — La Rochelle, Poitiers</option>
+              <option value="H2b">H2b — Bordeaux, Toulouse</option>
+              <option value="H2c">H2c — Grenoble, Valence</option>
+              <option value="H2d">H2d — Perpignan, Montpellier</option>
+            </optgroup>
+            <optgroup label="Zone H3 — Sud / Méditerranée (chaud)">
+              <option value="H3">H3 — Marseille, Nice, Toulon</option>
+            </optgroup>
+            <optgroup label="Départements et régions d'outre-mer">
+              <option value="DOM_971">Guadeloupe (971)</option>
+              <option value="DOM_972">Martinique (972)</option>
+              <option value="DOM_973">Guyane (973)</option>
+              <option value="DOM_974">La Réunion (974)</option>
+              <option value="DOM_976">Mayotte (976)</option>
+            </optgroup>
           </select>
         </div>
 
         <div className="bg-blue-50 rounded-lg p-4 text-sm text-blue-700">
-          Après création, le calcul énergétique sera lancé automatiquement à partir des données du bâtiment.
+          Après création, renseignez les systèmes et l&apos;enveloppe du bâtiment, puis lancez le calcul énergétique.
         </div>
 
         <button type="submit" className="btn-primary w-full justify-center" disabled={loading || !form.building_id}>

@@ -1,7 +1,19 @@
 "use client";
-import { useState, useCallback, ReactNode } from "react";
+import { useState, useCallback, useContext, ReactNode } from "react";
 import { ToastContext, Toast, ToastType } from "@/hooks/useToast";
 import { ToastContainer } from "./Toast";
+
+export function useToastContext() {
+  const ctx = useContext(ToastContext);
+  if (!ctx) throw new Error("useToastContext must be used within ToastProvider");
+  return {
+    ...ctx,
+    success: (message: string) => ctx.addToast(message, "success"),
+    error: (message: string) => ctx.addToast(message, "error"),
+    warning: (message: string) => ctx.addToast(message, "warning"),
+    info: (message: string) => ctx.addToast(message, "info"),
+  };
+}
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
