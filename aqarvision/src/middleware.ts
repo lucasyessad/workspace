@@ -30,6 +30,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/auth/") ||
     pathname.startsWith("/admin") ||
+    pathname.startsWith("/espace") ||
     pathname.startsWith("/pricing") ||
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/favicon") ||

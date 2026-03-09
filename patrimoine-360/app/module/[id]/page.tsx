@@ -25,6 +25,8 @@ import { useToast } from "@/components/Toast";
 import { useStreamingResponse } from "@/hooks/useStreamingResponse";
 import { loadAppState, saveAppState } from "@/lib/storage";
 import { trackEvent, Events } from "@/lib/analytics";
+import { useAuth } from "@/components/AuthProvider";
+import { mapProfileToModule } from "@/lib/profile-mapping";
 
 const Charts = dynamic(() => import("@/components/Charts"), { ssr: false });
 const ScenariosPanel = dynamic(() => import("@/components/ScenariosPanel"), { ssr: false });
@@ -41,6 +43,7 @@ export default function ModulePage() {
   const mod = getModule(moduleId);
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
+  const { profile } = useAuth();
 
   const [formData, setFormData] = useState<FData>({});
   const [calculations, setCalculations] = useState<CalculationResult[] | null>(null);
@@ -88,20 +91,21 @@ export default function ModulePage() {
   useEffect(() => {
     const state = loadAppState();
     const moduleState = state.modules[moduleId];
-    if (moduleState) {
-      setFormData(moduleState.formData || {});
-      setAiResult(moduleState.aiResult || "");
-      setHistory(moduleState.history || []);
-    } else {
-      setFormData({});
-      setAiResult("");
-      setHistory([]);
-    }
+
+    // Pré-remplir depuis le profil (les données existantes du module ont priorité)
+    const profileDefaults = profile ? mapProfileToModule(profile, moduleId) : {};
+    const existingData = moduleState?.formData || {};
+    const merged = { ...profileDefaults, ...existingData };
+
+    setFormData(merged);
+    setAiResult(moduleState?.aiResult || "");
+    setHistory(moduleState?.history || []);
+
     const completed = Object.entries(state.modules)
       .filter(([, v]) => v.completed)
       .map(([k]) => Number(k));
     setCompletedModules(completed);
-  }, [moduleId]);
+  }, [moduleId, profile]);
 
   useEffect(() => {
     if (mod?.hasCalculator) {

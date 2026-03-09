@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Bot, Target, Sparkles, BarChart3 } from "lucide-react";
+import { Bot, Target, Sparkles, BarChart3, User, LogIn } from "lucide-react";
 import { modules } from "@/lib/modules";
 import { AppState } from "@/types";
 import ThemeToggle from "./ThemeToggle";
@@ -10,6 +10,7 @@ import ScoreGlobal from "./ScoreGlobal";
 import Reminders from "./Reminders";
 import EmptyState from "./EmptyState";
 import { useTheme } from "./ThemeProvider";
+import { useAuth } from "./AuthProvider";
 
 interface DashboardProps {
   completedModules: number[];
@@ -20,6 +21,7 @@ export default function Dashboard({ completedModules, appState }: DashboardProps
   const total = modules.length;
   const done = completedModules.length;
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -48,6 +50,15 @@ export default function Dashboard({ completedModules, appState }: DashboardProps
           </Link>
           <BilanComplet appState={appState} />
           <Reminders />
+          {user ? (
+            <Link href="/profil" className="btn-ghost text-sm" aria-label="Mon profil">
+              <User size={16} /> <span className="hidden sm:inline">Profil</span>
+            </Link>
+          ) : (
+            <Link href="/auth" className="btn-ghost text-sm" aria-label="Se connecter">
+              <LogIn size={16} /> <span className="hidden sm:inline">Connexion</span>
+            </Link>
+          )}
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
         </nav>
       </header>

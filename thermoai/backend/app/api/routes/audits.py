@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
 from app.database import get_db
 from app.core.security import get_current_user
+from app.core.limiter import limiter
 from app.models.audit import Audit
 from app.models.building import Building, System, Envelope
 from app.models.organization import Organization, PLAN_LIMITS
@@ -21,10 +22,12 @@ router = APIRouter(prefix="/audits", tags=["audits"])
 def list_audits(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
 ):
     return db.query(Audit).filter(
         Audit.organization_id == current_user.organization_id
-    ).order_by(Audit.created_at.desc()).all()
+    ).order_by(Audit.created_at.desc()).offset(offset).limit(limit).all()
 
 
 @router.post("", response_model=AuditRead, status_code=201)
@@ -125,7 +128,9 @@ def update_audit(
 
 
 @router.post("/{audit_id}/calculate", response_model=AuditRead)
+@limiter.limit("10/minute")
 def calculate_audit(
+    request: Request,
     audit_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -198,7 +203,6 @@ def calculate_audit(
         "energy_label": result.energy_label,
         "ghg_label": result.ghg_label,
         "dpe_label": result.dpe_label,
-        "ghg_label": result.ghg_label,
         "primary_energy_per_m2": result.primary_energy_per_m2,
         "co2_per_m2": result.co2_per_m2,
         "heating_kwh": result.heating_kwh,

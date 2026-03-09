@@ -45,7 +45,7 @@ export default async function DashboardPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-heading-3 font-bold text-foreground">
+        <h1 className="font-vitrine text-heading-3 font-bold text-foreground">
           Vue d&apos;ensemble
         </h1>
         <Link href="/dashboard/annonces/nouvelle">
@@ -61,7 +61,7 @@ export default async function DashboardPage() {
         {stats.map((stat) => (
           <div
             key={stat.titre}
-            className="p-5 rounded-2xl border border-border bg-white"
+            className="glass-card p-5 rounded-2xl border border-border cursor-pointer"
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-caption text-muted-foreground">
@@ -77,9 +77,9 @@ export default async function DashboardPage() {
       </div>
 
       {/* Dernières annonces */}
-      <div className="rounded-2xl border border-border bg-white">
-        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-          <h2 className="text-body font-semibold text-foreground">
+      <div className="glass-card rounded-2xl border border-border">
+        <div className="px-5 py-4 border-b border-border/50 flex items-center justify-between">
+          <h2 className="font-vitrine text-body font-semibold text-foreground">
             Annonces récentes
           </h2>
           <Link href="/dashboard/annonces" className="text-caption text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">

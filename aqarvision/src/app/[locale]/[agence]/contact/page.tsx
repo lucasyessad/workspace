@@ -104,7 +104,7 @@ export default async function ContactPage({ params }: ContactPageProps) {
   return (
     <div className="min-h-screen bg-blanc-casse" dir={dir}>
       {/* ─── Header compact ─── */}
-      <header className="bg-white border-b border-border sticky top-0 z-50">
+      <header className="bg-white/95 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
         <div className="container mx-auto px-4 h-14 flex items-center justify-between">
           <Link
             href={`/${locale}/${params.agence}`}
@@ -146,7 +146,7 @@ export default async function ContactPage({ params }: ContactPageProps) {
 
       <main className="container mx-auto px-4 py-8 md:py-12 max-w-3xl">
         {/* ─── Agency info card ─── */}
-        <section className="rounded-2xl border border-border bg-white p-6 md:p-8 mb-5 text-center">
+        <section className="glass-card rounded-2xl border border-border shadow-soft p-6 md:p-8 mb-5 text-center animate-fade-in-up">
           <div className="w-16 h-16 mx-auto rounded-2xl bg-muted flex items-center justify-center border border-border mb-4">
             {agence.logo_url ? (
               <img
@@ -160,7 +160,7 @@ export default async function ContactPage({ params }: ContactPageProps) {
           </div>
 
           <div className="flex items-center justify-center gap-2 mb-1.5">
-            <h1 className="text-heading-3 font-bold text-foreground">
+            <h1 className="font-vitrine text-heading-3 font-bold text-foreground">
               {agence.nom_agence}
             </h1>
             {agence.est_verifie && (
@@ -178,7 +178,7 @@ export default async function ContactPage({ params }: ContactPageProps) {
         </section>
 
         {/* ─── Contact methods ─── */}
-        <section className="rounded-2xl border border-border bg-white p-6 md:p-8 mb-5">
+        <section className="glass-card rounded-2xl border border-border shadow-soft p-6 md:p-8 mb-5 animate-fade-in-up delay-100">
           <p className="text-xs font-semibold text-or uppercase tracking-widest mb-5">
             {locale === "ar" ? "تواصل معنا" : locale === "en" ? "Contact us" : "Contactez-nous"}
           </p>
@@ -249,7 +249,7 @@ export default async function ContactPage({ params }: ContactPageProps) {
         </section>
 
         {/* ─── Map placeholder ─── */}
-        <section className="rounded-2xl border border-border bg-white p-6 md:p-8 mb-5">
+        <section className="glass-card rounded-2xl border border-border shadow-soft p-6 md:p-8 mb-5 animate-fade-in-up delay-150">
           <p className="text-xs font-semibold text-or uppercase tracking-widest mb-4">
             {locale === "ar" ? "الموقع" : locale === "en" ? "Location" : "Localisation"}
           </p>
@@ -266,7 +266,7 @@ export default async function ContactPage({ params }: ContactPageProps) {
         </section>
 
         {/* ─── Working hours ─── */}
-        <section className="rounded-2xl border border-border bg-white p-6 md:p-8 mb-5">
+        <section className="glass-card rounded-2xl border border-border shadow-soft p-6 md:p-8 mb-5 animate-fade-in-up delay-200">
           <p className="text-xs font-semibold text-or uppercase tracking-widest mb-4">
             {locale === "ar" ? "ساعات العمل" : locale === "en" ? "Working hours" : "Horaires d'ouverture"}
           </p>
@@ -307,7 +307,7 @@ export default async function ContactPage({ params }: ContactPageProps) {
       </main>
 
       {/* ─── Footer ─── */}
-      <footer className="border-t border-border bg-white py-8">
+      <footer className="border-t border-border/50 bg-white py-8">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 bg-bleu-nuit rounded flex items-center justify-center">

@@ -65,6 +65,12 @@ const dictionnaires = {
     confort_moderne: "Confort moderne",
     emplacement_strategique: "Emplacement stratégique",
     investissement_sur: "Investissement sûr",
+
+    // Recherche globale
+    explorer: "Explorer",
+    explorer_biens: "Explorer les biens",
+    recherche_titre: "Trouvez votre bien idéal",
+    recherche_sous_titre: "Recherchez parmi toutes les agences en Algérie",
   },
   ar: {
     accueil: "الرئيسية",
@@ -122,6 +128,11 @@ const dictionnaires = {
     confort_moderne: "راحة عصرية",
     emplacement_strategique: "موقع استراتيجي",
     investissement_sur: "استثمار آمن",
+
+    explorer: "استكشاف",
+    explorer_biens: "استكشف العقارات",
+    recherche_titre: "ابحث عن عقارك المثالي",
+    recherche_sous_titre: "ابحث بين جميع الوكالات في الجزائر",
   },
   en: {
     accueil: "Home",
@@ -179,6 +190,11 @@ const dictionnaires = {
     confort_moderne: "Modern comfort",
     emplacement_strategique: "Strategic location",
     investissement_sur: "Safe investment",
+
+    explorer: "Explore",
+    explorer_biens: "Explore properties",
+    recherche_titre: "Find your ideal property",
+    recherche_sous_titre: "Search across all agencies in Algeria",
   },
 } as const;
 

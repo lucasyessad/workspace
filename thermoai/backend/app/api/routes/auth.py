@@ -22,7 +22,8 @@ def slugify(text: str) -> str:
 
 
 @router.post("/register", response_model=Token, status_code=201)
-def register(payload: UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def register(request: Request, payload: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(status_code=400, detail="Email déjà utilisé")
 
@@ -97,7 +98,8 @@ def logout(payload: RefreshRequest):
 
 
 @router.post("/organizations", response_model=OrganizationRead, status_code=201)
-def create_organization(payload: OrganizationCreate, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def create_organization(request: Request, payload: OrganizationCreate, db: Session = Depends(get_db)):
     slug = payload.slug or slugify(payload.name)
     if db.query(Organization).filter(Organization.slug == slug).first():
         raise HTTPException(status_code=400, detail="Slug déjà utilisé")

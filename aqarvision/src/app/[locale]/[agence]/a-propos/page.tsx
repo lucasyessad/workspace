@@ -118,7 +118,7 @@ export default async function AProposPage({ params }: AProposPageProps) {
   return (
     <div className="min-h-screen bg-blanc-casse" dir={dir}>
       {/* ─── Header compact ─── */}
-      <header className="bg-white border-b border-border sticky top-0 z-50">
+      <header className="bg-white/95 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
         <div className="container mx-auto px-4 h-14 flex items-center justify-between">
           <Link
             href={`/${locale}/${params.agence}`}
@@ -160,8 +160,8 @@ export default async function AProposPage({ params }: AProposPageProps) {
 
       <main className="container mx-auto px-4 py-8 md:py-12 max-w-3xl">
         {/* ─── Hero section ─── */}
-        <div className="text-center mb-10">
-          <div className="w-24 h-24 md:w-28 md:h-28 mx-auto rounded-2xl bg-muted flex items-center justify-center border border-border mb-5">
+        <div className="text-center mb-10 animate-fade-in-up">
+          <div className="w-24 h-24 md:w-28 md:h-28 mx-auto rounded-2xl bg-muted flex items-center justify-center border border-border/50 mb-5 shadow-card">
             {agence.logo_url ? (
               <img
                 src={agence.logo_url}
@@ -174,7 +174,7 @@ export default async function AProposPage({ params }: AProposPageProps) {
           </div>
 
           <div className="flex items-center justify-center gap-2.5 mb-2">
-            <h1 className="text-heading-2 md:text-heading-1 font-bold text-foreground">
+            <h1 className="font-vitrine text-heading-2 md:text-heading-1 font-bold text-foreground">
               {agence.nom_agence}
             </h1>
             {agence.est_verifie && (
@@ -193,7 +193,7 @@ export default async function AProposPage({ params }: AProposPageProps) {
 
         {/* ─── À propos ─── */}
         {agence.description && (
-          <section className="rounded-2xl border border-border bg-white p-6 md:p-8 mb-5">
+          <section className="glass-card rounded-2xl border border-border shadow-soft p-6 md:p-8 mb-5 animate-fade-in-up delay-100">
             <p className="text-xs font-semibold text-or uppercase tracking-widest mb-4">
               {locale === "ar" ? "حول الوكالة" : locale === "en" ? "About" : "À propos"}
             </p>
@@ -204,7 +204,7 @@ export default async function AProposPage({ params }: AProposPageProps) {
         )}
 
         {/* ─── Informations ─── */}
-        <section className="rounded-2xl border border-border bg-white p-6 md:p-8 mb-5">
+        <section className="glass-card rounded-2xl border border-border shadow-soft p-6 md:p-8 mb-5 animate-fade-in-up delay-150">
           <p className="text-xs font-semibold text-or uppercase tracking-widest mb-4">
             {locale === "ar" ? "المعلومات" : locale === "en" ? "Information" : "Informations"}
           </p>
@@ -291,8 +291,8 @@ export default async function AProposPage({ params }: AProposPageProps) {
         )}
 
         {/* ─── Statistiques ─── */}
-        <section className="grid grid-cols-2 gap-4 mb-5">
-          <div className="rounded-2xl border border-border bg-white p-6 text-center">
+        <section className="grid grid-cols-2 gap-4 mb-5 animate-fade-in-up delay-200">
+          <div className="glass-card rounded-2xl border border-border p-6 text-center cursor-pointer">
             <Home className="h-5 w-5 text-or mx-auto mb-2" />
             <p className="text-heading-3 font-bold text-foreground">
               {nbAnnonces ?? 0}
@@ -305,7 +305,7 @@ export default async function AProposPage({ params }: AProposPageProps) {
                 : "Annonces actives"}
             </p>
           </div>
-          <div className="rounded-2xl border border-border bg-white p-6 text-center">
+          <div className="glass-card rounded-2xl border border-border p-6 text-center cursor-pointer">
             <Calendar className="h-5 w-5 text-or mx-auto mb-2" />
             <p className="text-body font-bold text-foreground">
               {dateInscription}
@@ -321,7 +321,7 @@ export default async function AProposPage({ params }: AProposPageProps) {
         </section>
 
         {/* ─── CTA Contact ─── */}
-        <section className="rounded-2xl border border-border bg-white p-6 md:p-8">
+        <section className="glass-card rounded-2xl border border-border shadow-soft p-6 md:p-8 animate-fade-in-up delay-300">
           <p className="text-xs font-semibold text-or uppercase tracking-widest mb-4">
             {locale === "ar" ? "تواصل معنا" : locale === "en" ? "Contact us" : "Contactez-nous"}
           </p>
@@ -351,7 +351,7 @@ export default async function AProposPage({ params }: AProposPageProps) {
       </main>
 
       {/* ─── Footer ─── */}
-      <footer className="border-t border-border bg-white py-8">
+      <footer className="border-t border-border/50 bg-white py-8">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 bg-bleu-nuit rounded flex items-center justify-center">

@@ -62,9 +62,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-blanc-casse px-4 py-8">
-      <div className="w-full max-w-md animate-fade-in-up">
-        <div className="rounded-2xl border border-border bg-white shadow-card p-8">
+    <div className="min-h-screen flex items-center justify-center bg-blanc-casse px-4 py-8 relative overflow-hidden">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-b from-or/[0.04] to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-bleu-nuit/[0.02] rounded-full blur-[120px] pointer-events-none" />
+      <div className="w-full max-w-md animate-fade-in-up relative">
+        <div className="glass-card rounded-2xl border border-border shadow-card p-8">
           <div className="flex justify-center mb-8">
             <Link href="/" className="inline-flex items-center gap-2.5">
               <div className="w-8 h-8 bg-bleu-nuit rounded-lg flex items-center justify-center">
@@ -76,7 +78,7 @@ export default function RegisterPage() {
             </Link>
           </div>
 
-          <h1 className="text-heading-3 font-bold text-foreground text-center">
+          <h1 className="font-vitrine text-heading-3 font-bold text-foreground text-center">
             Creer votre agence
           </h1>
           <p className="text-body-sm text-muted-foreground text-center mt-1.5 mb-6">

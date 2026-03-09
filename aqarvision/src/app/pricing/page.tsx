@@ -117,7 +117,7 @@ export default function PricingPage() {
           <p className="animate-fade-in-up text-xs font-semibold text-or uppercase tracking-widest mb-3">
             Tarifs
           </p>
-          <h1 className="animate-fade-in-up delay-75 text-heading-1 text-foreground mb-5">
+          <h1 className="animate-fade-in-up delay-75 font-vitrine text-heading-1 text-foreground mb-5">
             Des tarifs adaptés à votre agence
           </h1>
           <p className="animate-fade-in-up delay-100 text-body-lg text-muted-foreground max-w-xl mx-auto">
@@ -142,7 +142,7 @@ export default function PricingPage() {
               } relative rounded-2xl p-8 transition-all ${
                 plan.populaire
                   ? "bg-bleu-nuit text-white shadow-float md:scale-105 md:-my-4 z-10"
-                  : "bg-white border border-border shadow-card"
+                  : "glass-card border border-border shadow-card cursor-pointer"
               }`}
             >
               {plan.populaire && (
@@ -271,7 +271,7 @@ export default function PricingPage() {
               <p className="animate-fade-in-up text-xs font-semibold text-or uppercase tracking-widest mb-3">
                 Comparatif
               </p>
-              <h2 className="animate-fade-in-up delay-75 text-heading-2 text-foreground">
+              <h2 className="animate-fade-in-up delay-75 font-vitrine text-heading-2 text-foreground">
                 Toutes les fonctionnalités en détail
               </h2>
             </div>
@@ -340,7 +340,7 @@ export default function PricingPage() {
             <p className="text-xs font-semibold text-or uppercase tracking-widest mb-3">
               Prêt à commencer
             </p>
-            <h2 className="text-heading-2 text-foreground mb-4">
+            <h2 className="font-vitrine text-heading-2 text-foreground mb-4">
               Lancez votre agence en ligne dès aujourd&apos;hui
             </h2>
             <p className="text-body text-muted-foreground mb-8 max-w-lg mx-auto">

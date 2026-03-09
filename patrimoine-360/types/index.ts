@@ -67,6 +67,21 @@ export interface OnboardingData {
   completed: boolean;
 }
 
+export interface UserProfile {
+  age?: number;
+  revenus_mensuels?: number;
+  depenses_mensuelles?: number;
+  epargne_totale?: number;
+  dettes_totales?: number;
+  investissements?: number;
+  revenus_annuels?: number;
+  capacite_epargne?: number;
+  statut_fiscal?: string;
+  lieu_residence?: string;
+  nom?: string;
+  email?: string;
+}
+
 export type Theme = "dark" | "light";
 
 export interface AppState {

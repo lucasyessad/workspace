@@ -11,6 +11,7 @@ import {
   ExternalLink,
   Users,
   Palette,
+  MessageSquare,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ export default async function DashboardLayout({
     { href: "/dashboard/annonces", label: "Annonces", icon: List },
     { href: "/dashboard/annonces/nouvelle", label: "Nouvelle annonce", icon: PlusCircle },
     { href: "/dashboard/leads", label: "Leads", icon: Users },
+    { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
     { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
     { href: "/dashboard/branding", label: "Identité visuelle", icon: Palette },
     { href: "/dashboard/profil", label: "Profil", icon: User },
@@ -48,7 +50,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-blanc-casse">
       {/* Mobile top bar */}
-      <nav className="md:hidden border-b border-border bg-white sticky top-0 z-50">
+      <nav className="md:hidden border-b border-border/50 bg-white/95 backdrop-blur-md sticky top-0 z-50">
         <div className="px-4 h-14 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="w-7 h-7 bg-bleu-nuit rounded-lg flex items-center justify-center">
@@ -76,10 +78,10 @@ export default async function DashboardLayout({
 
       <div className="flex">
         {/* Sidebar desktop */}
-        <aside className="hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-border">
+        <aside className="hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 bg-white/95 backdrop-blur-md border-r border-border/50">
           <div className="flex flex-col h-full">
             {/* Logo */}
-            <div className="px-5 h-14 flex items-center border-b border-border">
+            <div className="px-5 h-14 flex items-center border-b border-border/50">
               <Link href="/dashboard" className="flex items-center gap-2">
                 <div className="w-7 h-7 bg-bleu-nuit rounded-lg flex items-center justify-center">
                   <Building2 className="h-3.5 w-3.5 text-white" />
@@ -91,7 +93,7 @@ export default async function DashboardLayout({
             </div>
 
             {/* Agency name */}
-            <div className="px-5 py-4 border-b border-border">
+            <div className="px-5 py-4 border-b border-border/50">
               <p className="text-caption text-muted-foreground">Agence</p>
               <p className="text-body-sm font-medium text-foreground truncate">
                 {profile?.nom_agence ?? "Mon Agence"}
@@ -113,7 +115,7 @@ export default async function DashboardLayout({
             </nav>
 
             {/* Bottom */}
-            <div className="px-3 py-4 border-t border-border space-y-1">
+            <div className="px-3 py-4 border-t border-border/50 space-y-1">
               {profile?.slug_url && (
                 <Link
                   href={`/fr/${profile.slug_url}`}
@@ -139,7 +141,7 @@ export default async function DashboardLayout({
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 md:ml-60">
+        <main id="main-content" className="flex-1 md:ml-60">
           <div className="p-5 md:p-8 max-w-6xl">{children}</div>
         </main>
       </div>

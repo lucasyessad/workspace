@@ -64,6 +64,7 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-jakarta)", "sans-serif"],
         arabic: ["var(--font-cairo)", "sans-serif"],
+        display: ["var(--font-playfair)", "serif"],
       },
       fontSize: {
         "display-xl": ["4.5rem", { lineHeight: "1.1", letterSpacing: "-0.02em" }],

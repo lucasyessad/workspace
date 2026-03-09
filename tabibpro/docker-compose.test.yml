@@ -1,0 +1,69 @@
+# ============================================================
+# TabibPro — Docker Compose TEST
+# Environnement isolé pour les tests d'intégration
+# Ports décalés pour ne pas interférer avec le dev
+# ============================================================
+
+name: tabibpro-test
+
+services:
+  postgres-medical-test:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: tabibpro_medical_test
+      POSTGRES_USER: medgest
+      POSTGRES_PASSWORD: test-medical-password
+    ports:
+      - "5434:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medgest -d tabibpro_medical_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres-service-test:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: tabibpro_service_test
+      POSTGRES_USER: medgest
+      POSTGRES_PASSWORD: test-service-password
+    ports:
+      - "5435:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medgest -d tabibpro_service_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis-test:
+    image: redis:7-alpine
+    command: redis-server --requirepass test-redis-password
+    ports:
+      - "6381:6379"
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "test-redis-password", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  meilisearch-test:
+    image: getmeili/meilisearch:v1.11
+    environment:
+      MEILI_MASTER_KEY: test-meili-key
+      MEILI_ENV: development
+      MEILI_NO_ANALYTICS: "true"
+    ports:
+      - "7701:7700"
+    tmpfs:
+      - /meili_data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5

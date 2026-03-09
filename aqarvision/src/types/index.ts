@@ -39,6 +39,9 @@ export interface Profile {
   description: string | null;
   est_verifie: boolean;
   slug_url: string;
+  theme_id: string | null;
+  custom_primary: string | null;
+  custom_accent: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -54,6 +57,7 @@ export interface Listing {
   type_transaction: TypeTransaction;
   statut_document: StatutDocument;
   photos: string[];
+  videos: string[];
   wilaya_id: number;
   commune: string | null;
   quartier: string | null;
@@ -86,6 +90,61 @@ export interface Commune {
 }
 
 /** Données du formulaire de création d'annonce */
+/** Profil visiteur */
+export interface VisitorProfile {
+  id: string;
+  nom: string;
+  telephone: string | null;
+  wilaya_id: number | null;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Favori */
+export interface Favorite {
+  id: string;
+  visitor_id: string;
+  listing_id: string;
+  created_at: string;
+}
+
+/** Historique de recherche */
+export interface SearchHistoryEntry {
+  id: string;
+  visitor_id: string;
+  query: string | null;
+  filters: Record<string, string>;
+  results_count: number;
+  created_at: string;
+}
+
+/** Conversation */
+export interface Conversation {
+  id: string;
+  visitor_id: string;
+  agent_id: string;
+  listing_id: string | null;
+  dernier_message: string | null;
+  dernier_message_at: string;
+  visitor_non_lu: number;
+  agent_non_lu: number;
+  created_at: string;
+}
+
+/** Message */
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  contenu: string;
+  lu: boolean;
+  created_at: string;
+}
+
+/** Rôle utilisateur */
+export type UserRole = "agent" | "visitor";
+
 export interface ListingFormData {
   titre: string;
   description: string;
@@ -104,4 +163,5 @@ export interface ListingFormData {
   garage: boolean;
   jardin: boolean;
   photos: File[];
+  videoFiles: File[];
 }

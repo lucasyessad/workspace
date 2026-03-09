@@ -34,6 +34,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.7,
     },
+    // Pages de recherche globale par locale
+    ...LOCALES.map((locale) => ({
+      url: `${BASE_URL}/${locale}/recherche`,
+      lastModified: new Date(),
+      changeFrequency: "daily" as const,
+      priority: 0.9,
+    })),
   ];
 
   // Récupérer toutes les agences avec des annonces actives

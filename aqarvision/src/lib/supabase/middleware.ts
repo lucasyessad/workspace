@@ -38,5 +38,12 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Rediriger vers login visiteur si non authentifié et accès à l'espace visiteur
+  if (!user && request.nextUrl.pathname.startsWith("/espace")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/visiteur/login";
+    return NextResponse.redirect(url);
+  }
+
   return supabaseResponse;
 }

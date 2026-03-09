@@ -16,7 +16,7 @@ export default function BilanComplet({ appState }: BilanCompletProps) {
   const [results, setResults] = useState<Record<number, string>>({});
   const [error, setError] = useState("");
 
-  const completedModules = modules.filter((m) => appState.modules[m.id]?.formData && Object.keys(appState.modules[m.id].formData).length > 0);
+  const completedModules = modules.filter((m) => appState.modules[m.id]?.formData && Object.keys(appState.modules[m.id]?.formData ?? {}).length > 0);
 
   const handleRunAll = async () => {
     setRunning(true);

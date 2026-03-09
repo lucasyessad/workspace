@@ -68,7 +68,20 @@ export class AuthService {
       throw new UnauthorizedException('Numéro de téléphone ou mot de passe incorrect');
     }
 
-    // TODO: vérifier hash mot de passe en DB service
+    // Vérifier le mot de passe hashé
+    const user = await this.prismaService.user.findFirst({
+      where: { patientId: patient.id },
+    });
+
+    if (!user || !user.passwordHash) {
+      throw new UnauthorizedException('Numéro de téléphone ou mot de passe incorrect');
+    }
+
+    const passwordValid = await bcrypt.compare(dto.password, user.passwordHash);
+    if (!passwordValid) {
+      throw new UnauthorizedException('Numéro de téléphone ou mot de passe incorrect');
+    }
+
     return this.generateTokens({
       sub: patient.id,
       email: patient.email || '',
@@ -109,8 +122,9 @@ export class AuthService {
   // ---- Stub DB service ----
 
   private async findUserByEmail(email: string) {
-    // TODO: implémenter avec db-service prisma
-    // Stub pour développement
-    return null as any;
+    const user = await this.prismaService.user.findUnique({
+      where: { email },
+    });
+    return user;
   }
 }

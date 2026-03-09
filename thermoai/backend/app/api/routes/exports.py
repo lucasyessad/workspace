@@ -4,7 +4,7 @@ Exports scenarios and audits as .xlsx files using openpyxl.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from uuid import UUID
 import io
 from datetime import datetime
@@ -65,6 +65,7 @@ def export_audits_xlsx(
     """Export all completed audits as an Excel file."""
     audits = (
         db.query(Audit)
+        .options(joinedload(Audit.building))
         .filter(
             Audit.organization_id == current_user.organization_id,
             Audit.status == "completed",
@@ -89,13 +90,8 @@ def export_audits_xlsx(
         ws.cell(row=1, column=col, value=h)
     _style_header_row(ws, 1, len(headers))
 
-    buildings_cache: dict = {}
-
     for i, audit in enumerate(audits, 2):
-        if audit.building_id not in buildings_cache:
-            b = db.query(Building).filter(Building.id == audit.building_id).first()
-            buildings_cache[audit.building_id] = b
-        b = buildings_cache.get(audit.building_id)
+        b = audit.building
         snap = audit.result_snapshot or {}
 
         row = [

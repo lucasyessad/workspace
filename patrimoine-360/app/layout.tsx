@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
+import AuthProvider from "@/components/AuthProvider";
 import ToastProvider from "@/components/Toast";
 import Disclaimer from "@/components/Disclaimer";
 
@@ -71,12 +72,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Aller au contenu principal
         </a>
         <ThemeProvider>
-          <ToastProvider>
-            <main id="main-content">
-              {children}
-            </main>
-            <Disclaimer />
-          </ToastProvider>
+          <AuthProvider>
+            <ToastProvider>
+              <main id="main-content">
+                {children}
+              </main>
+              <Disclaimer />
+            </ToastProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

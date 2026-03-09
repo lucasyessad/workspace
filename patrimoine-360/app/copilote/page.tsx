@@ -10,18 +10,11 @@ import { useTheme } from "@/components/ThemeProvider";
 import { AppState } from "@/types";
 import { modules } from "@/lib/modules";
 import { calculate } from "@/lib/calculators";
+import { loadAppState } from "@/lib/storage";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
-}
-
-function loadState(): AppState {
-  try {
-    const stored = localStorage.getItem("patrimoine360_state");
-    if (stored) return JSON.parse(stored);
-  } catch {}
-  return { modules: {} };
 }
 
 function buildContext(appState: AppState): string {
@@ -69,7 +62,7 @@ export default function CopilotePage() {
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    setAppState(loadState());
+    setAppState(loadAppState());
   }, []);
 
   useEffect(() => {
@@ -145,7 +138,7 @@ export default function CopilotePage() {
   };
 
   const filledModules = modules.filter(
-    (m) => appState.modules[m.id]?.formData && Object.keys(appState.modules[m.id].formData).length > 0
+    (m) => appState.modules[m.id]?.formData && Object.keys(appState.modules[m.id]?.formData ?? {}).length > 0
   );
 
   return (

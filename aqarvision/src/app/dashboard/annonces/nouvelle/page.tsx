@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Sparkles, Upload, X, Languages, Check } from "lucide-react";
+import { Loader2, Sparkles, Upload, X, Languages, Check, Video } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,7 +55,10 @@ export default function NouvelleAnnoncePage() {
   const [photosPreviews, setPhotosPreviews] = useState<string[]>([]);
   const [photosFiles, setPhotosFiles] = useState<File[]>([]);
   const [compression, setCompression] = useState<string | null>(null);
+  const [videosPreviews, setVideosPreviews] = useState<string[]>([]);
+  const [videosFiles, setVideosFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     titre: "",
@@ -167,6 +170,47 @@ export default function NouvelleAnnoncePage() {
     setPhotosFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
+  const FORMATS_VIDEO_ACCEPTES = "video/mp4,video/quicktime,video/webm";
+  const TAILLE_MAX_VIDEO = 50 * 1024 * 1024; // 50 Mo
+  const MAX_VIDEOS = 2;
+
+  function handleVideos(e: React.ChangeEvent<HTMLInputElement>) {
+    const fichiers = e.target.files;
+    if (!fichiers) return;
+
+    const fichiersArray = Array.from(fichiers);
+    const restants = MAX_VIDEOS - videosFiles.length;
+
+    if (restants <= 0) {
+      setErreur("Vous pouvez ajouter au maximum 2 vidéos.");
+      return;
+    }
+
+    const aAjouter = fichiersArray.slice(0, restants);
+
+    for (const fichier of aAjouter) {
+      if (fichier.size > TAILLE_MAX_VIDEO) {
+        setErreur(`La vidéo "${fichier.name}" dépasse la taille maximale de 50 Mo.`);
+        return;
+      }
+    }
+
+    const nouvelles: string[] = aAjouter.map((f) => URL.createObjectURL(f));
+
+    setVideosPreviews((prev) => [...prev, ...nouvelles]);
+    setVideosFiles((prev) => [...prev, ...aAjouter]);
+    setErreur(null);
+    if (videoInputRef.current) videoInputRef.current.value = "";
+  }
+
+  function supprimerVideo(index: number) {
+    setVideosPreviews((prev) => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+    setVideosFiles((prev) => prev.filter((_, i) => i !== index));
+  }
+
   function validerEtape(etapeCible: number): boolean {
     if (etapeCible > 1 && etape === 1) {
       if (!formData.titre.trim()) { setErreur("Le titre est requis"); return false; }
@@ -216,6 +260,22 @@ export default function NouvelleAnnoncePage() {
       photosUrls.push(urlData.publicUrl);
     }
 
+    const videosUrls: string[] = [];
+    for (const fichier of videosFiles) {
+      const nomFichier = `${user.id}/${Date.now()}-${fichier.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("listing-videos")
+        .upload(nomFichier, fichier);
+
+      if (uploadError) { console.error("Erreur upload vidéo:", uploadError); continue; }
+
+      const { data: urlData } = supabase.storage
+        .from("listing-videos")
+        .getPublicUrl(uploadData.path);
+
+      videosUrls.push(urlData.publicUrl);
+    }
+
     const { error } = await supabase.from("listings").insert({
       titre: formData.titre,
       description: formData.description,
@@ -235,6 +295,7 @@ export default function NouvelleAnnoncePage() {
       jardin: formData.jardin,
       agent_id: user.id,
       photos: photosUrls,
+      videos: videosUrls,
     });
 
     if (error) {
@@ -517,6 +578,83 @@ export default function NouvelleAnnoncePage() {
                     </div>
                     <p className="text-caption text-muted-foreground">
                       {photosPreviews.length} photo(s)
+                    </p>
+                  </>
+                )}
+              </div>
+
+              {/* Upload vidéos */}
+              <div className="space-y-2">
+                <Label className="text-body-sm font-medium">Vidéos du bien</Label>
+                <p className="text-caption text-muted-foreground">
+                  Jusqu&apos;à 2 vidéos (MP4, MOV, WebM) — 50 Mo max par vidéo
+                </p>
+                <div
+                  className="border border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-muted-foreground/30 hover:bg-muted/30 transition-colors"
+                  onClick={() => videoInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (e.dataTransfer.files?.length) {
+                      const input = videoInputRef.current;
+                      if (input) {
+                        const dt = new DataTransfer();
+                        Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+                        input.files = dt.files;
+                        input.dispatchEvent(new Event("change", { bubbles: true }));
+                      }
+                    }
+                  }}
+                >
+                  <Video className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-body-sm text-foreground mb-0.5">
+                    Glissez vos vidéos ici
+                  </p>
+                  <p className="text-caption text-muted-foreground mb-3">
+                    Formats acceptés : MP4, MOV, WebM
+                  </p>
+                  <input
+                    type="file"
+                    multiple
+                    accept={FORMATS_VIDEO_ACCEPTES}
+                    onChange={handleVideos}
+                    className="hidden"
+                    ref={videoInputRef}
+                    id="videos-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => { e.stopPropagation(); videoInputRef.current?.click(); }}
+                    disabled={videosFiles.length >= MAX_VIDEOS}
+                  >
+                    Parcourir
+                  </Button>
+                </div>
+                {videosPreviews.length > 0 && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3 mt-3">
+                      {videosPreviews.map((video, i) => (
+                        <div key={i} className="relative group rounded-lg overflow-hidden">
+                          <video
+                            src={video}
+                            controls
+                            className="w-full aspect-video object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => supprimerVideo(i)}
+                            className="absolute top-2 right-2 bg-black/60 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-4 w-4 text-white" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-caption text-muted-foreground">
+                      {videosPreviews.length} / {MAX_VIDEOS} vidéo(s)
                     </p>
                   </>
                 )}

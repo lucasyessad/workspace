@@ -12,71 +12,99 @@ import {
   Users,
   Zap,
   Layout,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MarketingHeader } from "@/components/shared/marketing-header";
 import { MarketingFooter } from "@/components/shared/marketing-footer";
+import { BarreRechercheHero } from "@/components/recherche/barre-recherche-hero";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-blanc-casse">
       <MarketingHeader />
 
-      {/* ─── Hero ─── */}
-      <section className="relative section-padding overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-b from-or/[0.04] to-transparent rounded-full blur-3xl pointer-events-none" />
+      {/* ─── Hero avec recherche premium ─── */}
+      <section className="relative bg-bleu-nuit overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(184,150,62,0.08),transparent_50%)]" />
+        <div className="absolute top-20 right-0 w-[500px] h-[500px] bg-or/[0.04] rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-white/[0.02] rounded-full blur-[100px] pointer-events-none" />
 
-        <div className="container mx-auto px-4 relative">
-          <div className="max-w-3xl mx-auto text-center">
+        <div className="container mx-auto px-4 relative pt-16 pb-20 md:pt-24 md:pb-28">
+          <div className="text-center mb-12">
             <div className="animate-fade-in-up">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-bleu-nuit/5 text-bleu-nuit text-xs font-medium mb-8">
-                <Zap className="h-3.5 w-3.5" />
-                Plateforme propulsée par l&apos;IA
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-white/80 text-xs font-medium mb-6 backdrop-blur-sm">
+                <Search className="h-3.5 w-3.5" />
+                +5 000 annonces sur 58 wilayas
               </div>
             </div>
 
-            <h1 className="animate-fade-in-up delay-75 text-heading-1 md:text-display font-extrabold text-foreground mb-6">
-              Créez un site vitrine immobilier{" "}
-              <span className="text-or">moderne</span> et gérez vos annonces
-              depuis une seule plateforme
+            <h1 className="animate-fade-in-up delay-75 font-vitrine text-heading-1 md:text-display font-extrabold text-white mb-5">
+              Trouvez votre bien immobilier{" "}
+              <span className="text-or">idéal</span> en Algérie
             </h1>
 
-            <p className="animate-fade-in-up delay-150 text-body-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
-              La première plateforme SaaS dédiée aux agences immobilières en
-              Algérie. Publiez vos biens, créez votre vitrine professionnelle et
-              convertissez vos visiteurs en leads.
+            <p className="animate-fade-in-up delay-150 text-body-lg text-white/60 mb-12 max-w-2xl mx-auto">
+              Recherchez parmi des milliers d&apos;annonces de vente et location
+              publiées par des agences vérifiées sur toute l&apos;Algérie.
             </p>
+          </div>
 
-            <div className="animate-fade-in-up delay-200 flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/auth/register">
-                <Button size="lg" className="w-full sm:w-auto">
-                  Créer mon agence
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="#fonctionnalites">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                  Découvrir les fonctionnalités
-                </Button>
-              </Link>
+          {/* Barre de recherche premium */}
+          <div className="animate-fade-in-up delay-200">
+            <BarreRechercheHero />
+          </div>
+
+          {/* Social proof */}
+          <div className="animate-fade-in-up delay-300 mt-16 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-white/50">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span className="text-sm">+200 agences</span>
             </div>
+            <div className="hidden sm:block w-px h-4 bg-white/20" />
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              <span className="text-sm">58 wilayas</span>
+            </div>
+            <div className="hidden sm:block w-px h-4 bg-white/20" />
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              <span className="text-sm">Agences vérifiées</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-            {/* Social proof */}
-            <div className="animate-fade-in-up delay-300 mt-14 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                <span className="text-sm">+200 agences</span>
+      {/* ─── Bandeau recherche premium ─── */}
+      <section className="py-12 bg-white border-b border-border/50">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 max-w-4xl mx-auto">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-or/10 flex items-center justify-center flex-shrink-0">
+                <Search className="h-6 w-6 text-or" />
               </div>
-              <div className="hidden sm:block w-px h-4 bg-border" />
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                <span className="text-sm">58 wilayas</span>
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">
+                  Moteur de recherche immobilier
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Recherche multi-agences avec filtres avancés, favoris et alertes personnalisées
+                </p>
               </div>
-              <div className="hidden sm:block w-px h-4 bg-border" />
-              <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4" />
-                <span className="text-sm">14 jours d&apos;essai gratuit</span>
-              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link href="/fr/recherche">
+                <Button variant="outline" size="sm">
+                  Rechercher un bien
+                  <ArrowRight className="ml-2 h-3.5 w-3.5" />
+                </Button>
+              </Link>
+              <Link href="/auth/register">
+                <Button size="sm">
+                  Espace Agence
+                  <ArrowRight className="ml-2 h-3.5 w-3.5" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -89,7 +117,7 @@ export default function HomePage() {
             <p className="text-xs font-semibold text-or uppercase tracking-widest mb-3">
               Fonctionnalités
             </p>
-            <h2 className="text-heading-2 md:text-heading-1 font-bold text-foreground mb-4">
+            <h2 className="font-vitrine text-heading-2 md:text-heading-1 font-bold text-foreground mb-4">
               Tout ce dont votre agence a besoin
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto">
@@ -133,7 +161,7 @@ export default function HomePage() {
             ].map(({ icon: Icon, title, desc }) => (
               <div
                 key={title}
-                className="group p-7 rounded-2xl border border-border bg-white hover:shadow-card hover:border-border/60 transition-all duration-300"
+                className="group glass-card p-7 rounded-2xl border border-border cursor-pointer"
               >
                 <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center mb-5 group-hover:bg-or/10 transition-colors">
                   <Icon className="h-5 w-5 text-muted-foreground group-hover:text-or transition-colors" />
@@ -159,7 +187,7 @@ export default function HomePage() {
                 <p className="text-xs font-semibold text-or uppercase tracking-widest mb-3">
                   Mini-site agence
                 </p>
-                <h2 className="text-heading-2 font-bold text-foreground mb-5">
+                <h2 className="font-vitrine text-heading-2 font-bold text-foreground mb-5">
                   Une vitrine premium pour chaque agence
                 </h2>
                 <p className="text-muted-foreground mb-8 leading-relaxed">
@@ -186,7 +214,7 @@ export default function HomePage() {
               </div>
 
               <div className="relative">
-                <div className="rounded-2xl border border-border bg-white shadow-elevated p-6">
+                <div className="glass-card rounded-2xl border border-border shadow-elevated p-6">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 bg-bleu-nuit rounded-xl flex items-center justify-center">
                       <Building2 className="h-5 w-5 text-white" />
@@ -262,7 +290,7 @@ export default function HomePage() {
                 <p className="text-xs font-semibold text-or uppercase tracking-widest mb-3">
                   Dashboard
                 </p>
-                <h2 className="text-heading-2 font-bold text-foreground mb-5">
+                <h2 className="font-vitrine text-heading-2 font-bold text-foreground mb-5">
                   Gérez tout depuis un seul endroit
                 </h2>
                 <p className="text-muted-foreground mb-8 leading-relaxed">
@@ -318,7 +346,7 @@ export default function HomePage() {
             <p className="text-xs font-semibold text-or uppercase tracking-widest mb-3">
               Simple
             </p>
-            <h2 className="text-heading-2 md:text-heading-1 font-bold text-foreground">
+            <h2 className="font-vitrine text-heading-2 md:text-heading-1 font-bold text-foreground">
               Lancez-vous en 3 étapes
             </h2>
           </div>
@@ -369,7 +397,7 @@ export default function HomePage() {
             <p className="text-xs font-semibold text-or uppercase tracking-widest mb-3">
               Tarifs
             </p>
-            <h2 className="text-heading-2 md:text-heading-1 font-bold text-foreground mb-4">
+            <h2 className="font-vitrine text-heading-2 md:text-heading-1 font-bold text-foreground mb-4">
               Des formules adaptées à chaque agence
             </h2>
             <p className="text-muted-foreground mb-10 max-w-lg mx-auto">
@@ -401,10 +429,10 @@ export default function HomePage() {
               ].map((plan) => (
                 <div
                   key={plan.nom}
-                  className={`rounded-2xl p-7 transition-all ${
+                  className={`rounded-2xl p-7 transition-all duration-200 ${
                     plan.popular
                       ? "bg-bleu-nuit text-white shadow-float ring-1 ring-bleu-nuit"
-                      : "bg-white border border-border shadow-soft"
+                      : "glass-card border border-border shadow-soft cursor-pointer"
                   }`}
                 >
                   {plan.popular && (
@@ -460,7 +488,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto">
             <div className="text-center mb-14">
-              <h2 className="text-heading-2 font-bold text-foreground">
+              <h2 className="font-vitrine text-heading-2 font-bold text-foreground">
                 Questions fréquentes
               </h2>
             </div>
@@ -508,8 +536,9 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center rounded-3xl bg-bleu-nuit p-12 md:p-16 relative overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(184,150,62,0.08),transparent_50%)]" />
+            <div className="absolute top-10 right-10 w-64 h-64 bg-or/10 rounded-full blur-[120px] pointer-events-none" />
             <div className="relative">
-              <h2 className="text-heading-2 md:text-heading-1 font-bold text-white mb-4">
+              <h2 className="font-vitrine text-heading-2 md:text-heading-1 font-bold text-white mb-4">
                 Prêt à digitaliser votre agence ?
               </h2>
               <p className="text-white/60 mb-8 max-w-md mx-auto">

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Loader2, Save, Trash2, ArrowLeft, Upload, X } from "lucide-react";
+import { Loader2, Save, Trash2, ArrowLeft, Upload, X, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { WILAYAS } from "@/lib/wilayas";
 import { compresserImage, formaterTailleFichier, FORMATS_IMAGE_ACCEPTES } from "@/lib/compression-image";
+import { AssistantDescription } from "@/components/shared/assistant-description";
 import type {
   TypeBien,
   TypeTransaction,
@@ -495,11 +496,27 @@ export default function EditerAnnoncePage() {
           <CardHeader>
             <CardTitle>Description</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Textarea
+          <CardContent>
+            <AssistantDescription
               value={formData.description}
-              onChange={(e) => updateField("description", e.target.value)}
-              rows={6}
+              onChange={(text) => updateField("description", text)}
+              type="listing"
+              context={{
+                type_bien: formData.type_bien,
+                type_transaction: formData.type_transaction,
+                surface: formData.surface,
+                prix: formData.prix,
+                commune: formData.commune,
+                wilaya: WILAYAS.find((w) => String(w.id) === formData.wilaya_id)?.nom_fr || "",
+                statut_document: formData.statut_document,
+                nb_pieces: formData.nb_pieces,
+                etage: formData.etage,
+                ascenseur: formData.ascenseur,
+                citerne: formData.citerne,
+                garage: formData.garage,
+                jardin: formData.jardin,
+              }}
+              placeholder="Décrivez votre bien en détail..."
               required
             />
           </CardContent>

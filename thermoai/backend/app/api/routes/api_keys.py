@@ -94,7 +94,7 @@ def list_api_keys(
     _check_enterprise(org)
     return (
         db.query(ApiKey)
-        .filter(ApiKey.organization_id == current_user.organization_id, ApiKey.is_active == True)  # noqa: E712
+        .filter(ApiKey.organization_id == current_user.organization_id, ApiKey.is_active.is_(True))
         .order_by(ApiKey.created_at.desc())
         .all()
     )

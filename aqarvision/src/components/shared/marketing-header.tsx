@@ -31,14 +31,14 @@ export function MarketingHeader() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Link href="/auth/login">
-            <Button variant="ghost" size="sm">
-              Connexion
+          <Link href="/espace">
+            <Button variant="outline" size="sm">
+              Espace Visiteur
             </Button>
           </Link>
-          <Link href="/auth/register">
+          <Link href="/dashboard">
             <Button size="sm">
-              Commencer gratuitement
+              Espace Pro
             </Button>
           </Link>
         </div>

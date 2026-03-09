@@ -5,7 +5,7 @@ celery_app = Celery(
     "thermopilot",
     broker=settings.redis_url,
     backend=settings.redis_url,
-    include=["app.tasks"],
+    include=[],
 )
 
 celery_app.conf.update(

@@ -39,7 +39,12 @@ export function loadAppState(): AppState {
     const stored = localStorage.getItem(STATE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      return migrate(parsed);
+      const state = migrate(parsed);
+      // Garantir que modules existe toujours
+      if (!state.modules || typeof state.modules !== "object") {
+        state.modules = {};
+      }
+      return state;
     }
   } catch {
     // Données corrompues, repartir à zéro

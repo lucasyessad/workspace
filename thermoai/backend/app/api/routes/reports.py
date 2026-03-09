@@ -101,7 +101,7 @@ def download_report_pdf(
         scenario_list = [
             {
                 "name": s.name,
-                "works_description": s.description or "",
+                "works_description": s.notes or "",
                 "estimated_total_cost_eur": str(s.estimated_total_cost_eur) if s.estimated_total_cost_eur else None,
                 "estimated_energy_savings_kwh": str(s.estimated_energy_savings_kwh) if s.estimated_energy_savings_kwh else None,
                 "simple_payback_years": str(s.simple_payback_years) if s.simple_payback_years else None,

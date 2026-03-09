@@ -192,6 +192,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Essayer Anthropic si disponible
+    if (process.env.ANTHROPIC_API_KEY) {
+      try {
+        const prompt = buildPrompt(body);
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": process.env.ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 500,
+            messages: [{ role: "user", content: prompt }],
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const description = data.content?.[0]?.text?.trim();
+          if (description) {
+            return NextResponse.json({ description, source: "ia" });
+          }
+        }
+      } catch {
+        // Fall through to template
+      }
+    }
+
     // Fallback : génération locale avancée (template intelligent)
     const description = genererDescriptionLocale(body);
     return NextResponse.json({ description, source: "template" });
