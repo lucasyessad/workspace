@@ -1,7 +1,6 @@
-import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 
-/** Middleware Supabase pour rafraîchir la session */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -13,8 +12,8 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
-          cookiesToSet.forEach(({ name, value }) =>
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({ request });
@@ -26,22 +25,39 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Rafraîchir la session
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Rediriger vers login si non authentifié et accès au dashboard
-  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+  const pathname = request.nextUrl.pathname;
+
+  // Protected routes: redirect to login if not authenticated
+  if (!user && pathname.startsWith('/dashboard')) {
     const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
+    url.pathname = '/login';
+    url.searchParams.set('redirect', pathname);
     return NextResponse.redirect(url);
   }
 
-  // Rediriger vers login visiteur si non authentifié et accès à l'espace visiteur
-  if (!user && request.nextUrl.pathname.startsWith("/espace")) {
+  if (!user && pathname.startsWith('/admin')) {
     const url = request.nextUrl.clone();
-    url.pathname = "/auth/visiteur/login";
+    url.pathname = '/login';
+    url.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(url);
+  }
+
+  if (!user && pathname.startsWith('/espace')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    url.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(url);
+  }
+
+  // Already authenticated: redirect away from auth pages
+  if (user && (pathname === '/login' || pathname === '/signup' || pathname === '/inscription-visiteur')) {
+    // Route based on account type
+    const url = request.nextUrl.clone();
+    url.pathname = '/dashboard';
     return NextResponse.redirect(url);
   }
 

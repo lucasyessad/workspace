@@ -1,167 +1,57 @@
-/** Types principaux du projet AqarVision */
+export * from './database';
 
-// Types de biens immobiliers algériens
-export type TypeBien =
-  | "Villa"
-  | "Appartement F1"
-  | "Appartement F2"
-  | "Appartement F3"
-  | "Appartement F4"
-  | "Appartement F5+"
-  | "Terrain"
-  | "Local Commercial"
-  | "Duplex"
-  | "Studio"
-  | "Hangar"
-  | "Bureau";
+// ============================================================================
+// App-level types
+// ============================================================================
 
-// Types de documents de propriété
-export type StatutDocument =
-  | "Acte"
-  | "Livret foncier"
-  | "Concession"
-  | "Promesse de vente"
-  | "Timbré"
-  | "Autre";
-
-// Type de transaction
-export type TypeTransaction = "Vente" | "Location" | "Location vacances";
-
-/** Profil d'une agence immobilière */
-export interface Profile {
-  id: string;
-  nom_agence: string;
-  logo_url: string | null;
-  telephone_whatsapp: string;
-  wilaya_id: number;
-  commune: string | null;
-  adresse: string | null;
-  description: string | null;
-  est_verifie: boolean;
-  slug_url: string;
-  theme_id: string | null;
-  custom_primary: string | null;
-  custom_accent: string | null;
-  created_at: string;
-  updated_at: string;
+export interface TenantContext {
+  agencyId: string;
+  agencySlug: string;
+  userId: string;
+  userRole: import('./database').UserRole;
 }
 
-/** Annonce immobilière */
-export interface Listing {
-  id: string;
-  titre: string;
-  description: string;
-  prix: number;
-  surface: number;
-  type_bien: TypeBien;
-  type_transaction: TypeTransaction;
-  statut_document: StatutDocument;
-  photos: string[];
-  videos: string[];
-  wilaya_id: number;
-  commune: string | null;
-  quartier: string | null;
-  etage: number | null;
-  nb_pieces: number | null;
-  ascenseur: boolean;
-  citerne: boolean;
-  garage: boolean;
-  jardin: boolean;
-  agent_id: string;
-  est_active: boolean;
-  created_at: string;
-  updated_at: string;
+export interface PaginationParams {
+  page: number;
+  perPage: number;
 }
 
-/** Wilaya d'Algérie */
-export interface Wilaya {
-  id: number;
-  nom_fr: string;
-  nom_ar: string;
-  code: string;
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  perPage: number;
+  totalPages: number;
 }
 
-/** Commune */
-export interface Commune {
-  id: number;
-  nom_fr: string;
-  nom_ar: string;
-  wilaya_id: number;
+export interface PropertyFilters {
+  transactionType?: import('./database').TransactionType;
+  propertyType?: import('./database').PropertyType;
+  wilaya?: string;
+  commune?: string;
+  priceMin?: number;
+  priceMax?: number;
+  surfaceMin?: number;
+  surfaceMax?: number;
+  rooms?: number;
+  bedrooms?: number;
+  status?: import('./database').PropertyStatus;
 }
 
-/** Données du formulaire de création d'annonce */
-/** Profil visiteur */
-export interface VisitorProfile {
-  id: string;
-  nom: string;
-  telephone: string | null;
-  wilaya_id: number | null;
-  avatar_url: string | null;
-  created_at: string;
-  updated_at: string;
+export interface ActionResult<T = void> {
+  success: boolean;
+  data?: T;
+  error?: string;
 }
 
-/** Favori */
-export interface Favorite {
-  id: string;
-  visitor_id: string;
-  listing_id: string;
-  created_at: string;
+export interface SearchFilters extends PropertyFilters {
+  query?: string;
+  sortBy?: 'price_asc' | 'price_desc' | 'newest' | 'surface_desc';
+  isFeatured?: boolean;
 }
 
-/** Historique de recherche */
-export interface SearchHistoryEntry {
-  id: string;
-  visitor_id: string;
-  query: string | null;
-  filters: Record<string, string>;
-  results_count: number;
-  created_at: string;
-}
-
-/** Conversation */
-export interface Conversation {
-  id: string;
-  visitor_id: string;
-  agent_id: string;
-  listing_id: string | null;
-  dernier_message: string | null;
-  dernier_message_at: string;
-  visitor_non_lu: number;
-  agent_non_lu: number;
-  created_at: string;
-}
-
-/** Message */
-export interface Message {
-  id: string;
-  conversation_id: string;
-  sender_id: string;
-  contenu: string;
-  lu: boolean;
-  created_at: string;
-}
-
-/** Rôle utilisateur */
-export type UserRole = "agent" | "visitor";
-
-export interface ListingFormData {
-  titre: string;
-  description: string;
-  prix: number;
-  surface: number;
-  type_bien: TypeBien;
-  type_transaction: TypeTransaction;
-  statut_document: StatutDocument;
-  wilaya_id: number;
-  commune: string;
-  quartier: string;
-  etage: number | null;
-  nb_pieces: number | null;
-  ascenseur: boolean;
-  citerne: boolean;
-  garage: boolean;
-  jardin: boolean;
-  photos: File[];
-  videoFiles: File[];
+export interface VisitorAuthContext {
+  user: { id: string; email: string };
+  profile: import('./database').UserProfile;
+  visitorProfile?: import('./database').VisitorProfile;
 }

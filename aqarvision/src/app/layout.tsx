@@ -1,42 +1,46 @@
-import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Cairo, Playfair_Display } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { Plus_Jakarta_Sans, Playfair_Display, Cairo } from 'next/font/google';
+import './globals.css';
 
 const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-jakarta",
-});
-
-const cairo = Cairo({
-  subsets: ["arabic"],
-  variable: "--font-cairo",
+  subsets: ['latin'],
+  variable: '--font-jakarta',
+  display: 'swap',
 });
 
 const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  display: 'swap',
+});
+
+const cairo = Cairo({
+  subsets: ['arabic'],
+  variable: '--font-cairo',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: "AqarVision - Plateforme Immobilière Algérie",
+  title: {
+    default: 'AqarVision - Plateforme immobilière premium',
+    template: '%s | AqarVision',
+  },
   description:
-    "Professionnalisez votre agence immobilière avec AqarVision. Gestion d'annonces, mini-site vitrine et aide IA.",
-  keywords: ["immobilier", "algérie", "agence", "annonces", "SaaS"],
+    'Plateforme SaaS immobilière multi-agences pour le marché algérien. Gérez vos annonces, vos leads et votre visibilité en ligne.',
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="fr" dir="ltr">
-      <body className={`${jakarta.variable} ${cairo.variable} ${playfair.variable} font-sans antialiased`}>
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-bleu-nuit focus:text-white focus:rounded-lg focus:text-sm">
-          Aller au contenu principal
-        </a>
-        {children}
-      </body>
+    <html
+      lang="fr"
+      className={`${jakarta.variable} ${playfair.variable} ${cairo.variable}`}
+      suppressHydrationWarning
+    >
+      <body className="min-h-screen font-sans antialiased">{children}</body>
     </html>
   );
 }

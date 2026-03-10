@@ -1,0 +1,90 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { createBrowserClient } from '@/lib/supabase/client';
+
+export default function VisitorSignupPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const fullName = formData.get('full_name') as string;
+
+    const supabase = createBrowserClient();
+
+    const { error: signupError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          role: 'agency_editor',
+          account_type: 'visitor',
+        },
+        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+      },
+    });
+
+    setLoading(false);
+    if (signupError) {
+      setError(signupError.message);
+    } else {
+      router.push('/verification?email=' + encodeURIComponent(email));
+    }
+  }
+
+  return (
+    <div>
+      <h2 className="text-heading-3 font-bold text-bleu-nuit">Créer un compte</h2>
+      <p className="mt-2 text-body-sm text-muted-foreground">
+        Créez un compte pour sauvegarder vos favoris, recevoir des alertes et contacter les agences.
+      </p>
+
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <div>
+          <label htmlFor="full_name" className="mb-1.5 block text-sm font-medium">Nom complet</label>
+          <Input id="full_name" name="full_name" placeholder="Votre nom" required />
+        </div>
+        <div>
+          <label htmlFor="email" className="mb-1.5 block text-sm font-medium">Email</label>
+          <Input id="email" name="email" type="email" placeholder="votre@email.dz" required />
+        </div>
+        <div>
+          <label htmlFor="password" className="mb-1.5 block text-sm font-medium">Mot de passe</label>
+          <Input id="password" name="password" type="password" placeholder="Minimum 8 caractères" required />
+        </div>
+
+        {error && <p className="text-sm text-destructive">{error}</p>}
+
+        <Button type="submit" className="w-full" variant="or" disabled={loading}>
+          {loading ? 'Création...' : 'Créer mon compte'}
+        </Button>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        Déjà inscrit ?{' '}
+        <Link href="/login" className="font-medium text-bleu-nuit hover:underline cursor-pointer">
+          Se connecter
+        </Link>
+      </p>
+      <p className="mt-2 text-center text-sm text-muted-foreground">
+        Vous êtes une agence ?{' '}
+        <Link href="/signup" className="font-medium text-or hover:underline cursor-pointer">
+          Créer un compte agence
+        </Link>
+      </p>
+    </div>
+  );
+}
