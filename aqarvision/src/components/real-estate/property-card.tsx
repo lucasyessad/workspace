@@ -3,17 +3,22 @@ import Image from 'next/image';
 import { MapPin, Maximize, BedDouble, Bath } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { FavoriteButton } from '@/components/real-estate/favorite-button';
 import { formatPrice, formatSurface } from '@/lib/formatters';
 import { TRANSACTION_TYPE_LABELS, PROPERTY_TYPE_LABELS } from '@/lib/constants';
-import type { Property } from '@/types';
+import type { Property, PropertyWithAgency } from '@/types';
 
 interface PropertyCardProps {
-  property: Property;
+  property: Property | PropertyWithAgency;
   href: string;
   showStatus?: boolean;
+  showAgency?: boolean;
+  isFavorited?: boolean;
 }
 
-export function PropertyCard({ property, href, showStatus }: PropertyCardProps) {
+export function PropertyCard({ property, href, showStatus, showAgency, isFavorited }: PropertyCardProps) {
+  const agency = 'agency' in property ? property.agency : null;
+
   return (
     <Card className="group overflow-hidden transition-shadow duration-200 hover:shadow-elevated">
       <Link href={href} className="cursor-pointer">
@@ -30,6 +35,13 @@ export function PropertyCard({ property, href, showStatus }: PropertyCardProps) 
             >
               {property.status === 'published' ? 'Publié' : property.status}
             </Badge>
+          )}
+          {isFavorited !== undefined && (
+            <FavoriteButton
+              propertyId={property.id}
+              isFavorited={isFavorited}
+              className="absolute right-3 top-3 z-10"
+            />
           )}
           <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
             <Building2Icon className="h-12 w-12 opacity-20" />
@@ -88,6 +100,17 @@ export function PropertyCard({ property, href, showStatus }: PropertyCardProps) 
               <span className="text-xs text-or font-medium">Négociable</span>
             )}
           </div>
+
+          {showAgency && agency && (
+            <div className="mt-2 flex items-center gap-1.5 border-t pt-2 text-xs text-muted-foreground">
+              <span className="truncate font-medium">{agency.name}</span>
+              {agency.is_verified && (
+                <svg className="h-3.5 w-3.5 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              )}
+            </div>
+          )}
         </div>
       </Link>
     </Card>

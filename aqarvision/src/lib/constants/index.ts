@@ -43,6 +43,18 @@ export const SUBSCRIPTION_PLAN_LABELS: Record<string, string> = {
   enterprise: 'Enterprise',
 };
 
+export const CONVERSATION_STATUS_LABELS: Record<string, string> = {
+  open: 'Ouverte',
+  pending: 'En attente',
+  closed: 'Clôturée',
+};
+
+export const ALERT_FREQUENCY_LABELS: Record<string, string> = {
+  instant: 'Instantanée',
+  daily: 'Quotidienne',
+  weekly: 'Hebdomadaire',
+};
+
 export const AMENITY_LABELS: Record<string, string> = {
   parking: 'Parking',
   ascenseur: 'Ascenseur',

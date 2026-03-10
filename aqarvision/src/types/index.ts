@@ -43,3 +43,15 @@ export interface ActionResult<T = void> {
   data?: T;
   error?: string;
 }
+
+export interface SearchFilters extends PropertyFilters {
+  query?: string;
+  sortBy?: 'price_asc' | 'price_desc' | 'newest' | 'surface_desc';
+  isFeatured?: boolean;
+}
+
+export interface VisitorAuthContext {
+  user: { id: string; email: string };
+  profile: import('./database').UserProfile;
+  visitorProfile?: import('./database').VisitorProfile;
+}

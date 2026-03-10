@@ -1,27 +1,34 @@
 import Link from 'next/link';
-import { Building2, Users, BarChart3, Globe, Shield, Zap } from 'lucide-react';
+import { Building2, Users, BarChart3, Globe, Shield, Zap, Search, MessageSquare, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { HeroSearchBar } from '@/components/search/hero-search-bar';
 
 export default function HomePage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-bleu-nuit py-24 text-white md:py-32">
-        <div className="container relative z-10 text-center">
-          <h1 className="mx-auto max-w-4xl font-display text-display-xl leading-tight md:text-display">
-            Votre agence immobilière,{' '}
-            <span className="text-or">visible et professionnelle</span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-body-lg text-white/70">
-            AqarVision donne à chaque agence algérienne les outils pour gérer ses annonces,
-            convertir ses leads et renforcer sa crédibilité en ligne.
-          </p>
-          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <Button size="lg" variant="or" asChild>
+      <section className="relative overflow-hidden bg-bleu-nuit py-20 text-white md:py-28">
+        <div className="container relative z-10">
+          <div className="text-center">
+            <h1 className="mx-auto max-w-4xl font-display text-display-xl leading-tight md:text-display">
+              Trouvez votre bien immobilier,{' '}
+              <span className="text-or">en toute confiance</span>
+            </h1>
+            <p className="mx-auto mt-6 max-w-2xl text-body-lg text-white/70">
+              Des milliers d'annonces vérifiées par des agences agréées à travers l'Algérie.
+              Achat, location — trouvez le bien qui vous correspond.
+            </p>
+          </div>
+
+          {/* Hero search bar */}
+          <div className="mx-auto mt-10 max-w-3xl">
+            <HeroSearchBar />
+          </div>
+
+          <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <p className="text-sm text-white/50">Vous êtes une agence ?</p>
+            <Button size="sm" variant="or" asChild>
               <Link href="/signup">Créer mon agence gratuitement</Link>
-            </Button>
-            <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10" asChild>
-              <Link href="/demo">Voir la démo</Link>
             </Button>
           </div>
         </div>
@@ -77,9 +84,24 @@ export default function HomePage() {
 
 const FEATURES = [
   {
+    title: 'Recherche puissante',
+    description: 'Trouvez le bien idéal avec notre moteur de recherche multi-critères : wilaya, budget, surface, type.',
+    icon: Search,
+  },
+  {
     title: 'Site vitrine premium',
     description: 'Chaque agence dispose de son mini-site professionnel, personnalisable et optimisé pour le mobile.',
     icon: Globe,
+  },
+  {
+    title: 'Messagerie intégrée',
+    description: 'Contactez les agences directement via la plateforme. Historique complet, notifications email.',
+    icon: MessageSquare,
+  },
+  {
+    title: 'Favoris & alertes',
+    description: 'Sauvegardez vos biens préférés et recevez des alertes quand de nouvelles annonces correspondent.',
+    icon: Heart,
   },
   {
     title: 'Gestion des annonces',

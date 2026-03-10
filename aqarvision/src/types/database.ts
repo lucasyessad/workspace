@@ -226,6 +226,80 @@ export interface AuditLog {
 }
 
 // ============================================================================
+// Messaging & Visitor types (from 0004 migration)
+// ============================================================================
+
+export type ConversationStatus = 'open' | 'pending' | 'closed';
+export type ParticipantType = 'visitor' | 'agency_member';
+export type MessageType = 'text' | 'system';
+export type SenderType = 'visitor' | 'agency_member' | 'system';
+export type AlertFrequency = 'instant' | 'daily' | 'weekly';
+export type AccountType = 'agency' | 'visitor';
+
+export interface Conversation {
+  id: string;
+  agency_id: string;
+  property_id: string | null;
+  visitor_user_id: string | null;
+  lead_id: string | null;
+  subject: string | null;
+  status: ConversationStatus;
+  last_message_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConversationParticipant {
+  id: string;
+  conversation_id: string;
+  user_id: string | null;
+  participant_type: ParticipantType;
+  last_read_at: string | null;
+  created_at: string;
+}
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_type: SenderType;
+  sender_user_id: string | null;
+  body: string;
+  message_type: MessageType;
+  created_at: string;
+}
+
+export interface Favorite {
+  id: string;
+  user_id: string;
+  property_id: string;
+  created_at: string;
+}
+
+export interface SavedSearch {
+  id: string;
+  user_id: string;
+  name: string;
+  filters: Record<string, unknown>;
+  frequency: AlertFrequency;
+  is_active: boolean;
+  last_notified_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VisitorProfile {
+  id: string;
+  budget_min: number | null;
+  budget_max: number | null;
+  preferred_wilayas: string[];
+  preferred_types: PropertyType[];
+  transaction_preference: TransactionType | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================================================
 // Composite / join types
 // ============================================================================
 
@@ -239,4 +313,20 @@ export interface PropertyWithAgency extends Property {
 
 export interface LeadWithProperty extends Lead {
   property: Pick<Property, 'id' | 'title' | 'slug'> | null;
+}
+
+export interface ConversationWithDetails extends Conversation {
+  agency: Pick<Agency, 'id' | 'name' | 'slug' | 'logo_url'>;
+  property: Pick<Property, 'id' | 'title' | 'slug'> | null;
+  last_message: Pick<Message, 'body' | 'sender_type' | 'created_at'> | null;
+  unread_count: number;
+}
+
+export interface PropertyWithAgencyAndImages extends Property {
+  agency: Pick<Agency, 'id' | 'name' | 'slug' | 'logo_url' | 'is_verified' | 'phone' | 'license_number'>;
+  images: PropertyImage[];
+}
+
+export interface FavoriteWithProperty extends Favorite {
+  property: PropertyWithAgency;
 }

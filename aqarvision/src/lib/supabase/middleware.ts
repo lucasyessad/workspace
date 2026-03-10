@@ -46,8 +46,16 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (!user && pathname.startsWith('/espace')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    url.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(url);
+  }
+
   // Already authenticated: redirect away from auth pages
-  if (user && (pathname === '/login' || pathname === '/signup')) {
+  if (user && (pathname === '/login' || pathname === '/signup' || pathname === '/inscription-visiteur')) {
+    // Route based on account type
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);

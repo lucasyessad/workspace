@@ -17,6 +17,9 @@ export default function MarketingLayout({
           </Link>
 
           <nav className="hidden items-center gap-6 md:flex">
+            <Link href="/recherche" className="text-sm font-medium text-or transition-colors hover:text-or/80 cursor-pointer">
+              Rechercher un bien
+            </Link>
             <Link href="/features" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground cursor-pointer">
               Fonctionnalités
             </Link>

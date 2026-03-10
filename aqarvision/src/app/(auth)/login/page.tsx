@@ -40,7 +40,12 @@ export default function LoginPage() {
           <Input id="email" name="email" type="email" placeholder="votre@email.dz" required />
         </div>
         <div>
-          <label htmlFor="password" className="mb-1.5 block text-sm font-medium">Mot de passe</label>
+          <div className="mb-1.5 flex items-center justify-between">
+            <label htmlFor="password" className="text-sm font-medium">Mot de passe</label>
+            <Link href="/mot-de-passe-oublie" className="text-xs text-or hover:underline cursor-pointer">
+              Mot de passe oublié ?
+            </Link>
+          </div>
           <Input id="password" name="password" type="password" placeholder="Votre mot de passe" required />
         </div>
 
@@ -55,6 +60,12 @@ export default function LoginPage() {
         Pas encore de compte ?{' '}
         <Link href="/signup" className="font-medium text-bleu-nuit hover:underline cursor-pointer">
           Créer mon agence
+        </Link>
+      </p>
+      <p className="mt-2 text-center text-sm text-muted-foreground">
+        Vous êtes un particulier ?{' '}
+        <Link href="/inscription-visiteur" className="font-medium text-or hover:underline cursor-pointer">
+          Créer un compte visiteur
         </Link>
       </p>
     </div>
