@@ -14,6 +14,20 @@ export const agencyBrandingSchema = z.object({
 
 export type AgencyBrandingValues = z.infer<typeof agencyBrandingSchema>;
 
+export const agencyLuxuryBrandingSchema = agencyBrandingSchema.extend({
+  secondary_color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Couleur invalide').nullable().optional(),
+  hero_video_url: z.string().url('URL invalide').nullable().optional(),
+  hero_style: z.enum(['color', 'cover', 'video']).default('cover'),
+  font_style: z.enum(['modern', 'classic', 'elegant']).default('elegant'),
+  theme_mode: z.enum(['light', 'dark']).default('dark'),
+  tagline: z.string().max(300).nullable().optional(),
+  stats_years: z.coerce.number().int().min(0).max(100).nullable().optional(),
+  stats_properties_sold: z.coerce.number().int().min(0).nullable().optional(),
+  stats_clients: z.coerce.number().int().min(0).nullable().optional(),
+});
+
+export type AgencyLuxuryBrandingValues = z.infer<typeof agencyLuxuryBrandingSchema>;
+
 export const agencyCreateSchema = z.object({
   name: z.string().min(2).max(100),
   slug: z.string().min(2).max(100).regex(/^[a-z0-9-]+$/, 'Le slug ne doit contenir que des lettres minuscules, chiffres et tirets'),

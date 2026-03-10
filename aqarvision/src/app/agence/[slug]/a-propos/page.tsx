@@ -1,9 +1,10 @@
 import { notFound } from 'next/navigation';
 import { resolvePublicAgency } from '@/lib/tenant/resolve';
 import { TrustBadgeGroup } from '@/components/algeria/trust-badges';
+import { LuxuryAboutSection } from '@/components/agency/luxury-about-section';
 import { Card, CardContent } from '@/components/ui/card';
 
-export const metadata = { title: 'À propos' };
+export const metadata = { title: 'A propos' };
 
 export default async function AgencyAboutPage({
   params,
@@ -13,10 +14,18 @@ export default async function AgencyAboutPage({
   const agency = await resolvePublicAgency(params.slug);
   if (!agency) notFound();
 
+  const isEnterprise = agency.active_plan === 'enterprise';
+
+  // Enterprise luxury about page
+  if (isEnterprise) {
+    return <LuxuryAboutSection agency={agency} />;
+  }
+
+  // Standard about page
   return (
     <section className="py-12">
       <div className="container max-w-3xl">
-        <h1 className="text-heading-2 font-bold text-bleu-nuit">À propos de {agency.name}</h1>
+        <h1 className="text-heading-2 font-bold text-bleu-nuit">A propos de {agency.name}</h1>
 
         <div className="mt-4">
           <TrustBadgeGroup isVerified={agency.is_verified} licenseNumber={agency.license_number} />

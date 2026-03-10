@@ -6,29 +6,30 @@ export const metadata = { title: 'Branding' };
 
 export default async function BrandingPage() {
   const tenant = await requirePermission('branding:read');
+  const isEnterprise = tenant.agency.active_plan === 'enterprise';
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-heading-3 font-bold">Branding</h1>
         <p className="mt-1 text-body-sm text-muted-foreground">
-          Personnalisez l'identité visuelle de votre agence.
+          Personnalisez l&apos;identite visuelle de votre agence.
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Informations de l'agence</CardTitle>
+            <CardTitle>Informations de l&apos;agence</CardTitle>
           </CardHeader>
           <CardContent>
-            <BrandingForm agency={tenant.agency} canEdit={true} />
+            <BrandingForm agency={tenant.agency} canEdit={true} isEnterprise={isEnterprise} />
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Aperçu</CardTitle>
+            <CardTitle>Apercu</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="rounded-lg border p-6" style={{ borderColor: tenant.agency.primary_color }}>
@@ -50,6 +51,17 @@ export default async function BrandingPage() {
                   )}
                 </div>
               </div>
+
+              {/* Enterprise preview */}
+              {isEnterprise && tenant.agency.cover_image_url && (
+                <div className="mt-4 overflow-hidden rounded-lg">
+                  <img
+                    src={tenant.agency.cover_image_url}
+                    alt="Apercu couverture"
+                    className="h-24 w-full object-cover"
+                  />
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

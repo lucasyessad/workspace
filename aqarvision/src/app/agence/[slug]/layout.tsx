@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Phone, Mail, MapPin } from 'lucide-react';
 import { resolvePublicAgency } from '@/lib/tenant/resolve';
 import { TrustBadgeGroup } from '@/components/algeria/trust-badges';
+import { LuxuryLayout } from '@/components/agency/luxury-layout';
 
 export default async function AgencySiteLayout({
   children,
@@ -14,6 +15,14 @@ export default async function AgencySiteLayout({
   const agency = await resolvePublicAgency(params.slug);
   if (!agency) notFound();
 
+  const isEnterprise = agency.active_plan === 'enterprise';
+
+  // Enterprise agencies get the luxury layout
+  if (isEnterprise) {
+    return <LuxuryLayout agency={agency}>{children}</LuxuryLayout>;
+  }
+
+  // Standard layout for Starter/Pro
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur">
@@ -37,7 +46,7 @@ export default async function AgencySiteLayout({
               Annonces
             </Link>
             <Link href={`/agence/${agency.slug}/a-propos`} className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground cursor-pointer">
-              À propos
+              A propos
             </Link>
             <Link href={`/agence/${agency.slug}/contact`} className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground cursor-pointer">
               Contact
@@ -76,7 +85,7 @@ export default async function AgencySiteLayout({
               )}
             </div>
             <div className="text-sm text-muted-foreground">
-              <p>Propulsé par <Link href="/" className="font-medium text-bleu-nuit hover:underline cursor-pointer">AqarVision</Link></p>
+              <p>Propulse par <Link href="/" className="font-medium text-bleu-nuit hover:underline cursor-pointer">AqarVision</Link></p>
             </div>
           </div>
         </div>

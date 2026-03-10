@@ -5,6 +5,9 @@ import { getPublicProperties } from '@/lib/queries';
 import { Button } from '@/components/ui/button';
 import { PropertyCard } from '@/components/real-estate/property-card';
 import { TrustBadgeGroup } from '@/components/algeria/trust-badges';
+import { LuxuryHero } from '@/components/agency/luxury-hero';
+import { LuxuryPropertiesSection } from '@/components/agency/luxury-properties-section';
+import { LuxuryAboutSection } from '@/components/agency/luxury-about-section';
 import type { Metadata } from 'next';
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -12,7 +15,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   if (!agency) return {};
   return {
     title: agency.name,
-    description: agency.slogan ?? `Agence immobilière à ${agency.wilaya ?? 'Algérie'}`,
+    description: agency.slogan ?? `Agence immobiliere a ${agency.wilaya ?? 'Algerie'}`,
   };
 }
 
@@ -25,7 +28,24 @@ export default async function AgencyHomePage({
   if (!agency) notFound();
 
   const featured = await getPublicProperties(agency.id, {}, 1, 6);
+  const isEnterprise = agency.active_plan === 'enterprise';
 
+  // Enterprise luxury homepage
+  if (isEnterprise) {
+    return (
+      <div>
+        <LuxuryHero agency={agency} />
+        <LuxuryPropertiesSection
+          agency={agency}
+          properties={featured.data}
+          total={featured.total}
+        />
+        <LuxuryAboutSection agency={agency} />
+      </div>
+    );
+  }
+
+  // Standard homepage for Starter/Pro
   return (
     <div>
       {/* Hero */}
@@ -81,7 +101,7 @@ export default async function AgencyHomePage({
       {agency.description && (
         <section className="border-t py-16">
           <div className="container max-w-2xl text-center">
-            <h2 className="text-heading-3 font-bold">À propos</h2>
+            <h2 className="text-heading-3 font-bold">A propos</h2>
             <p className="mt-4 text-body text-muted-foreground">{agency.description}</p>
           </div>
         </section>

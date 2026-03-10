@@ -52,3 +52,122 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ============================================================================
+   Luxury agency animations (Enterprise plan)
+   ============================================================================ */
+
+@keyframes luxury-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes luxury-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes luxury-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes luxury-scroll-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(10px); }
+}
+
+@keyframes luxury-line-grow {
+  from { width: 0; }
+  to { width: 4rem; }
+}
+
+@keyframes luxury-counter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.luxury-animate-fade-in-up {
+  animation: luxury-fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.luxury-animate-fade-in {
+  animation: luxury-fade-in 1s ease-out forwards;
+}
+
+.luxury-animate-fade-in-delayed {
+  animation: luxury-fade-in 1s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+.luxury-animate-fade-in-delayed-2 {
+  animation: luxury-fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
+  opacity: 0;
+}
+
+.luxury-animate-fade-in-delayed-3 {
+  animation: luxury-fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards;
+  opacity: 0;
+}
+
+.luxury-animate-scale-in {
+  animation: luxury-scale-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.luxury-animate-scroll-bounce {
+  animation: luxury-scroll-bounce 2s ease-in-out infinite;
+}
+
+.luxury-animate-line-grow {
+  animation: luxury-line-grow 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
+  width: 0;
+}
+
+/* Scroll reveal — elements start invisible, revealed via IntersectionObserver */
+.luxury-scroll-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luxury-scroll-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Luxury property card hover effect */
+.luxury-property-card {
+  overflow: hidden;
+}
+
+.luxury-property-card img {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luxury-property-card:hover img {
+  transform: scale(1.05);
+}
+
+/* Glassmorphism header */
+.luxury-header-glass {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.luxury-header-glass.is-scrolled {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}

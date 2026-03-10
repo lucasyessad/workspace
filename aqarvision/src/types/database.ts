@@ -72,6 +72,10 @@ export type BillingEventType =
 // Table row types
 // ============================================================================
 
+export type HeroStyle = 'color' | 'cover' | 'video';
+export type FontStyle = 'modern' | 'classic' | 'elegant';
+export type ThemeMode = 'light' | 'dark';
+
 export interface Agency {
   id: string;
   name: string;
@@ -90,6 +94,16 @@ export interface Agency {
   active_plan: SubscriptionPlan;
   subscription_status: SubscriptionStatus;
   custom_domain: string | null;
+  // Luxury branding fields (Enterprise only)
+  secondary_color: string | null;
+  hero_video_url: string | null;
+  hero_style: HeroStyle;
+  font_style: FontStyle;
+  theme_mode: ThemeMode;
+  tagline: string | null;
+  stats_years: number | null;
+  stats_properties_sold: number | null;
+  stats_clients: number | null;
   created_at: string;
   updated_at: string;
 }
