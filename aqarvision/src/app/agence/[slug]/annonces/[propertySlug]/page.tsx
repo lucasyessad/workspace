@@ -16,6 +16,8 @@ import { VerifiedListingBadge, TrustBadgeGroup } from '@/components/algeria/trus
 import { ShareButton } from '@/components/real-estate/share-button';
 import { StickyContactCTA } from '@/components/real-estate/sticky-contact-cta';
 import { PropertyLocationMapCard } from '@/components/map/property-location-map-lazy';
+import { ReportButton } from '@/components/real-estate/report-button';
+import { RecentlyViewedTracker } from '@/components/real-estate/recently-viewed-tracker';
 import { formatPrice, formatSurface, formatRelativeDate } from '@/lib/formatters';
 import { TRANSACTION_TYPE_LABELS, PROPERTY_TYPE_LABELS, AMENITY_LABELS } from '@/lib/constants';
 import type { Metadata } from 'next';
@@ -57,8 +59,58 @@ export default async function PropertyDetailPage({
     isPropertyFavorited(property.id).catch(() => false),
   ]);
 
+  const pricePerSqm = property.surface && property.surface > 0
+    ? Math.round(property.price / property.surface)
+    : null;
+
+  // JSON-LD structured data
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'RealEstateListing',
+    name: property.title,
+    description: property.description?.slice(0, 500),
+    url: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/agence/${agency.slug}/annonces/${property.slug}`,
+    datePosted: property.published_at,
+    image: property.images.map((img) => img.public_url),
+    offers: {
+      '@type': 'Offer',
+      price: property.price,
+      priceCurrency: property.currency || 'DZD',
+      availability: 'https://schema.org/InStock',
+    },
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: property.commune,
+      addressRegion: property.wilaya,
+      addressCountry: 'DZ',
+    },
+    ...(property.latitude && property.longitude ? {
+      geo: {
+        '@type': 'GeoCoordinates',
+        latitude: property.latitude,
+        longitude: property.longitude,
+      },
+    } : {}),
+    ...(property.surface ? { floorSize: { '@type': 'QuantitativeValue', value: property.surface, unitCode: 'MTK' } } : {}),
+    ...(property.rooms ? { numberOfRooms: property.rooms } : {}),
+    ...(property.bedrooms ? { numberOfBedrooms: property.bedrooms } : {}),
+    ...(property.bathrooms ? { numberOfBathroomsTotal: property.bathrooms } : {}),
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <RecentlyViewedTracker
+        id={property.id}
+        title={property.title}
+        slug={property.slug}
+        agencySlug={agency.slug}
+        price={property.price}
+        wilaya={property.wilaya}
+      />
       <section className="py-8">
         <div className="container">
           {/* Gallery */}
@@ -74,6 +126,7 @@ export default async function PropertyDetailPage({
             <div className="flex items-center gap-2">
               <FavoriteButton propertyId={property.id} isFavorited={favorited} variant="full" />
               <ShareButton title={property.title} />
+              <ReportButton propertyId={property.id} />
             </div>
           </div>
 
@@ -90,6 +143,11 @@ export default async function PropertyDetailPage({
                 <p className="mt-4 text-heading-3 font-bold text-bleu-nuit">
                   {formatPrice(property.price, property.currency, property.transaction_type === 'rent')}
                 </p>
+                {pricePerSqm && (
+                  <span className="text-sm text-muted-foreground">
+                    {formatPrice(pricePerSqm)}/m²
+                  </span>
+                )}
                 {property.negotiable && (
                   <span className="text-sm font-medium text-or">Prix négociable</span>
                 )}

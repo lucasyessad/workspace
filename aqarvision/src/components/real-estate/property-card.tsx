@@ -88,16 +88,23 @@ export function PropertyCard({ property, href, showStatus, showAgency, isFavorit
             )}
           </div>
 
-          <div className="mt-3 flex items-center justify-between">
-            <p className="text-base font-bold text-bleu-nuit">
-              {formatPrice(
-                property.price,
-                property.currency,
-                property.transaction_type === 'rent'
+          <div className="mt-3">
+            <div className="flex items-center justify-between">
+              <p className="text-base font-bold text-bleu-nuit">
+                {formatPrice(
+                  property.price,
+                  property.currency,
+                  property.transaction_type === 'rent'
+                )}
+              </p>
+              {property.negotiable && (
+                <span className="text-xs text-or font-medium">Négociable</span>
               )}
-            </p>
-            {property.negotiable && (
-              <span className="text-xs text-or font-medium">Négociable</span>
+            </div>
+            {property.surface != null && property.surface > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {formatPrice(Math.round(property.price / property.surface))}/m²
+              </p>
             )}
           </div>
 

@@ -5,21 +5,27 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordStrength } from '@/components/auth/password-strength';
 import { createBrowserClient } from '@/lib/supabase/client';
 
 export default function VisitorSignupPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [password, setPassword] = useState('');
+  const [acceptCgu, setAcceptCgu] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!acceptCgu) {
+      setError('Veuillez accepter les conditions d\'utilisation.');
+      return;
+    }
     setLoading(true);
     setError('');
 
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
     const fullName = formData.get('full_name') as string;
 
     const supabase = createBrowserClient();
@@ -63,12 +69,36 @@ export default function VisitorSignupPage() {
         </div>
         <div>
           <label htmlFor="password" className="mb-1.5 block text-sm font-medium">Mot de passe</label>
-          <Input id="password" name="password" type="password" placeholder="Minimum 8 caractères" required />
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="Minimum 8 caractères"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <PasswordStrength password={password} />
         </div>
+
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={acceptCgu}
+            onChange={(e) => setAcceptCgu(e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-gray-300"
+          />
+          <span className="text-xs text-muted-foreground">
+            J'accepte les{' '}
+            <Link href="#" className="text-or hover:underline">conditions d'utilisation</Link>
+            {' '}et la{' '}
+            <Link href="#" className="text-or hover:underline">politique de confidentialité</Link>
+          </span>
+        </label>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <Button type="submit" className="w-full" variant="or" disabled={loading}>
+        <Button type="submit" className="w-full" variant="or" disabled={loading || !acceptCgu}>
           {loading ? 'Création...' : 'Créer mon compte'}
         </Button>
       </form>

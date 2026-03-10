@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import 'leaflet.markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import Link from 'next/link';
 import { formatPrice, formatSurface } from '@/lib/formatters';
 import { TRANSACTION_TYPE_LABELS } from '@/lib/constants';
@@ -91,16 +94,84 @@ export function SearchMap({ properties, activePropertyId, onPropertyHover }: Sea
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <FitBounds properties={geoProperties} />
-      {geoProperties.map((property) => (
-        <PropertyMarker
-          key={property.id}
-          property={property}
-          isActive={property.id === activePropertyId}
-          onHover={onPropertyHover}
-        />
-      ))}
+      <ClusteredMarkers
+        properties={geoProperties}
+        activePropertyId={activePropertyId}
+        onPropertyHover={onPropertyHover}
+      />
     </MapContainer>
   );
+}
+
+function ClusteredMarkers({
+  properties,
+  activePropertyId,
+  onPropertyHover,
+}: {
+  properties: PropertyWithAgency[];
+  activePropertyId?: string | null;
+  onPropertyHover?: (id: string | null) => void;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    // Only cluster if there are many markers
+    if (properties.length <= 10) return;
+
+    const clusterGroup = (L as any).markerClusterGroup({
+      maxClusterRadius: 50,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+    });
+
+    properties.forEach((property) => {
+      const marker = L.marker([property.latitude!, property.longitude!], { icon: defaultIcon });
+      const href = property.agency
+        ? `/agence/${property.agency.slug}/annonces/${property.slug}`
+        : '#';
+
+      marker.bindPopup(`
+        <a href="${href}" style="text-decoration:none;color:inherit;display:block;max-width:200px;">
+          <div style="font-size:11px;color:#666;">${TRANSACTION_TYPE_LABELS[property.transaction_type]}</div>
+          <div style="font-size:13px;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${property.title}</div>
+          <div style="font-size:13px;font-weight:700;color:#0c1b2a;margin-top:4px;">${formatPrice(property.price, property.currency, property.transaction_type === 'rent')}</div>
+          ${property.surface ? `<div style="font-size:11px;color:#666;">${formatSurface(property.surface)}</div>` : ''}
+        </a>
+      `);
+
+      marker.on('mouseover', () => onPropertyHover?.(property.id));
+      marker.on('mouseout', () => onPropertyHover?.(null));
+
+      // Store property id for active state
+      (marker as any)._propertyId = property.id;
+      clusterGroup.addLayer(marker);
+    });
+
+    map.addLayer(clusterGroup);
+
+    return () => {
+      map.removeLayer(clusterGroup);
+    };
+  }, [properties, map, onPropertyHover]);
+
+  // For <= 10 markers, render individual react-leaflet markers
+  if (properties.length <= 10) {
+    return (
+      <>
+        {properties.map((property) => (
+          <PropertyMarker
+            key={property.id}
+            property={property}
+            isActive={property.id === activePropertyId}
+            onHover={onPropertyHover}
+          />
+        ))}
+      </>
+    );
+  }
+
+  return null;
 }
 
 function PropertyMarker({

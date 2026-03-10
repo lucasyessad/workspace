@@ -23,7 +23,9 @@ export function SearchFiltersBar({ filters }: SearchFiltersBarProps) {
   const [priceMin, setPriceMin] = useState(filters.priceMin?.toString() ?? '');
   const [priceMax, setPriceMax] = useState(filters.priceMax?.toString() ?? '');
   const [surfaceMin, setSurfaceMin] = useState(filters.surfaceMin?.toString() ?? '');
+  const [surfaceMax, setSurfaceMax] = useState(filters.surfaceMax?.toString() ?? '');
   const [rooms, setRooms] = useState(filters.rooms?.toString() ?? '');
+  const [bedrooms, setBedrooms] = useState(filters.bedrooms?.toString() ?? '');
   const [sortBy, setSortBy] = useState(filters.sortBy ?? 'newest');
 
   function handleSearch() {
@@ -35,7 +37,9 @@ export function SearchFiltersBar({ filters }: SearchFiltersBarProps) {
     if (priceMin) params.set('price_min', priceMin);
     if (priceMax) params.set('price_max', priceMax);
     if (surfaceMin) params.set('surface_min', surfaceMin);
+    if (surfaceMax) params.set('surface_max', surfaceMax);
     if (rooms) params.set('rooms', rooms);
+    if (bedrooms) params.set('bedrooms', bedrooms);
     if (sortBy !== 'newest') params.set('sort', sortBy);
     router.push(`/recherche?${params.toString()}`);
   }
@@ -48,7 +52,9 @@ export function SearchFiltersBar({ filters }: SearchFiltersBarProps) {
     setPriceMin('');
     setPriceMax('');
     setSurfaceMin('');
+    setSurfaceMax('');
     setRooms('');
+    setBedrooms('');
     setSortBy('newest');
     router.push('/recherche');
   }
@@ -145,12 +151,32 @@ export function SearchFiltersBar({ filters }: SearchFiltersBarProps) {
               />
             </div>
             <div>
+              <label className="mb-1 block text-xs text-muted-foreground">Surface max (m²)</label>
+              <Input
+                type="number"
+                value={surfaceMax}
+                onChange={(e) => setSurfaceMax(e.target.value)}
+                placeholder="Ex: 200"
+                className="h-9"
+              />
+            </div>
+            <div>
               <label className="mb-1 block text-xs text-muted-foreground">Pièces min</label>
               <Input
                 type="number"
                 value={rooms}
                 onChange={(e) => setRooms(e.target.value)}
                 placeholder="Ex: 3"
+                className="h-9"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">Chambres min</label>
+              <Input
+                type="number"
+                value={bedrooms}
+                onChange={(e) => setBedrooms(e.target.value)}
+                placeholder="Ex: 2"
                 className="h-9"
               />
             </div>

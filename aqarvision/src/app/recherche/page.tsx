@@ -22,7 +22,9 @@ interface SearchPageProps {
     price_min?: string;
     price_max?: string;
     surface_min?: string;
+    surface_max?: string;
     rooms?: string;
+    bedrooms?: string;
     sort?: string;
     page?: string;
   };
@@ -38,7 +40,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     priceMin: searchParams.price_min ? Number(searchParams.price_min) : undefined,
     priceMax: searchParams.price_max ? Number(searchParams.price_max) : undefined,
     surfaceMin: searchParams.surface_min ? Number(searchParams.surface_min) : undefined,
+    surfaceMax: searchParams.surface_max ? Number(searchParams.surface_max) : undefined,
     rooms: searchParams.rooms ? Number(searchParams.rooms) : undefined,
+    bedrooms: searchParams.bedrooms ? Number(searchParams.bedrooms) : undefined,
     sortBy: (searchParams.sort as SearchFilters['sortBy']) ?? 'newest',
   };
 

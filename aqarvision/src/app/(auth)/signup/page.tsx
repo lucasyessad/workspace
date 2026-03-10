@@ -5,15 +5,22 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { WilayaSelector } from '@/components/algeria/wilaya-selector';
+import { PasswordStrength } from '@/components/auth/password-strength';
 import { signup } from '@/lib/actions';
 
 export default function SignupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [wilaya, setWilaya] = useState('');
+  const [password, setPassword] = useState('');
+  const [acceptCgu, setAcceptCgu] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!acceptCgu) {
+      setError('Veuillez accepter les conditions d\'utilisation.');
+      return;
+    }
     setLoading(true);
     setError('');
 
@@ -51,7 +58,16 @@ export default function SignupPage() {
         </div>
         <div>
           <label htmlFor="password" className="mb-1.5 block text-sm font-medium">Mot de passe</label>
-          <Input id="password" name="password" type="password" placeholder="Minimum 8 caractères" required />
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="Minimum 8 caractères"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <PasswordStrength password={password} />
         </div>
 
         <hr className="my-2" />
@@ -69,9 +85,24 @@ export default function SignupPage() {
           <WilayaSelector value={wilaya} onChange={setWilaya} required />
         </div>
 
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={acceptCgu}
+            onChange={(e) => setAcceptCgu(e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-gray-300"
+          />
+          <span className="text-xs text-muted-foreground">
+            J'accepte les{' '}
+            <Link href="#" className="text-or hover:underline">conditions d'utilisation</Link>
+            {' '}et la{' '}
+            <Link href="#" className="text-or hover:underline">politique de confidentialité</Link>
+          </span>
+        </label>
+
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <Button type="submit" className="w-full" variant="or" disabled={loading}>
+        <Button type="submit" className="w-full" variant="or" disabled={loading || !acceptCgu}>
           {loading ? 'Création...' : 'Créer mon agence'}
         </Button>
       </form>
