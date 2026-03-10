@@ -15,6 +15,7 @@ import { FavoriteButton } from '@/components/real-estate/favorite-button';
 import { VerifiedListingBadge, TrustBadgeGroup } from '@/components/algeria/trust-badges';
 import { ShareButton } from '@/components/real-estate/share-button';
 import { StickyContactCTA } from '@/components/real-estate/sticky-contact-cta';
+import { PropertyLocationMapCard } from '@/components/map/property-location-map-lazy';
 import { formatPrice, formatSurface, formatRelativeDate } from '@/lib/formatters';
 import { TRANSACTION_TYPE_LABELS, PROPERTY_TYPE_LABELS, AMENITY_LABELS } from '@/lib/constants';
 import type { Metadata } from 'next';
@@ -158,6 +159,15 @@ export default async function PropertyDetailPage({
                     </div>
                   </CardContent>
                 </Card>
+              )}
+
+              {/* Location map */}
+              {property.latitude && property.longitude && (
+                <PropertyLocationMapCard
+                  latitude={property.latitude}
+                  longitude={property.longitude}
+                  title={property.title}
+                />
               )}
 
               {/* Agency info */}

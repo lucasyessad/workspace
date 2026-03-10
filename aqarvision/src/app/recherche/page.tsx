@@ -1,11 +1,9 @@
-import { Suspense } from 'react';
 import { searchProperties } from '@/lib/queries/search';
 import { getUserFavoriteIds } from '@/lib/queries/favorites';
-import { PropertyCard } from '@/components/real-estate/property-card';
 import { SearchFiltersBar } from '@/components/search/search-filters-bar';
 import { SaveSearchButton } from '@/components/search/save-search-button';
+import { SearchResultsWithMap } from '@/components/search/search-results-with-map';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Search } from 'lucide-react';
 import type { SearchFilters, TransactionType, PropertyType } from '@/types';
 
@@ -79,17 +77,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             />
           ) : (
             <>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {results.data.map((property) => (
-                  <PropertyCard
-                    key={property.id}
-                    property={property}
-                    href={`/agence/${property.agency.slug}/annonces/${property.slug}`}
-                    showAgency
-                    isFavorited={favoriteIds.has(property.id)}
-                  />
-                ))}
-              </div>
+              <SearchResultsWithMap
+                properties={results.data}
+                favoriteIds={[...favoriteIds]}
+              />
 
               {/* Pagination */}
               {results.totalPages > 1 && (
