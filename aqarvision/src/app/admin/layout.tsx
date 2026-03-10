@@ -14,7 +14,7 @@ export default async function AdminLayout({
     <div className="flex h-screen overflow-hidden">
       <aside className="flex w-64 flex-col border-r bg-white">
         <div className="flex h-16 items-center gap-3 border-b px-6">
-          <Shield className="h-5 w-5 text-red-600" />
+          <Shield className="h-5 w-5 text-destructive" />
           <span className="text-sm font-bold">Admin Plateforme</span>
         </div>
         <nav className="flex-1 space-y-1 p-3">

@@ -7,7 +7,7 @@ interface VerifiedAgencyBadgeProps {
 
 export function VerifiedAgencyBadge({ className }: VerifiedAgencyBadgeProps) {
   return (
-    <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700', className)}>
+    <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium text-verified', className)}>
       <ShieldCheck className="h-4 w-4" />
       Agence vérifiée
     </span>
@@ -16,7 +16,7 @@ export function VerifiedAgencyBadge({ className }: VerifiedAgencyBadgeProps) {
 
 export function VerifiedListingBadge({ className }: { className?: string }) {
   return (
-    <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium text-blue-700', className)}>
+    <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium text-info', className)}>
       <BadgeCheck className="h-4 w-4" />
       Annonce vérifiée
     </span>

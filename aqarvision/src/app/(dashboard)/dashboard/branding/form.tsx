@@ -82,7 +82,7 @@ export function BrandingForm({ agency, canEdit }: BrandingFormProps) {
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
-      {success && <p className="text-sm text-emerald-600">Branding mis à jour.</p>}
+      {success && <p className="text-sm text-success">Branding mis à jour.</p>}
 
       {canEdit && (
         <Button type="submit" disabled={loading}>

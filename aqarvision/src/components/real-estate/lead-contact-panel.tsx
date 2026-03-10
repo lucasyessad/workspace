@@ -48,8 +48,8 @@ export function LeadContactPanel({ agency, agencyId, propertyId }: LeadContactPa
     return (
       <Card>
         <CardContent className="p-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
-            <Send className="h-5 w-5 text-emerald-600" />
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-success-light">
+            <Send className="h-5 w-5 text-success" />
           </div>
           <p className="font-semibold">Message envoyé</p>
           <p className="mt-1 text-sm text-muted-foreground">

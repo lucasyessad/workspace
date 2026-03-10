@@ -98,7 +98,7 @@ export default function VisitorProfilePage() {
               <Button type="submit" variant="or" disabled={loading}>
                 {loading ? 'Enregistrement...' : 'Enregistrer'}
               </Button>
-              {saved && <span className="text-sm text-emerald-600">Profil mis à jour</span>}
+              {saved && <span className="text-sm text-success">Profil mis à jour</span>}
             </div>
           </form>
         </CardContent>

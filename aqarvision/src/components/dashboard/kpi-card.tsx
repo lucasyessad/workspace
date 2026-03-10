@@ -25,7 +25,7 @@ export function KPICard({ title, value, description, icon, trend, className }: K
               <p
                 className={cn(
                   'text-xs font-medium',
-                  trend.positive ? 'text-emerald-600' : 'text-red-600'
+                  trend.positive ? 'text-success' : 'text-error'
                 )}
               >
                 {trend.positive ? '+' : ''}{trend.value}%

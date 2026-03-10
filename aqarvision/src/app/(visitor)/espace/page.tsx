@@ -22,10 +22,10 @@ export default async function VisitorHomePage() {
   ]);
 
   const items = [
-    { href: '/espace/favoris', label: 'Favoris', count: favCount ?? 0, icon: Heart, color: 'text-red-500' },
+    { href: '/espace/favoris', label: 'Favoris', count: favCount ?? 0, icon: Heart, color: 'text-favorite' },
     { href: '/espace/alertes', label: 'Alertes', count: alertCount ?? 0, icon: Bell, color: 'text-or' },
-    { href: '/espace/messages', label: 'Messages', count: msgCount ?? 0, icon: MessageSquare, color: 'text-blue-500' },
-    { href: '/recherche', label: 'Rechercher', count: null, icon: Search, color: 'text-emerald-500' },
+    { href: '/espace/messages', label: 'Messages', count: msgCount ?? 0, icon: MessageSquare, color: 'text-info' },
+    { href: '/recherche', label: 'Rechercher', count: null, icon: Search, color: 'text-success' },
   ];
 
   return (

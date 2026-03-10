@@ -86,7 +86,7 @@ export default function VisitorSignupPage() {
             type="checkbox"
             checked={acceptCgu}
             onChange={(e) => setAcceptCgu(e.target.checked)}
-            className="mt-1 h-4 w-4 rounded border-gray-300"
+            className="mt-1 h-4 w-4 rounded border-input"
           />
           <span className="text-xs text-muted-foreground">
             J'accepte les{' '}

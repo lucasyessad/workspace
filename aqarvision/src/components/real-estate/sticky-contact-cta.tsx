@@ -26,7 +26,7 @@ export function StickyContactCTA({ phone, agencyId, propertyId, price }: StickyC
                   Appeler
                 </a>
               </Button>
-              <Button size="sm" className="bg-[#25D366] hover:bg-[#20BD5A] text-white" asChild>
+              <Button size="sm" className="bg-whatsapp hover:bg-whatsapp/90 text-white" asChild>
                 <a
                   href={`https://wa.me/${phone.replace(/[\s+()-]/g, '')}`}
                   target="_blank"

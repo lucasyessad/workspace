@@ -31,7 +31,7 @@ export function SaveSearchButton({ filters }: SaveSearchButtonProps) {
 
   if (saved) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-sm text-emerald-600">
+      <span className="inline-flex items-center gap-1.5 text-sm text-success">
         <Bell className="h-4 w-4" />
         Alerte sauvegardée
       </span>

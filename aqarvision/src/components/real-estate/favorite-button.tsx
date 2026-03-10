@@ -42,7 +42,7 @@ export function FavoriteButton({
         disabled={loading}
         className={cn('gap-2', className)}
       >
-        <Heart className={cn('h-4 w-4', favorited && 'fill-red-500 text-red-500')} />
+        <Heart className={cn('h-4 w-4', favorited && 'fill-favorite text-favorite')} />
         {favorited ? 'Retirer des favoris' : 'Ajouter aux favoris'}
       </Button>
     );
@@ -65,7 +65,7 @@ export function FavoriteButton({
       <Heart
         className={cn(
           'h-4 w-4 transition-colors',
-          favorited ? 'fill-red-500 text-red-500' : 'text-gray-600'
+          favorited ? 'fill-favorite text-favorite' : 'text-muted-foreground'
         )}
       />
     </button>

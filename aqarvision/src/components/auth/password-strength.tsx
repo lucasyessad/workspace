@@ -12,10 +12,10 @@ function getStrength(password: string): { score: number; label: string; color: s
   if (/[0-9]/.test(password)) score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
 
-  if (score <= 1) return { score, label: 'Faible', color: 'bg-red-500' };
-  if (score <= 2) return { score, label: 'Moyen', color: 'bg-orange-500' };
-  if (score <= 3) return { score, label: 'Bon', color: 'bg-yellow-500' };
-  return { score, label: 'Fort', color: 'bg-emerald-500' };
+  if (score <= 1) return { score, label: 'Faible', color: 'bg-error' };
+  if (score <= 2) return { score, label: 'Moyen', color: 'bg-warning' };
+  if (score <= 3) return { score, label: 'Bon', color: 'bg-info' };
+  return { score, label: 'Fort', color: 'bg-success' };
 }
 
 export function PasswordStrength({ password }: PasswordStrengthProps) {
