@@ -1,5 +1,5 @@
 {
-  "_comment": "Config globale heritee par tous les jobs. Surcharger les cles necessaires dans le config specifique au job.",
+  "_comment": "Config globale héritée par tous les jobs. Surcharger les clés nécessaires dans le config spécifique au job.",
 
   "Smtp": {
     "Server":               "",
@@ -17,28 +17,28 @@
   },
 
   "From":     "noreply@corp.com",
-  "FromName": "Systeme de notification INEO",
+  "FromName": "Système de notification INEO",
   "To":       [],
   "Cc":       [],
   "Bcc":      [],
   "ReplyTo":  "",
   "Priority": "Normal",
 
-  "Template": "C:\\proclib\\CL\\PRODUCTION\\template-notification.html",
+  "Template": "%PROCLIB%\\CL\\PRODUCTION\\template-notification.html",
   "Env":      "PROD",
   "Hostname": "",
   "Team":     "DSI — Exploitation",
-  "Footer":   "Message genere automatiquement — Merci de ne pas repondre.",
+  "Footer":   "Message généré automatiquement — Merci de ne pas répondre.",
   "RunbookUrl":      "",
   "SubjectPrefix":   "",
   "DefaultSeverity": "Info",
 
   "Messages": {
-    "Info":     "Traitement execute.",
-    "Success":  "Traitement termine avec succes.",
-    "Warning":  "Traitement termine avec des avertissements. Verification recommandee.",
-    "Error":    "Le traitement a rencontre des erreurs. Intervention requise.",
-    "Critical": "Echec critique. Intervention immediate requise."
+    "Info":     "Traitement exécuté.",
+    "Success":  "Traitement terminé avec succès.",
+    "Warning":  "Traitement terminé avec des avertissements. Vérification recommandée.",
+    "Error":    "Le traitement a rencontré des erreurs. Intervention requise.",
+    "Critical": "Échec critique. Intervention immédiate requise."
   },
 
   "RcMapping": {
