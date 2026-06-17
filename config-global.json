@@ -1,0 +1,65 @@
+{
+  "_comment": "Config globale héritée par tous les jobs. Surcharger les clés nécessaires dans le config spécifique au job.",
+
+  "Smtp": {
+    "Server":               "",
+    "Port":                 25,
+    "SecureSocketOptions":  "None",
+    "TimeoutMs":            30000,
+    "RetryCount":           2,
+    "RetryDelayMs":         5000,
+    "DeliveryNotification": "Never",
+    "Auth": {
+      "Type":         "WindowsAuth",
+      "Username":     "",
+      "PasswordFile": ""
+    }
+  },
+
+  "From":     "noreply@corp.com",
+  "FromName": "Système de notification INEO",
+  "To":       [],
+  "Cc":       [],
+  "Bcc":      [],
+  "ReplyTo":  "",
+  "Priority": "Normal",
+
+  "Template": "%PROCLIB%\\PRODUCTION\\template-notification.html",
+  "Env":      "PROD",
+  "Hostname": "",
+  "Team":     "DSI — Exploitation",
+  "Footer":   "Message généré automatiquement — Merci de ne pas répondre.",
+  "RunbookUrl":      "",
+  "SubjectPrefix":   "",
+  "DefaultSeverity": "Info",
+
+  "Messages": {
+    "Info":     "Traitement exécuté.",
+    "Success":  "Traitement terminé avec succès.",
+    "Warning":  "Traitement terminé avec des avertissements. Vérification recommandée.",
+    "Error":    "Le traitement a rencontré des erreurs. Intervention requise.",
+    "Critical": "Échec critique. Intervention immédiate requise."
+  },
+
+  "RcMapping": {
+    "0": "Success",
+    "*": "Error"
+  },
+
+  "AutoSeverity": [],
+
+  "Attachments": [],
+
+  "Data": {
+    "Delimiter":   ";",
+    "GroupBy":     "",
+    "TitlePrefix": "",
+    "BadgeColumn": "",
+    "BadgeColors": {},
+    "Columns":     [],
+    "Headers":     [],
+    "SortBy":      "",
+    "Descending":  false,
+    "MaxRows":     0
+  }
+}

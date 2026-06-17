@@ -1,19 +1,62 @@
 {
-  "Description": "Configuration DADP - notification de chargement par expediteur (US D250401_001)",
-  "SmtpServer": "${SMTP_SERVER}",
-  "Port": 25,
-  "From": "INEO.DADP.Exploitation@creditlogement.fr",
-  "To": ["DRM@creditlogement.fr"],
-  "Cc": [],
-  "TemplatePath": "${TEMPLATE_PATH}",
-  "Environnement": "PRODUCTION",
-  "EquipeNom": "L'équipe INEO Exploitation",
-  "Subject": "[{{STATUS_LABEL}}] Intégration des données partenaires DADP — {{DATE}}",
-  "StatusMessages": {
-    "OK":      "Nous vous informons que le chargement des données partenaires DADP s'est déroulé avec succès. La table DADP_STOCK a bien été mise à jour. Vous trouverez ci-dessous la synthèse par expéditeur.",
-    "SUCCES":  "Nous vous informons que le chargement des données partenaires DADP s'est déroulé avec succès. La table DADP_STOCK a bien été mise à jour. Vous trouverez ci-dessous la synthèse par expéditeur.",
-    "ERREUR":  "Nous vous informons qu'une erreur est survenue lors du chargement des données partenaires DADP. La table DADP_STOCK n'a pas été mise à jour. Veuillez contacter l'équipe INEO Exploitation pour investigation.",
-    "WARNING": "Le chargement des données partenaires DADP s'est terminé avec des avertissements. La table DADP_STOCK a été partiellement mise à jour. Une vérification de la synthèse ci-dessous est recommandée.",
-    "PARTIEL": "Le chargement des données partenaires DADP est incomplet. Certains expéditeurs n'ont pas été intégrés dans DADP_STOCK. Merci de consulter la synthèse ci-dessous et de contacter l'équipe INEO si nécessaire."
+  "Inherits": "%PROCLIB%\\config-global.json",
+
+  "From":    "INEO.DADP.Exploitation@creditlogement.fr",
+  "To":      ["DRM@creditlogement.fr"],
+  "Cc":      [],
+
+  "SubjectPrefix":   "DADP —",
+  "DefaultSeverity": "Success",
+  "RunbookUrl":      "",
+
+  "RcMapping": {
+    "0": "Success",
+    "1": "Warning",
+    "*": "Error"
+  },
+
+  "AutoSeverity": [
+    { "Column": "Statut", "Operator": "Equals", "Value": "NON_RECU", "Severity": "Error"   },
+    { "Column": "Statut", "Operator": "Equals", "Value": "RETARD",   "Severity": "Warning" }
+  ],
+
+  "Messages": {
+    "Success":  "Le chargement des données partenaires DADP s'est déroulé avec succès. La table DADP_STOCK a bien été mise à jour. Vous trouverez ci-dessous la synthèse par expéditeur.",
+    "Warning":  "Le chargement DADP est terminé avec des alertes. Certains expéditeurs sont en retard ou absents. Veuillez consulter la synthèse ci-dessous.",
+    "Error":    "Une erreur est survenue lors du chargement DADP ou des transmissions sont manquantes. Intervention requise.",
+    "Critical": "Échec critique du chargement DADP. Intervention immédiate requise."
+  },
+
+  "Attachments": [],
+
+  "Data": {
+    "Delimiter":   ";",
+    "GroupBy":     "Expediteur",
+    "TitlePrefix": "Expéditeur",
+    "BadgeColumn": "Statut",
+    "BadgeColors": {
+      "RECU":     { "Bg": "#2E7D32", "Text": "#ffffff" },
+      "RETARD":   { "Bg": "#E65100", "Text": "#ffffff" },
+      "NON_RECU": { "Bg": "#C62828", "Text": "#ffffff" }
+    },
+    "Columns": [
+      "Arrete", "Sequence",
+      "Somme_FOR",  "Evolution_FOR",
+      "Somme_DEF",  "Evolution_DEF",
+      "Somme_NPE",  "Evolution_NPE",
+      "Somme_IMP",  "Evolution_IMP",
+      "Date_chargement_INEO"
+    ],
+    "Headers": [
+      "Arrêté",   "Séq.",
+      "FOR",      "Évol. FOR",
+      "DEF",      "Évol. DEF",
+      "NPE",      "Évol. NPE",
+      "IMP",      "Évol. IMP",
+      "Chargement INEO"
+    ],
+    "SortBy":     "Arrete",
+    "Descending": false,
+    "MaxRows":    0
   }
 }
