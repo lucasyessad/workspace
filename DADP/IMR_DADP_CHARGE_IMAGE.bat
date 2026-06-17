@@ -9,15 +9,18 @@ SET SCEN_NAME=IMR_DADP_CHARGE_IMAGE
 SET SCEN_VERS=0_5
 SET SCEN_CTX=CTX_DEV
 
-REM --- Chemins notification mail ---
+REM --- Chemins (adapter selon l'environnement) ---
 SET PROCLIB=C:\proclib
-SET CONFIG=%PROCLIB%\config-dadp.json
+SET DADP_CONFIG=%PROCLIB%\DADP\config-dadp.json
 SET DADP_CSV=<CHEMIN_CSV_PRODUIT_PAR_ODI>\DADP_STOCK_EVOL_MAIL.csv
+
+SET SMTP_SERVER=<ADRESSE_SERVEUR_SMTP>
+SET TEMPLATE_PATH=%PROCLIB%\PRODUCTION\template-notification.html
 
 
 pushd "X:\Oracle\ODI12c\user_projects\domains\base_domain\bin"
 
-echo ***** Lancement Scenario ODI
+echo ***** Lancement Scenario ODI : %SCEN_NAME% v%SCEN_VERS%
 echo.
 call startscen "%SCEN_NAME%" "%SCEN_VERS%" %SCEN_CTX%
 
@@ -36,20 +39,23 @@ goto FIN
 echo Scenario Error 7000
 
 :ERR
-echo Error %RC%
+echo [DADP] Erreur ODI - code %RC% - aucun mail envoye
 exit /B 1
 
 :FIN
+echo.
 echo ***** Envoi notification mail DADP
 if not exist "%DADP_CSV%" (
     echo [ERREUR] Fichier CSV introuvable : %DADP_CSV%
+    echo          Le job ODI doit produire ce fichier avant la fin du traitement.
     exit /B 1
 )
 powershell -NoProfile -ExecutionPolicy Bypass ^
-  -File "%PROCLIB%\Generer-Rupture.ps1" ^
+  -File "%PROCLIB%\PRODUCTION\Generer-Rupture.ps1" ^
   -Source "%DADP_CSV%" ^
   -ColonneRupture "Expediteur" ^
-  -ConfigFile "%CONFIG%" ^
-  -NomJob DADP_CHARGEMENT ^
+  -ConfigFile "%DADP_CONFIG%" ^
+  -NomJob "DADP - Chargement données partenaires" ^
   -Status OK
+echo [DADP] Notification terminee (code=%ERRORLEVEL%)
 exit /B %ERRORLEVEL%
