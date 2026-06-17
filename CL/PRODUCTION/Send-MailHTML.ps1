@@ -1,75 +1,76 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Envoie un mail de notification HTML professionnel.
 
 .DESCRIPTION
-    Outil generique d'envoi de mail HTML. Charge un profil JSON (avec heritage),
-    evalue la severite depuis le RC du job et/ou les donnees CSV, construit
+    Outil générique d'envoi de mail HTML. Charge un profil JSON (avec héritage),
+    évalue la sévérité depuis le RC du job et/ou les données CSV, construit
     un email HTML compatible Outlook et l'envoie via SMTP.
 
     Aucun module externe requis. SMTP via System.Net.Mail.
+    Les chemins dans le JSON supportent les variables d'environnement Windows (%PROCLIB%, etc.).
 
 .PARAMETER Config
     Chemin vers le fichier JSON de configuration.
-    Supporte la cle "Inherits" pour l'heritage de profil.
+    Supporte la clé "Inherits" pour l'héritage de profil.
 
 .PARAMETER Subject
     Sujet du mail.
 
 .PARAMETER RC
-    Code retour du job execute. Mappe en severite via RcMapping dans le JSON.
+    Code retour du job exécuté. Mappe en sévérité via RcMapping dans le JSON.
 
 .PARAMETER Severity
-    Severite initiale (surclassee par RC et/ou AutoSeverity si presents).
+    Sévérité initiale (surclassée par RC et/ou AutoSeverity si présents).
     Valeurs : Info | Success | Warning | Error | Critical
 
 .PARAMETER Body
     Texte libre. Surcharge Messages[Severity] du JSON si fourni.
 
 .PARAMETER Steps
-    Liste d'etapes affichees comme log d'execution ordonne.
-    Exemple : -Steps "Chargement OK","Controle KO","Rollback OK"
+    Liste d'étapes affichées comme log d'exécution ordonné.
+    Exemple : -Steps "Chargement OK","Contrôle KO","Rollback OK"
 
 .PARAMETER Summary
-    Bloc cle/valeur affiche en en-tete.
-    Exemple : -Summary @{ "Duree"="02:14"; "Lignes"="1 524" }
+    Bloc clé/valeur affiché en en-tête.
+    Exemple : -Summary @{ "Durée"="02:14"; "Lignes"="1 524" }
 
 .PARAMETER Source
     Un ou plusieurs fichiers CSV source pour les tableaux.
     Supporte les variables {DATE}, {TIME}, {DATETIME}, {HOSTNAME}, {ENV}.
 
 .PARAMETER Delimiter
-    Separateur CSV. Defaut : valeur du JSON ou ';'.
+    Séparateur CSV. Défaut : valeur du JSON ou ';'.
 
 .PARAMETER GroupBy
     Colonne de rupture : 1 section par valeur distincte. Surcharge JSON.
 
 .PARAMETER Columns
-    Colonnes a afficher. Defaut : toutes (ou valeur du JSON).
+    Colonnes à afficher. Défaut : toutes (ou valeur du JSON).
 
 .PARAMETER Headers
-    Noms d'affichage des colonnes (meme ordre que -Columns).
+    Noms d'affichage des colonnes (même ordre que -Columns).
 
 .PARAMETER SortBy
-    Colonne de tri des donnees.
+    Colonne de tri des données.
 
 .PARAMETER Descending
-    Tri decroissant (utilise avec -SortBy).
+    Tri décroissant (utilisé avec -SortBy).
 
 .PARAMETER MaxRows
-    Nombre max de lignes par tableau. 0 = illimite.
+    Nombre max de lignes par tableau. 0 = illimité.
 
 .PARAMETER TitlePrefix
-    Prefixe des titres de section (avec -GroupBy).
+    Préfixe des titres de section (avec -GroupBy).
 
 .PARAMETER Attachments
-    Fichiers a joindre au mail.
+    Fichiers à joindre au mail.
     Supporte les variables {DATE}, {TIME}, {DATETIME}, {HOSTNAME}, {ENV}.
 
 .PARAMETER AttachWhen
-    Severites pour lesquelles joindre les -Attachments runtime.
-    Defaut : "Always". Exemple : "Warning,Error"
+    Sévérités pour lesquelles joindre les -Attachments runtime.
+    Défaut : "Always". Exemple : "Warning,Error"
 
 .PARAMETER To
     Surcharge les destinataires du JSON.
@@ -78,10 +79,10 @@
     Destinataires en copie.
 
 .PARAMETER Bcc
-    Destinataires en copie cachee.
+    Destinataires en copie cachée.
 
 .PARAMETER Priority
-    Priorite du mail. Valeurs : High | Normal | Low.
+    Priorité du mail. Valeurs : High | Normal | Low.
 
 .PARAMETER Template
     Surcharge le chemin du template HTML du JSON.
@@ -90,40 +91,40 @@
     Badge environnement (PROD, DEV, UAT...). Surcharge le JSON.
 
 .PARAMETER OutFile
-    Sauvegarde le HTML genere dans ce fichier.
-    Compatible avec -WhatIf (genere le fichier sans envoyer).
+    Sauvegarde le HTML généré dans ce fichier.
+    Compatible avec -WhatIf (génère le fichier sans envoyer).
 
 .PARAMETER TestAddress
-    Redirige l'envoi vers cette adresse au lieu des destinataires configures.
-    Le sujet est prefixe de [TEST - Destinataires reels : ...].
+    Redirige l'envoi vers cette adresse au lieu des destinataires configurés.
+    Le sujet est préfixé de [TEST - Destinataires réels : ...].
 
 .EXAMPLE
     # Notification simple depuis un job ODI
-    .\Send-MailHTML.ps1 -Config cfg.json -Subject "Deploiement v2.1" -RC 0
+    .\Send-MailHTML.ps1 -Config cfg.json -Subject "Déploiement v2.1" -RC 0
 
 .EXAMPLE
-    # Erreur avec log en piece jointe (uniquement si Warning ou Error)
+    # Erreur avec log en pièce jointe (uniquement si Warning ou Error)
     .\Send-MailHTML.ps1 -Config cfg.json -Subject "MON_JOB" -RC %RC% `
         -Attachments "C:\logs\job_{DATE}.log" -AttachWhen "Warning,Error"
 
 .EXAMPLE
-    # Rapport DADP avec donnees CSV groupees (autorite des colonnes dans le JSON)
+    # Rapport DADP avec données CSV groupées (autorité des colonnes dans le JSON)
     .\Send-MailHTML.ps1 -Config config-dadp.json `
-        -Subject "Chargement donnees partenaires" -Source data.csv -RC 0
+        -Subject "Chargement données partenaires" -Source data.csv -RC 0
 
 .EXAMPLE
-    # Log de traitement par etapes avec resume
+    # Log de traitement par étapes avec résumé
     .\Send-MailHTML.ps1 -Config cfg.json -Subject "Batch nuit" -RC 1 `
-        -Steps "Etape 1 OK","Etape 2 KO","Rollback OK" `
-        -Summary @{ Duree="02:14"; Erreurs="3"; Lignes="1 524" }
+        -Steps "Étape 1 OK","Étape 2 KO","Rollback OK" `
+        -Summary @{ Durée="02:14"; Erreurs="3"; Lignes="1 524" }
 
 .EXAMPLE
-    # Mail avec piece jointe toujours et copie
+    # Mail avec pièce jointe toujours et copie
     .\Send-MailHTML.ps1 -Config cfg.json -Subject "Rapport mensuel" -RC 0 `
         -Attachments "C:\reports\rapport.xlsx" -Cc dsi@example.com -Priority High
 
 .EXAMPLE
-    # Generer le HTML sans envoyer (apercu ou archivage)
+    # Générer le HTML sans envoyer (aperçu ou archivage)
     .\Send-MailHTML.ps1 -Config cfg.json -Subject "Test" -Source data.csv `
         -OutFile "C:\temp\preview.html" -WhatIf
 
@@ -134,10 +135,11 @@
 
 .NOTES
     Version      : 1.0
-    Dependances  : aucune (System.Net.Mail integre a PowerShell)
-    Auth OAuth2  : non inclus dans cette version (necessite Mailozaurr)
-    Heritage     : le JSON peut contenir "Inherits" pour heriter d'un config parent
+    Dépendances  : aucune (System.Net.Mail intégré à PowerShell)
+    Auth OAuth2  : non inclus dans cette version (nécessite Mailozaurr)
+    Héritage     : le JSON peut contenir "Inherits" pour hériter d'un config parent
     Variables    : {DATE} {TIME} {DATETIME} {HOSTNAME} {ENV} dans Source et Attachments
+                   %VAR% dans tous les chemins du JSON (variables d'environnement Windows)
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
@@ -197,6 +199,19 @@ function Get-Prop($obj, [string]$name, $default = $null) {
     return $default
 }
 
+function Expand-EnvStr($obj) {
+    if ($null -eq $obj) { return $obj }
+    if ($obj -is [string]) { return [Environment]::ExpandEnvironmentVariables($obj) }
+    if ($obj -is [System.Management.Automation.PSCustomObject]) {
+        foreach ($p in $obj.PSObject.Properties) {
+            $p.Value = Expand-EnvStr $p.Value
+        }
+        return $obj
+    }
+    if ($obj -is [array]) { return @($obj | ForEach-Object { Expand-EnvStr $_ }) }
+    return $obj
+}
+
 function Merge-Configs($base, $child) {
     $r = [ordered]@{}
     if ($base)  { foreach ($p in $base.PSObject.Properties)  { $r[$p.Name] = $p.Value } }
@@ -205,11 +220,17 @@ function Merge-Configs($base, $child) {
 }
 
 function Load-Config([string]$path) {
-    if (-not (Test-Path -LiteralPath $path)) { throw "Config introuvable : $path" }
-    $raw = Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
+    $expandedPath = [Environment]::ExpandEnvironmentVariables($path)
+    if (-not (Test-Path -LiteralPath $expandedPath)) { throw "Config introuvable : $expandedPath" }
+    $raw = Get-Content -LiteralPath $expandedPath -Raw -Encoding UTF8 | ConvertFrom-Json
     $parent = Get-Prop $raw 'Inherits'
-    if ($parent) { return Merge-Configs (Load-Config $parent) $raw }
-    return $raw
+    if ($parent) {
+        $parentPath = [Environment]::ExpandEnvironmentVariables($parent)
+        $merged = Merge-Configs (Load-Config $parentPath) $raw
+    } else {
+        $merged = $raw
+    }
+    return Expand-EnvStr $merged
 }
 
 $SEVERITY_RANK = @{ Info=0; Success=1; Warning=2; Error=3; Critical=4 }
@@ -244,7 +265,7 @@ function Test-ShouldAttach([string]$when, [string]$sev) {
 }
 
 # ============================================================================
-# Generateurs HTML
+# Générateurs HTML
 # ============================================================================
 
 function New-SummaryHtml([hashtable]$data) {
@@ -253,11 +274,11 @@ function New-SummaryHtml([hashtable]$data) {
     foreach ($k in $data.Keys) {
         $bg = if ($i % 2 -eq 0) { '#ffffff' } else { '#f8f9fa' }
         $rows += "<tr style=`"background-color:$bg;`">" +
-            "<td style=`"padding:6px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;font-weight:bold;color:#1B3254;width:35%;border-bottom:1px solid #DDE3E9;white-space:nowrap;`">$(HtmlEnc $k)</td>" +
+            "<td style=`"padding:6px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;font-weight:bold;color:#343E47;width:35%;border-bottom:1px solid #DDE3E9;white-space:nowrap;`">$(HtmlEnc $k)</td>" +
             "<td style=`"padding:6px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;color:#2C3E50;border-bottom:1px solid #DDE3E9;`">$(HtmlEnc $data[$k])</td>" +
             "</tr>"; $i++
     }
-    return "<tr><td style=`"padding:8px 28px 16px 28px;`"><table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`" style=`"border-collapse:collapse;border:1px solid #DDE3E9;`"><thead><tr style=`"background-color:#1B3254;`"><th style=`"padding:7px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#fff;text-align:left;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;`">Parametre</th><th style=`"padding:7px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#fff;text-align:left;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;`">Valeur</th></tr></thead><tbody>$rows</tbody></table></td></tr>"
+    return "<tr><td style=`"padding:8px 28px 16px 28px;`"><table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`" style=`"border-collapse:collapse;border:1px solid #DDE3E9;`"><thead><tr style=`"background-color:#343E47;`"><th style=`"padding:7px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#fff;text-align:left;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;`">Paramètre</th><th style=`"padding:7px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#fff;text-align:left;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;`">Valeur</th></tr></thead><tbody>$rows</tbody></table></td></tr>"
 }
 
 function New-StepsHtml([string[]]$stepList) {
@@ -268,7 +289,7 @@ function New-StepsHtml([string[]]$stepList) {
         $num = ($i + 1).ToString().PadLeft(2,'0')
         $rows += "<tr style=`"background-color:$bg;`"><td style=`"padding:6px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;color:#2C3E50;border-bottom:1px solid #DDE3E9;`"><span style=`"color:#8A9BB0;margin-right:10px;font-size:11px;`">$num.</span>$(HtmlEnc $stepList[$i])</td></tr>"
     }
-    return "<tr><td style=`"padding:8px 28px 16px 28px;`"><table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`" style=`"border-collapse:collapse;border:1px solid #DDE3E9;`"><thead><tr style=`"background-color:#1B3254;`"><th style=`"padding:7px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#fff;text-align:left;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;`">Etapes d'execution</th></tr></thead><tbody>$rows</tbody></table></td></tr>"
+    return "<tr><td style=`"padding:8px 28px 16px 28px;`"><table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`" style=`"border-collapse:collapse;border:1px solid #DDE3E9;`"><thead><tr style=`"background-color:#343E47;`"><th style=`"padding:7px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#fff;text-align:left;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;`">Étapes d'exécution</th></tr></thead><tbody>$rows</tbody></table></td></tr>"
 }
 
 function New-BadgeHtml([string]$value, $badgeColors) {
@@ -281,15 +302,15 @@ function New-BadgeHtml([string]$value, $badgeColors) {
     return " <span style=`"display:inline-block;padding:2px 9px;border-radius:3px;font-size:10px;font-weight:bold;background-color:$bg;color:$fg;font-family:Calibri,'Segoe UI',Arial,sans-serif;letter-spacing:0.3px;`">$(HtmlEnc $value)</span>"
 }
 
-function New-SectionTitleHtml([string]$title, [string]$badgeHtml, [string]$borderColor = '#1B3254') {
-    return "<tr><td style=`"padding:14px 28px 4px 28px;`"><table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`"><tr><td style=`"background-color:#f8f9fa;padding:7px 14px;border-left:4px solid $borderColor;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;font-weight:bold;color:#1B3254;`">$(HtmlEnc $title)$badgeHtml</td></tr></table></td></tr>"
+function New-SectionTitleHtml([string]$title, [string]$badgeHtml, [string]$borderColor = '#343E47') {
+    return "<tr><td style=`"padding:14px 28px 4px 28px;`"><table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`"><tr><td style=`"background-color:#f8f9fa;padding:7px 14px;border-left:4px solid $borderColor;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;font-weight:bold;color:#343E47;`">$(HtmlEnc $title)$badgeHtml</td></tr></table></td></tr>"
 }
 
 function New-DataTableHtml([string[]]$dispHeaders, $rows, [string[]]$dispColumns, [int]$effMaxRows) {
     $show   = if ($effMaxRows -gt 0 -and $rows.Count -gt $effMaxRows) { @($rows[0..($effMaxRows-1)]) } else { @($rows) }
     $hidden = $rows.Count - $show.Count
 
-    $th = ($dispHeaders | ForEach-Object { "<th style=`"padding:6px 10px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#fff;text-align:left;font-weight:bold;white-space:nowrap;border-right:1px solid #2d4a6e;`">$(HtmlEnc $_)</th>" }) -join ''
+    $th = ($dispHeaders | ForEach-Object { "<th style=`"padding:6px 10px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#fff;text-align:left;font-weight:bold;white-space:nowrap;border-right:1px solid #2B343D;`">$(HtmlEnc $_)</th>" }) -join ''
 
     $tbody = ''
     for ($i = 0; $i -lt $show.Count; $i++) {
@@ -301,14 +322,14 @@ function New-DataTableHtml([string[]]$dispHeaders, $rows, [string[]]$dispColumns
     }
     if ($hidden -gt 0) {
         $span = $dispHeaders.Count
-        $tbody += "<tr><td colspan=`"$span`" style=`"padding:5px 10px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#8A9BB0;font-style:italic;border-top:1px solid #DDE3E9;`">... $hidden ligne(s) supplementaire(s) non affichee(s)</td></tr>"
+        $tbody += "<tr><td colspan=`"$span`" style=`"padding:5px 10px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#8A9BB0;font-style:italic;border-top:1px solid #DDE3E9;`">... $hidden ligne(s) supplémentaire(s) non affichée(s)</td></tr>"
     }
-    return "<tr><td style=`"padding:0 28px 16px 28px;overflow-x:auto;`"><table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`" style=`"border-collapse:collapse;`"><thead><tr style=`"background-color:#1B3254;`">$th</tr></thead><tbody>$tbody</tbody></table></td></tr>"
+    return "<tr><td style=`"padding:0 28px 16px 28px;overflow-x:auto;`"><table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`" style=`"border-collapse:collapse;`"><thead><tr style=`"background-color:#343E47;`">$th</tr></thead><tbody>$tbody</tbody></table></td></tr>"
 }
 
 function New-RunbookHtml([string]$url) {
     if (-not $url) { return '' }
-    return "<tr><td style=`"padding:4px 28px 16px 28px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;color:#6B7F96;`">Procedure : <a href=`"$(HtmlEnc $url)`" style=`"color:#1565C0;`">$(HtmlEnc $url)</a></td></tr>"
+    return "<tr><td style=`"padding:4px 28px 16px 28px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;color:#6B7F96;`">Procédure : <a href=`"$(HtmlEnc $url)`" style=`"color:#407DD9;`">$(HtmlEnc $url)</a></td></tr>"
 }
 
 # ============================================================================
@@ -317,7 +338,7 @@ function New-RunbookHtml([string]$url) {
 
 $now = Get-Date
 
-# 1. Chargement de la configuration avec heritage
+# 1. Chargement de la configuration avec héritage
 $cfg         = Load-Config -path $Config
 $cfgSmtp     = Get-Prop $cfg 'Smtp'
 $cfgData     = Get-Prop $cfg 'Data'
@@ -326,7 +347,7 @@ $cfgRcMap    = Get-Prop $cfg 'RcMapping'
 $cfgAutoSev  = @(Get-Prop $cfg 'AutoSeverity' @())
 $cfgAttRules = @(Get-Prop $cfg 'Attachments'  @())
 
-# 2. Resolution des parametres effectifs (param > JSON)
+# 2. Résolution des paramètres effectifs (param > JSON)
 $effEnv      = if ($Env)      { $Env      } else { Get-Prop $cfg 'Env'      '' }
 $effTemplate = if ($Template) { $Template } else { Get-Prop $cfg 'Template' '' }
 $effSmtpSrv  = Get-Prop $cfgSmtp 'Server'               ''
@@ -344,7 +365,7 @@ $effCc       = if ($Cc.Count  -gt 0) { $Cc  } else { @(Get-Prop $cfg 'Cc'  @()) 
 $effBcc      = if ($Bcc.Count -gt 0) { $Bcc } else { @(Get-Prop $cfg 'Bcc' @()) }
 $effPrio     = if ($Priority) { $Priority } else { Get-Prop $cfg 'Priority' 'Normal' }
 $effTeam     = Get-Prop $cfg 'Team'       ''
-$effFooter   = Get-Prop $cfg 'Footer'     'Message genere automatiquement.'
+$effFooter   = Get-Prop $cfg 'Footer'     'Message généré automatiquement.'
 $effRunbook  = Get-Prop $cfg 'RunbookUrl' ''
 $effHost     = Get-Prop $cfg 'Hostname'   $env:COMPUTERNAME
 if (-not $effHost) { $effHost = $env:COMPUTERNAME }
@@ -364,7 +385,7 @@ $effBadgeClr = Get-Prop $cfgData 'BadgeColors'
 
 $effSubject  = if ($effSubPfx) { "$effSubPfx $Subject".Trim() } else { $Subject }
 
-# 3. Severite technique depuis RC
+# 3. Sévérité technique depuis RC
 $techSev = ''
 if ($RC -ne [int]::MinValue -and $cfgRcMap) {
     $rcKey = [string]$RC
@@ -380,7 +401,7 @@ foreach ($src in $Source) {
     $csvData.AddRange(@(Import-Csv -LiteralPath $srcPath -Delimiter $effDelim))
 }
 
-# 5. Severite fonctionnelle depuis AutoSeverity
+# 5. Sévérité fonctionnelle depuis AutoSeverity
 $funcSev = 'Info'
 if ($cfgAutoSev.Count -gt 0 -and $csvData.Count -gt 0) {
     $candidates = [System.Collections.Generic.List[string]]::new()
@@ -406,12 +427,12 @@ if ($cfgAutoSev.Count -gt 0 -and $csvData.Count -gt 0) {
     $funcSev = Get-MaxSeverity $candidates.ToArray()
 }
 
-# 6. Severite initiale et finale
+# 6. Sévérité initiale et finale
 $initSev  = if ($Severity) { $Severity } else { $effDefSev }
 $finalSev = Get-MaxSeverity @($initSev, $techSev, $funcSev)
 $colors   = $SEVERITY_COLORS[$finalSev]
 
-Write-Host "Severite : initiale=$initSev | technique=$(if($techSev){'[RC='+$RC+'] '+$techSev}else{'n/a'}) | fonctionnelle=$funcSev | finale=$finalSev"
+Write-Host "Sévérité : initiale=$initSev | technique=$(if($techSev){'[RC='+$RC+'] '+$techSev}else{'n/a'}) | fonctionnelle=$funcSev | finale=$finalSev"
 
 # 7. Construction des sections HTML
 $sections = ''
@@ -422,7 +443,7 @@ if ($Steps.Count   -gt 0)  { $sections += New-StepsHtml   $Steps   }
 if ($csvData.Count -gt 0) {
     $srcCols = @($csvData[0].PSObject.Properties.Name)
 
-    # Colonnes a afficher
+    # Colonnes à afficher
     $dispCols = if ($effColumns.Count -gt 0) {
         $effColumns
     } elseif ($effGroupBy) {
@@ -431,7 +452,7 @@ if ($csvData.Count -gt 0) {
         $srcCols | Where-Object { $_ -ne $effBadgeCol }
     }
 
-    # En-tetes effectifs
+    # En-têtes effectifs
     $dispHdrs = if ($effHeaders.Count -eq @($dispCols).Count) { $effHeaders } else { @($dispCols) }
 
     # Tri
@@ -444,13 +465,13 @@ if ($csvData.Count -gt 0) {
         foreach ($g in ($csvArr | Group-Object -Property $effGroupBy)) {
             # Badge depuis BadgeColumn
             $badgeVal    = ''
-            $borderColor = '#1B3254'
+            $borderColor = '#343E47'
             if ($effBadgeCol -and $g.Group[0].PSObject.Properties[$effBadgeCol]) {
                 $badgeVal = $g.Group | ForEach-Object { $_.$effBadgeCol } |
                             Where-Object { $_ -ne '' } | Select-Object -First 1
                 if ($badgeVal -and $effBadgeClr) {
                     $bk = $effBadgeClr.PSObject.Properties.Name | Where-Object { $_ -ieq $badgeVal } | Select-Object -First 1
-                    if ($bk) { $borderColor = Get-Prop $effBadgeClr.$bk 'Bg' '#1B3254' }
+                    if ($bk) { $borderColor = Get-Prop $effBadgeClr.$bk 'Bg' '#343E47' }
                 }
             }
             $badge = if ($badgeVal) { New-BadgeHtml $badgeVal $effBadgeClr } else { '' }
@@ -467,7 +488,7 @@ $sections += New-RunbookHtml $effRunbook
 
 # 8. Population du template
 if (-not $effTemplate -or -not (Test-Path -LiteralPath $effTemplate)) {
-    throw "Template HTML introuvable : '$effTemplate'. Verifiez la cle Template dans votre config."
+    throw "Template HTML introuvable : '$effTemplate'. Vérifiez la clé Template dans votre config."
 }
 $html = Get-Content -LiteralPath $effTemplate -Raw -Encoding UTF8
 
@@ -492,10 +513,10 @@ if ($OutFile) {
     $dir = Split-Path $OutFile -Parent
     if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
     [System.IO.File]::WriteAllText($OutFile, $html, [System.Text.UTF8Encoding]::new($false))
-    Write-Host "HTML sauvegarde : $OutFile"
+    Write-Host "HTML sauvegardé : $OutFile"
 }
 
-# 10. Pieces jointes effectives
+# 10. Pièces jointes effectives
 $finalAtt = [System.Collections.Generic.List[string]]::new()
 
 foreach ($rule in $cfgAttRules) {
@@ -506,7 +527,7 @@ foreach ($rule in $cfgAttRules) {
     $ok = ($conds -contains 'Always') -or ($conds -contains $finalSev)
     if ($ok) {
         if (Test-Path -LiteralPath $p) { $finalAtt.Add($p) }
-        else { Write-Warning "Piece jointe introuvable (ignoree) : $p" }
+        else { Write-Warning "Pièce jointe introuvable (ignorée) : $p" }
     }
 }
 
@@ -514,18 +535,18 @@ foreach ($a in $Attachments) {
     $p = Expand-Vars $a $now $effEnv
     if (Test-ShouldAttach $AttachWhen $finalSev) {
         if (Test-Path -LiteralPath $p) { $finalAtt.Add($p) }
-        else { Write-Warning "Piece jointe introuvable (ignoree) : $p" }
+        else { Write-Warning "Pièce jointe introuvable (ignorée) : $p" }
     }
 }
 
 # 11. Envoi (ou WhatIf)
 if (-not $PSCmdlet.ShouldProcess($effSubject, 'Envoyer mail')) {
-    Write-Host "[WhatIf] Mail non envoye. Severite=$finalSev | Destinataires=$($effTo -join ',') | PJ=$($finalAtt.Count)"
+    Write-Host "[WhatIf] Mail non envoyé. Sévérité=$finalSev | Destinataires=$($effTo -join ',') | PJ=$($finalAtt.Count)"
     exit 0
 }
 
-if ($effTo.Count -eq 0) { throw "Aucun destinataire configure." }
-if (-not $effSmtpSrv)   { throw "SmtpServer non configure." }
+if ($effTo.Count -eq 0) { throw "Aucun destinataire configuré." }
+if (-not $effSmtpSrv)   { throw "SmtpServer non configuré." }
 
 $dest = if ($TestAddress) { @($TestAddress) } else { $effTo }
 
@@ -544,7 +565,7 @@ while ($attempt -lt $maxAtt) {
         foreach ($a in $effBcc) { $mail.Bcc.Add($a) }
 
         $mail.Subject = if ($TestAddress) {
-            "[TEST - Destinataires reels : $($effTo -join ', ')] $effSubject"
+            "[TEST - Destinataires réels : $($effTo -join ', ')] $effSubject"
         } else { $effSubject }
 
         $mail.Body            = $html
@@ -578,13 +599,13 @@ while ($attempt -lt $maxAtt) {
         }
 
         $smtp.Send($mail)
-        Write-Host "Mail envoye : '$effSubject' -> $($dest -join ', ') [Severite=$finalSev | PJ=$($finalAtt.Count)]"
+        Write-Host "Mail envoyé : '$effSubject' -> $($dest -join ', ') [Sévérité=$finalSev | PJ=$($finalAtt.Count)]"
         break
     }
     catch {
-        Write-Warning "Tentative $attempt/$maxAtt echouee : $_"
+        Write-Warning "Tentative $attempt/$maxAtt échouée : $_"
         if ($attempt -lt $maxAtt) { Start-Sleep -Milliseconds $effRetDly }
-        else { throw "Impossible d'envoyer le mail apres $maxAtt tentative(s) : $_" }
+        else { throw "Impossible d'envoyer le mail après $maxAtt tentative(s) : $_" }
     }
     finally {
         if ($mail) { $mail.Dispose() }
