@@ -9,14 +9,9 @@ SET SCEN_NAME=IMR_DADP_CHARGE_IMAGE
 SET SCEN_VERS=0_5
 SET SCEN_CTX=CTX_DEV
 
-REM --- Chemins (adapter selon l'environnement) ---
 SET PROCLIB=C:\proclib
 SET DADP_CONFIG=%PROCLIB%\CL\DADP\config-dadp.json
 SET DADP_CSV=<CHEMIN_CSV_PRODUIT_PAR_ODI>\DADP_STOCK_EVOL_MAIL.csv
-
-SET SMTP_SERVER=<ADRESSE_SERVEUR_SMTP>
-SET DADP_TEMPLATE_PATH=%PROCLIB%\CL\DADP\template-dadp.html
-
 
 pushd "X:\Oracle\ODI12c\user_projects\domains\base_domain\bin"
 
@@ -28,38 +23,15 @@ set RC=%ERRORLEVEL%
 echo Code Retour : %RC%
 popd
 
-if .%RC%.==.-1. goto ERR_SCEN
-echo %SCEN_NAME% : RC=%RC%
-
-if %RC% NEQ 0 goto ERR
-goto FIN
-
-
-:ERR_SCEN
-echo Scenario Error 7000
-
-:ERR
-echo [DADP] Erreur ODI - code %RC% - aucun mail envoye
-exit /B 1
-
-:FIN
 echo.
-echo ***** Envoi notification mail DADP
-if not exist "%DADP_CSV%" (
-    echo [ERREUR] Fichier CSV introuvable : %DADP_CSV%
-    echo          Le job ODI doit produire ce fichier avant la fin du traitement.
-    exit /B 1
-)
+echo ***** Envoi notification mail DADP (RC=%RC%)
+
 powershell -NoProfile -ExecutionPolicy Bypass ^
-  -File "%PROCLIB%\CL\PRODUCTION\Generer-Rupture.ps1" ^
-  -Source "%DADP_CSV%" ^
-  -ColonneRupture "Expediteur" ^
-  -ColonneStatut "Statut" ^
-  -ColonneFrequence "Frequence" ^
-  -ExclureColonnes "Statut","Frequence" ^
-  -Entetes "Arrete","Seq.","Somme FOR","Evol. FOR","Somme DEF","Evol. DEF","Somme NPE","Evol. NPE","Somme IMP","Evol. IMP","Date chargement INEO" ^
-  -ConfigFile "%DADP_CONFIG%" ^
-  -NomJob "DADP - Chargement donnees partenaires" ^
-  -Status OK
+  -File "%PROCLIB%\CL\PRODUCTION\Send-MailHTML.ps1" ^
+  -Config "%DADP_CONFIG%" ^
+  -Subject "Chargement donnees partenaires" ^
+  -Source  "%DADP_CSV%" ^
+  -RC      %RC%
+
 echo [DADP] Notification terminee (code=%ERRORLEVEL%)
 exit /B %ERRORLEVEL%
