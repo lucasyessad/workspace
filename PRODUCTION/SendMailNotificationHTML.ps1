@@ -126,7 +126,7 @@ function Safe-Read([string]$path, [int]$maxLines=0) {
     }
 }
 
-Log "=== SendMailNotificationHTML v3.0 ==="
+Log "=== SendMailNotificationHTML v3.1 ==="
 Log "Job: $NomJob | Status: $Status | Config: $ConfigFile"
 
 # ============================================================================
@@ -177,6 +177,7 @@ $TplPath  = $cfg.TemplatePath
 $Env_Name = if ($cfg.Environnement) { $cfg.Environnement } else { 'N/A' }
 $SubjTpl  = if ($cfg.Subject) { $cfg.Subject } else { '[{{STATUS_LABEL}}] [{{ENVIRONNEMENT}}] {{JOB_NAME}} - {{DATE}}' }
 $stMsgs   = $cfg.StatusMessages
+$Equipe   = if ($cfg.EquipeNom) { $cfg.EquipeNom } else { "L'équipe INEO" }
 
 # Heriter LogDir/LogPattern depuis config si non passes en parametre
 if (-not $LogDir -and $cfg.LogDir)         { $LogDir = $cfg.LogDir }
@@ -783,6 +784,8 @@ $vars = [ordered]@{
     '{{STATUS_MESSAGE}}' = $stMsg
     '{{ENVIRONNEMENT}}'  = $Env_Name
     '{{STATUS_COLOR}}'   = $stColor
+    '{{HOSTNAME}}'       = $env:COMPUTERNAME
+    '{{EQUIPE}}'         = $Equipe
     '{{SECTIONS}}'       = $secHtml
 }
 
