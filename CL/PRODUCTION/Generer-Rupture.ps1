@@ -39,9 +39,12 @@ param(
 
     # --- Detection retard / manquants ---
     # Fichier JSON listant les expediteurs attendus avec frequence et delai de retard
-    [string]   $ReferenceFile   = '',
+    [string]   $ReferenceFile    = '',
     # Colonne du CSV contenant la date du dernier arrete (pour detection retard)
-    [string]   $ColonneDate     = '',
+    [string]   $ColonneDate      = '',
+    # Colonnes du CSV avec statut/frequence pre-calcules par ODI (mode CSV-driven)
+    [string]   $ColonneStatut    = '',
+    [string]   $ColonneFrequence = '',
 
     # --- Envoi integre (optionnel) ---
     [string]   $ConfigFile      = '',
@@ -109,24 +112,35 @@ if ($ReferenceFile -and (Test-Path -LiteralPath $ReferenceFile)) {
 $groupes = $data | Group-Object -Property $ColonneRupture
 if ($Tri -eq 'Nom') { $groupes = $groupes | Sort-Object Name }
 
-# Expediteurs presents dans le CSV
-$expediteursPresents = @($groupes | ForEach-Object { $_.Name })
-
-# Detection des expediteurs manquants et en retard
+$expediteursPresents  = @($groupes | ForEach-Object { $_.Name })
 $expediteursManquants = @()
 $expediteursRetard    = @()
 
-if ($referenceMap.Count -gt 0) {
-    $today = Get-Date
+$modeCSVStatut = ($ColonneStatut -ne '' -and $colsSource -contains $ColonneStatut)
 
+if ($modeCSVStatut) {
+    # Mode CSV-driven : statut pre-calcule par ODI dans le fichier source
+    foreach ($g in $groupes) {
+        $statutVal = $g.Group | ForEach-Object { $_.$ColonneStatut } | Where-Object { $_ -ne '' } | Select-Object -First 1
+        if ($statutVal -eq 'RETARD')   { $expediteursRetard    += $g.Name }
+        if ($statutVal -eq 'NON_RECU') { $expediteursManquants += $g.Name }
+    }
+    # Expediteurs completement absents du CSV mais attendus (via reference)
+    if ($referenceMap.Count -gt 0) {
+        foreach ($exp in $referenceMap.Keys | Sort-Object) {
+            if ($expediteursPresents -notcontains $exp -and $expediteursManquants -notcontains $exp) {
+                $expediteursManquants += $exp
+            }
+        }
+    }
+} elseif ($referenceMap.Count -gt 0) {
+    # Mode classique : detection par calcul de date d'arrete
+    $today = Get-Date
     foreach ($exp in $referenceMap.Keys | Sort-Object) {
         $ref = $referenceMap[$exp]
-
         if ($expediteursPresents -notcontains $exp) {
-            # Completement absent du CSV
             $expediteursManquants += $exp
         } elseif ($ColonneDate) {
-            # Present mais verifier si en retard selon la frequence
             $lignes = @($data | Where-Object { $_.$ColonneRupture -eq $exp } | Sort-Object { $_.$ColonneDate } -Descending)
             if ($lignes.Count -gt 0) {
                 $dernierArrete = $null
@@ -138,32 +152,30 @@ if ($referenceMap.Count -gt 0) {
                         'Annuelle'     { 380 + [int]($ref.JoursRetard) }
                         default        { 35 + [int]($ref.JoursRetard) }
                     }
-                    if ($joursEcoules -gt $seuilRetard) {
-                        $expediteursRetard += $exp
-                    }
+                    if ($joursEcoules -gt $seuilRetard) { $expediteursRetard += $exp }
                 }
             }
         }
     }
+}
 
-    # Banniere d'alerte globale si des problemes detectes
-    $nbProblemes = $expediteursManquants.Count + $expediteursRetard.Count
-    if ($nbProblemes -gt 0) {
-        $lignesAlerte = @()
-        if ($expediteursManquants.Count -gt 0) {
-            $lignesAlerte += "[ECHEC] $($expediteursManquants.Count) expediteur(s) n'ont pas transmis leurs donnees : $($expediteursManquants -join ', '). Relance necessaire."
-        }
-        if ($expediteursRetard.Count -gt 0) {
-            $lignesAlerte += "[WARNING] $($expediteursRetard.Count) expediteur(s) presentent un retard par rapport a leur frequence d'envoi habituelle : $($expediteursRetard -join ', ')."
-        }
-        $alertesSections += [ordered]@{
-            type    = 'etapes'
-            title   = "Alertes — Controle des transmissions"
-            items   = @($lignesAlerte | ForEach-Object {
-                $parts = $_ -split ' ', 2
-                @($parts[0] -replace '[\[\]]', '', $parts[1], '')
-            })
-        }
+# Banniere d'alerte globale si des problemes detectes
+$nbProblemes = $expediteursManquants.Count + $expediteursRetard.Count
+if ($nbProblemes -gt 0) {
+    $lignesAlerte = @()
+    if ($expediteursManquants.Count -gt 0) {
+        $lignesAlerte += "[ECHEC] $($expediteursManquants.Count) expediteur(s) n'ont pas transmis leurs donnees : $($expediteursManquants -join ', '). Relance necessaire."
+    }
+    if ($expediteursRetard.Count -gt 0) {
+        $lignesAlerte += "[WARNING] $($expediteursRetard.Count) expediteur(s) presentent un retard par rapport a leur frequence d'envoi habituelle : $($expediteursRetard -join ', ')."
+    }
+    $alertesSections += [ordered]@{
+        type    = 'etapes'
+        title   = "Alertes — Controle des transmissions"
+        items   = @($lignesAlerte | ForEach-Object {
+            $parts = $_ -split ' ', 2
+            @($parts[0] -replace '[\[\]]', '', $parts[1], '')
+        })
     }
 }
 
@@ -173,9 +185,19 @@ $sectionsData = foreach ($g in $groupes) {
         ,@( $projection | ForEach-Object { [string]$enr.$_ } )
     }
 
-    # Titre avec statut si reference disponible
+    # Titre avec statut
     $statut = ''
-    if ($referenceMap.Count -gt 0) {
+    if ($modeCSVStatut) {
+        $statutVal = $g.Group | ForEach-Object { $_.$ColonneStatut } | Where-Object { $_ -ne '' } | Select-Object -First 1
+        $freqVal   = if ($ColonneFrequence -ne '' -and $colsSource -contains $ColonneFrequence) {
+                         $g.Group | ForEach-Object { $_.$ColonneFrequence } | Where-Object { $_ -ne '' } | Select-Object -First 1
+                     } else { '' }
+        $statut = switch ($statutVal) {
+            'RECU'   { if ($freqVal) { " [RECU — $freqVal]" }   else { ' [RECU]' } }
+            'RETARD' { if ($freqVal) { " [RETARD — $freqVal]" } else { ' [RETARD]' } }
+            default  { '' }
+        }
+    } elseif ($referenceMap.Count -gt 0) {
         if ($expediteursManquants -contains $g.Name) {
             $statut = ' [NON RECU]'
         } elseif ($expediteursRetard -contains $g.Name) {

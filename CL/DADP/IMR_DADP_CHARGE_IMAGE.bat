@@ -56,7 +56,9 @@ powershell -NoProfile -ExecutionPolicy Bypass ^
   -Source "%DADP_CSV%" ^
   -ColonneRupture "Expediteur" ^
   -ReferenceFile "%DADP_REF%" ^
-  -ColonneDate "Arrete" ^
+  -ColonneStatut "Statut" ^
+  -ColonneFrequence "Frequence" ^
+  -ExclureColonnes "Statut","Frequence" ^
   -ConfigFile "%DADP_CONFIG%" ^
   -NomJob "DADP - Chargement donnees partenaires" ^
   -Status OK
