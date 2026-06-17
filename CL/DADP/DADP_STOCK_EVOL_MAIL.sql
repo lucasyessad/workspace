@@ -8,17 +8,21 @@
 TRUNCATE TABLE DADP.dbo.DADP_STOCK_EVOL_MAIL;
 
 WITH mois AS (
-    -- Périmètre : combinaisons expéditeur / arrêté présentes dans DADP_STOCK
-    SELECT DISTINCT
+    -- Dernier NO_SEQ par (expéditeur, arrêté) : table historisée, on garde
+    -- uniquement la séquence maximale = le chargement le plus récent
+    SELECT
         CD_EXPEDITEUR,
-        CD_DAT_ARR_AAM
+        CD_DAT_ARR_AAM,
+        MAX(NO_SEQ) AS NO_SEQ
     FROM DADP.dbo.DADP_STOCK
+    GROUP BY CD_EXPEDITEUR, CD_DAT_ARR_AAM
 ),
 perim AS (
     -- Rang des arrêtés par expéditeur (rn=1 = le plus récent)
     SELECT
         CD_EXPEDITEUR,
         CD_DAT_ARR_AAM,
+        NO_SEQ,
         ROW_NUMBER() OVER (
             PARTITION BY CD_EXPEDITEUR
             ORDER BY CD_DAT_ARR_AAM DESC
@@ -26,10 +30,11 @@ perim AS (
     FROM mois
 ),
 agg AS (
-    -- Agrégation des flags + date de chargement sur les 2 derniers arrêtés
+    -- Agrégation des flags sur la dernière séquence des 2 derniers arrêtés
     SELECT
         p.CD_EXPEDITEUR,
         p.CD_DAT_ARR_AAM,
+        p.NO_SEQ,
         p.rn,
         SUM(CASE WHEN s.FL_FOR = 1 THEN 1 ELSE 0 END) AS SommeFlgFOR,
         SUM(CASE WHEN s.FL_DEF = 1 THEN 1 ELSE 0 END) AS SommeFlgDEF,
@@ -40,10 +45,12 @@ agg AS (
     JOIN DADP.dbo.DADP_STOCK s
         ON  s.CD_EXPEDITEUR  = p.CD_EXPEDITEUR
         AND s.CD_DAT_ARR_AAM = p.CD_DAT_ARR_AAM
+        AND s.NO_SEQ         = p.NO_SEQ        -- filtre sur la séquence max
     WHERE p.rn <= 2
     GROUP BY
         p.CD_EXPEDITEUR,
         p.CD_DAT_ARR_AAM,
+        p.NO_SEQ,
         p.rn
 ),
 calc AS (
@@ -52,6 +59,7 @@ calc AS (
     SELECT
         CD_EXPEDITEUR,
         CD_DAT_ARR_AAM,
+        NO_SEQ,
         rn,
         SommeFlgFOR,
         SommeFlgDEF,
@@ -84,7 +92,7 @@ INSERT INTO DADP.dbo.DADP_STOCK_EVOL_MAIL (
 SELECT
     CD_EXPEDITEUR AS Expediteur,
     DATEFROMPARTS(CD_DAT_ARR_AAM / 100, CD_DAT_ARR_AAM % 100, 1) AS Arrete,
-    3 - rn AS Sequence,
+    NO_SEQ        AS Sequence,             -- séquence réelle (MAX par arrêté)
 
     SommeFlgFOR AS [Somme Flag FOR],
     CASE
