@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <!--[if mso]>
+  <noscript><xml>
+    <o:OfficeDocumentSettings>
+      <o:PixelsPerInch>96</o:PixelsPerInch>
+    </o:OfficeDocumentSettings>
+  </xml></noscript>
+  <![endif]-->
+  <title>{{JOB_NAME}} - {{STATUS_LABEL}}</title>
+  <style>
+    body { margin:0; padding:0; background-color:#EDEEEE; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table { mso-table-lspace:0pt; mso-table-rspace:0pt; border-collapse:collapse; }
+    @media only screen and (max-width:620px) {
+      .outer-table { width:100% !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#EDEEEE;">
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0"
+       bgcolor="#EDEEEE" style="background-color:#EDEEEE;">
+  <tr>
+    <td style="padding:16px 10px;">
+
+<table class="outer-table" width="100%" cellpadding="0" cellspacing="1" border="0"
+       bgcolor="#C8CACA" style="width:100%;">
+  <tr>
+    <td bgcolor="#FFFFFF" style="background-color:#FFFFFF;">
+
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+        <!-- BARRE COULEUR STATUS -->
+        <tr>
+          <td bgcolor="{{STATUS_COLOR}}" height="5"
+              style="background-color:{{STATUS_COLOR}};font-size:0;line-height:5px;mso-line-height-rule:exactly;">&nbsp;</td>
+        </tr>
+
+        <!-- HEADER -->
+        <tr>
+          <td bgcolor="#2B2B2B" style="background-color:#2B2B2B;padding:18px 22px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:16px;font-weight:bold;color:#FFFFFF;vertical-align:middle;">
+                  {{JOB_NAME}}
+                </td>
+                <td style="font-size:0;width:12px;">&nbsp;</td>
+                <td width="1" nowrap bgcolor="#00A8A8" style="background-color:#00A8A8;padding:4px 10px;vertical-align:middle;white-space:nowrap;">
+                  <span style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:10px;font-weight:bold;color:#2B2B2B;letter-spacing:0.5px;text-transform:uppercase;">{{ENVIRONNEMENT}}</span>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="3" style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#9ECECE;padding-top:5px;">
+                  {{DATE}} &agrave; {{HEURE}} &nbsp;&middot;&nbsp; {{HOSTNAME}}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- BADGE STATUS -->
+        <tr>
+          <td style="padding:20px 22px 16px 22px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td>
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                         bgcolor="{{STATUS_COLOR}}" style="background-color:{{STATUS_COLOR}};">
+                    <tr><td colspan="3" height="1" style="font-size:0;line-height:1px;">&nbsp;</td></tr>
+                    <tr>
+                      <td width="5" style="font-size:0;">&nbsp;</td>
+                      <td bgcolor="#F7FAFA" style="background-color:#F7FAFA;padding:18px 20px;">
+                        <table cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td bgcolor="{{STATUS_COLOR}}" style="background-color:{{STATUS_COLOR}};padding:6px 16px;vertical-align:middle;white-space:nowrap;">
+                              <span style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:bold;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.7px;">{{STATUS_LABEL}}</span>
+                            </td>
+                            <td width="16" style="font-size:0;">&nbsp;</td>
+                            <td style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:14px;color:#2B2B2B;vertical-align:middle;line-height:1.5;">
+                              {{STATUS_MESSAGE}}
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                      <td width="1" style="font-size:0;">&nbsp;</td>
+                    </tr>
+                    <tr><td colspan="3" height="1" style="font-size:0;line-height:1px;">&nbsp;</td></tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- SECTIONS DYNAMIQUES -->
+        {{SECTIONS}}
+
+        <!-- FOOTER -->
+        <tr>
+          <td height="1" bgcolor="#C8CACA"
+              style="background-color:#C8CACA;font-size:0;line-height:1px;mso-line-height-rule:exactly;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td bgcolor="#F0F5F5" style="background-color:#F0F5F5;padding:10px 22px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:10px;color:#6B7070;">
+                  Message g&eacute;n&eacute;r&eacute; automatiquement par Send-MailNotification v3.0 &mdash; Ne pas r&eacute;pondre.
+                </td>
+                <td style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:10px;color:#9B9B9B;text-align:right;">
+                  {{DATE}} {{HEURE}}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
