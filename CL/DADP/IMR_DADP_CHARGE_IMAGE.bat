@@ -12,7 +12,6 @@ SET SCEN_CTX=CTX_DEV
 REM --- Chemins (adapter selon l'environnement) ---
 SET PROCLIB=C:\proclib
 SET DADP_CONFIG=%PROCLIB%\CL\DADP\config-dadp.json
-SET DADP_REF=%PROCLIB%\CL\DADP\expediteurs-ref.json
 SET DADP_CSV=<CHEMIN_CSV_PRODUIT_PAR_ODI>\DADP_STOCK_EVOL_MAIL.csv
 
 SET SMTP_SERVER=<ADRESSE_SERVEUR_SMTP>
@@ -55,7 +54,6 @@ powershell -NoProfile -ExecutionPolicy Bypass ^
   -File "%PROCLIB%\CL\PRODUCTION\Generer-Rupture.ps1" ^
   -Source "%DADP_CSV%" ^
   -ColonneRupture "Expediteur" ^
-  -ReferenceFile "%DADP_REF%" ^
   -ColonneStatut "Statut" ^
   -ColonneFrequence "Frequence" ^
   -ExclureColonnes "Statut","Frequence" ^

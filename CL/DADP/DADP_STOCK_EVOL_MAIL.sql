@@ -164,4 +164,28 @@ SELECT
 
 FROM calc C
 LEFT JOIN ref R ON R.CD_EXPEDITEUR = C.CD_EXPEDITEUR
-ORDER BY C.CD_EXPEDITEUR, C.CD_DAT_ARR_AAM;
+
+UNION ALL
+
+-- Expéditeurs attendus (référentiel) mais totalement absents de DADP_STOCK
+SELECT
+    R.CD_EXPEDITEUR     AS Expediteur,
+    NULL                AS Arrete,
+    NULL                AS [Sequence],
+    NULL                AS Somme_FOR,
+    NULL                AS Evolution_FOR,
+    NULL                AS Somme_DEF,
+    NULL                AS Evolution_DEF,
+    NULL                AS Somme_NPE,
+    NULL                AS Evolution_NPE,
+    NULL                AS Somme_IMP,
+    NULL                AS Evolution_IMP,
+    NULL                AS Date_chargement_INEO,
+    R.Frequence,
+    'NON_RECU'          AS Statut
+FROM ref R
+WHERE R.CD_EXPEDITEUR NOT IN (
+    SELECT DISTINCT CD_EXPEDITEUR FROM DADP.dbo.DADP_STOCK
+)
+
+ORDER BY Expediteur, Arrete;

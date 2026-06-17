@@ -221,7 +221,8 @@ $sectionsData = foreach ($g in $groupes) {
 # (ceux deja presents dans le CSV avec Statut=NON_RECU ont deja leur section dans sectionsData)
 $sectionManquants = foreach ($exp in ($expediteursManquants | Sort-Object)) {
     if ($expediteursPresents -contains $exp) { continue }
-    $ref   = $referenceMap[$exp]
+    # Frequence lue depuis la reference si disponible, sinon N/A
+    $ref   = if ($referenceMap.Count -gt 0) { $referenceMap[$exp] } else { $null }
     $freq  = if ($ref -and $ref.Frequence)   { $ref.Frequence   } else { 'N/A' }
     $jours = if ($ref -and $ref.JoursRetard) { $ref.JoursRetard } else { '4' }
     [ordered]@{
