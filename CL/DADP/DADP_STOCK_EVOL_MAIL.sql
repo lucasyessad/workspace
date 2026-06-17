@@ -2,12 +2,10 @@
 -- DADP_STOCK_EVOL_MAIL.sql
 -- 2 arrets par expediteur (dernier NO_SEQ) + evolutions + Frequence/Statut
 --
--- Aucune transformation de chaine : dates via DATEFROMPARTS, evolutions
--- en DECIMAL(5,1). La mise en forme est a la charge de la couche presentaion.
---
--- Retard dynamique : GETDATE() > DATEADD(month, DeltaMois, dernier_arrete)
---                                + JoursTolerance
--- DeltaMois et JoursTolerance deduits de la Frequence dans la CTE ref.
+-- Frequence et cycle viennent de DADP.dbo.EXPEDITEURS_REF.
+-- DeltaMois et JoursTolerance sont deduits dynamiquement de la Frequence.
+-- Retard : GETDATE() > DATEADD(month, DeltaMois, dernier_arrete) + JoursTolerance
+-- Evolutions formatees en VARCHAR ("4,8%") directement dans le SQL.
 -- ============================================================================
 
 TRUNCATE TABLE DADP.dbo.DADP_STOCK_EVOL_MAIL;
@@ -67,7 +65,6 @@ calc AS (
         LAG(SUM_FL_DEF) OVER (PARTITION BY CD_EXPEDITEUR ORDER BY CD_DAT_ARR_AAM) AS PREV_FL_DEF,
         LAG(SUM_FL_NPE) OVER (PARTITION BY CD_EXPEDITEUR ORDER BY CD_DAT_ARR_AAM) AS PREV_FL_NPE,
         LAG(SUM_FL_IMP) OVER (PARTITION BY CD_EXPEDITEUR ORDER BY CD_DAT_ARR_AAM) AS PREV_FL_IMP,
-        -- Date du dernier arrete via DATEFROMPARTS (pas de manipulation de chaine)
         DATEFROMPARTS(
             MAX(CD_DAT_ARR_AAM) OVER (PARTITION BY CD_EXPEDITEUR) / 100,
             MAX(CD_DAT_ARR_AAM) OVER (PARTITION BY CD_EXPEDITEUR) % 100,
@@ -90,38 +87,35 @@ INSERT INTO DADP.dbo.DADP_STOCK_EVOL_MAIL
 SELECT
     C.CD_EXPEDITEUR,
 
-    -- Date de l'arrete sans manipulation de chaine
     DATEFROMPARTS(C.CD_DAT_ARR_AAM / 100, C.CD_DAT_ARR_AAM % 100, 1) AS Arrete,
 
     C.NO_SEQ AS [Sequence],
 
     C.SUM_FL_FOR,
     CASE WHEN C.PREV_FL_FOR IS NULL OR C.PREV_FL_FOR = 0 THEN NULL
-         ELSE ROUND((C.SUM_FL_FOR * 1.0 / C.PREV_FL_FOR - 1) * 100, 1)
+         ELSE REPLACE(CONVERT(VARCHAR(20), CAST(ROUND((C.SUM_FL_FOR * 1.0 / C.PREV_FL_FOR - 1) * 100, 1) AS DECIMAL(10,1))), '.', ',') + '%'
     END AS Evolution_FOR,
 
     C.SUM_FL_DEF,
     CASE WHEN C.PREV_FL_DEF IS NULL OR C.PREV_FL_DEF = 0 THEN NULL
-         ELSE ROUND((C.SUM_FL_DEF * 1.0 / C.PREV_FL_DEF - 1) * 100, 1)
+         ELSE REPLACE(CONVERT(VARCHAR(20), CAST(ROUND((C.SUM_FL_DEF * 1.0 / C.PREV_FL_DEF - 1) * 100, 1) AS DECIMAL(10,1))), '.', ',') + '%'
     END AS Evolution_DEF,
 
     C.SUM_FL_NPE,
     CASE WHEN C.PREV_FL_NPE IS NULL OR C.PREV_FL_NPE = 0 THEN NULL
-         ELSE ROUND((C.SUM_FL_NPE * 1.0 / C.PREV_FL_NPE - 1) * 100, 1)
+         ELSE REPLACE(CONVERT(VARCHAR(20), CAST(ROUND((C.SUM_FL_NPE * 1.0 / C.PREV_FL_NPE - 1) * 100, 1) AS DECIMAL(10,1))), '.', ',') + '%'
     END AS Evolution_NPE,
 
     C.SUM_FL_IMP,
     CASE WHEN C.PREV_FL_IMP IS NULL OR C.PREV_FL_IMP = 0 THEN NULL
-         ELSE ROUND((C.SUM_FL_IMP * 1.0 / C.PREV_FL_IMP - 1) * 100, 1)
+         ELSE REPLACE(CONVERT(VARCHAR(20), CAST(ROUND((C.SUM_FL_IMP * 1.0 / C.PREV_FL_IMP - 1) * 100, 1) AS DECIMAL(10,1))), '.', ',') + '%'
     END AS Evolution_IMP,
 
     C.DT_CHARGEMENT_INEO,
     R.Frequence,
 
-    -- Retard dynamique : date theorique du prochain arrete + tolerance
     CASE
-        WHEN GETDATE() > DATEADD(day, R.JoursTolerance,
-                                 DATEADD(month, R.DeltaMois, C.MAX_ARR_DATE))
+        WHEN GETDATE() > DATEADD(day, R.JoursTolerance, DATEADD(month, R.DeltaMois, C.MAX_ARR_DATE))
         THEN 'RETARD'
         ELSE 'RECU'
     END AS Statut
