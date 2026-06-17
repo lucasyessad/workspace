@@ -257,9 +257,23 @@ $stColor = if ($colorMap.ContainsKey($Status)) { $colorMap[$Status] } else { '#8
 
 function Rnd-SectionTitle([string]$title, [string]$icon='') {
     if (-not $title) { return '' }
+    $badgeHtml   = ''
+    $borderColor = '#0056b3'
+    $cleanTitle  = $title
+    if ($title -match '\[((?:NON RECU|RETARD|RECU)[^\]]*)\]$') {
+        $badgeText = $Matches[0]
+        $badgeKey  = $Matches[1] -replace '\s*[—-].*', ''
+        $cleanTitle = $title.Substring(0, $title.Length - $badgeText.Length).TrimEnd()
+        $badgeColor = '#28a745'; $badgeBg = '#eafaf1'; $borderColor = '#28a745'
+        switch -Wildcard ($badgeKey.Trim()) {
+            'NON RECU' { $badgeColor = '#dc3545'; $badgeBg = '#fdf2f2'; $borderColor = '#dc3545' }
+            'RETARD'   { $badgeColor = '#E67E22'; $badgeBg = '#fef9f0'; $borderColor = '#E67E22' }
+        }
+        $badgeHtml = " <span style=`"display:inline-block;padding:2px 10px;border-radius:3px;font-size:11px;font-weight:700;background-color:${badgeBg};color:${badgeColor};border:1px solid ${badgeColor};`">$(HtmlEnc $badgeText)</span>"
+    }
     $iconHtml = if ($icon) { "<span style=`"font-size:13px;margin-right:6px;`">$icon</span>" } else { '' }
     $h  = '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:10px;">'
-    $h += "<tr><td bgcolor=`"#f8f9fa`" style=`"background-color:#f8f9fa;padding:7px 12px;border-left:4px solid #0056b3;font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:15px;font-weight:600;color:#444444;`">${iconHtml}$(HtmlEnc $title)</td></tr>"
+    $h += "<tr><td bgcolor=`"#f8f9fa`" style=`"background-color:#f8f9fa;padding:7px 12px;border-left:4px solid ${borderColor};font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:15px;font-weight:600;color:#444444;`">${iconHtml}$(HtmlEnc $cleanTitle)${badgeHtml}</td></tr>"
     $h += '</table>'
     return $h
 }
@@ -772,7 +786,7 @@ $execKv = @(
     ,@('Duree execution', '{0:00}:{1:00}:{2:00}.{3:000}' -f $execTime.Hours, $execTime.Minutes, $execTime.Seconds, $execTime.Milliseconds)
     ,@('Machine', $env:COMPUTERNAME)
     ,@('Utilisateur', "$env:USERDOMAIN\$env:USERNAME")
-    ,@('Script', 'SendMailNotificationHTML v3.0')
+    ,@('Script', 'SendMailNotificationHTML v3.1')
 )
 if ($allAttachments.Count -gt 0) {
     $execKv += ,@('Pieces jointes', $allAttachments.Count.ToString())

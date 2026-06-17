@@ -193,9 +193,10 @@ $sectionsData = foreach ($g in $groupes) {
                          $g.Group | ForEach-Object { $_.$ColonneFrequence } | Where-Object { $_ -ne '' } | Select-Object -First 1
                      } else { '' }
         $statut = switch ($statutVal) {
-            'RECU'   { if ($freqVal) { " [RECU — $freqVal]" }   else { ' [RECU]' } }
-            'RETARD' { if ($freqVal) { " [RETARD — $freqVal]" } else { ' [RETARD]' } }
-            default  { '' }
+            'RECU'     { if ($freqVal) { " [RECU — $freqVal]" }    else { ' [RECU]' } }
+            'RETARD'   { if ($freqVal) { " [RETARD — $freqVal]" }  else { ' [RETARD]' } }
+            'NON_RECU' { if ($freqVal) { " [NON RECU — $freqVal]" } else { ' [NON RECU]' } }
+            default    { '' }
         }
     } elseif ($referenceMap.Count -gt 0) {
         if ($expediteursManquants -contains $g.Name) {
@@ -216,11 +217,13 @@ $sectionsData = foreach ($g in $groupes) {
     }
 }
 
-# Sections pour expediteurs manquants (absent du CSV mais dans la reference)
+# Sections pour expediteurs manquants completement absents du CSV
+# (ceux deja presents dans le CSV avec Statut=NON_RECU ont deja leur section dans sectionsData)
 $sectionManquants = foreach ($exp in ($expediteursManquants | Sort-Object)) {
+    if ($expediteursPresents -contains $exp) { continue }
     $ref   = $referenceMap[$exp]
-    $freq  = if ($ref.Frequence) { $ref.Frequence } else { 'N/A' }
-    $jours = if ($ref.JoursRetard) { $ref.JoursRetard } else { '4' }
+    $freq  = if ($ref -and $ref.Frequence)   { $ref.Frequence   } else { 'N/A' }
+    $jours = if ($ref -and $ref.JoursRetard) { $ref.JoursRetard } else { '4' }
     [ordered]@{
         type    = 'table'
         title   = "$TitrePrefixe $exp [NON RECU — Frequence : $freq]"
