@@ -5,7 +5,7 @@
   "From": "INEO.DADP.Exploitation@creditlogement.fr",
   "To": ["DRM@creditlogement.fr"],
   "Cc": [],
-  "TemplatePath": "${TEMPLATE_PATH}",
+  "TemplatePath": "${DADP_TEMPLATE_PATH}",
   "Environnement": "PRODUCTION",
   "EquipeNom": "L'équipe INEO Exploitation",
   "Subject": "[{{STATUS_LABEL}}] Intégration des données partenaires DADP — {{DATE}}",

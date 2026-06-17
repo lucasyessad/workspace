@@ -11,11 +11,12 @@ SET SCEN_CTX=CTX_DEV
 
 REM --- Chemins (adapter selon l'environnement) ---
 SET PROCLIB=C:\proclib
-SET DADP_CONFIG=%PROCLIB%\DADP\config-dadp.json
+SET DADP_CONFIG=%PROCLIB%\CL\DADP\config-dadp.json
+SET DADP_REF=%PROCLIB%\CL\DADP\expediteurs-ref.json
 SET DADP_CSV=<CHEMIN_CSV_PRODUIT_PAR_ODI>\DADP_STOCK_EVOL_MAIL.csv
 
 SET SMTP_SERVER=<ADRESSE_SERVEUR_SMTP>
-SET TEMPLATE_PATH=%PROCLIB%\PRODUCTION\template-notification.html
+SET DADP_TEMPLATE_PATH=%PROCLIB%\CL\DADP\template-dadp.html
 
 
 pushd "X:\Oracle\ODI12c\user_projects\domains\base_domain\bin"
@@ -51,11 +52,13 @@ if not exist "%DADP_CSV%" (
     exit /B 1
 )
 powershell -NoProfile -ExecutionPolicy Bypass ^
-  -File "%PROCLIB%\PRODUCTION\Generer-Rupture.ps1" ^
+  -File "%PROCLIB%\CL\PRODUCTION\Generer-Rupture.ps1" ^
   -Source "%DADP_CSV%" ^
   -ColonneRupture "Expediteur" ^
+  -ReferenceFile "%DADP_REF%" ^
+  -ColonneDate "Arrete" ^
   -ConfigFile "%DADP_CONFIG%" ^
-  -NomJob "DADP - Chargement données partenaires" ^
+  -NomJob "DADP - Chargement donnees partenaires" ^
   -Status OK
 echo [DADP] Notification terminee (code=%ERRORLEVEL%)
 exit /B %ERRORLEVEL%

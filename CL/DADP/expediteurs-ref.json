@@ -1,0 +1,14 @@
+[
+  { "Expediteur": "EXP_AXB",    "Frequence": "Mensuelle",    "JoursRetard": 4 },
+  { "Expediteur": "EXP_BNP",    "Frequence": "Mensuelle",    "JoursRetard": 4 },
+  { "Expediteur": "EXP_BOURS",  "Frequence": "Mensuelle",    "JoursRetard": 4 },
+  { "Expediteur": "EXP_CA",     "Frequence": "Trimestrielle","JoursRetard": 10 },
+  { "Expediteur": "EXP_CDN",    "Frequence": "Trimestrielle","JoursRetard": 10 },
+  { "Expediteur": "EXP_CFF",    "Frequence": "Mensuelle",    "JoursRetard": 4 },
+  { "Expediteur": "EXP_CICMUT", "Frequence": "Mensuelle",    "JoursRetard": 4 },
+  { "Expediteur": "EXP_HSBC",   "Frequence": "Mensuelle",    "JoursRetard": 4 },
+  { "Expediteur": "EXP_ING",    "Frequence": "Trimestrielle","JoursRetard": 10 },
+  { "Expediteur": "EXP_LBP",    "Frequence": "Mensuelle",    "JoursRetard": 4 },
+  { "Expediteur": "EXP_LCL",    "Frequence": "Mensuelle",    "JoursRetard": 4 },
+  { "Expediteur": "EXP_SG_CDN", "Frequence": "Mensuelle",    "JoursRetard": 4 }
+]
