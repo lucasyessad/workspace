@@ -1,28 +1,20 @@
 -- ============================================================================
 -- DADP_STOCK_EVOL_MAIL.sql
--- Génère les données de notification mail DADP : 2 arrêtés par expéditeur
--- avec évolutions + colonnes Frequence et Statut (RECU/RETARD) pré-calculées.
--- Doit être exécuté par ODI après le chargement de DADP_STOCK.
+-- 2 arrêtés par expéditeur (dernier NO_SEQ) + évolutions + Frequence/Statut
 -- ============================================================================
 
 TRUNCATE TABLE DADP.dbo.DADP_STOCK_EVOL_MAIL;
 
 WITH mois AS (
-    -- Dernier NO_SEQ par (expéditeur, arrêté) : table historisée, on garde
-    -- uniquement la séquence maximale = le chargement le plus récent
-    SELECT
+    SELECT DISTINCT
         CD_EXPEDITEUR,
-        CD_DAT_ARR_AAM,
-        MAX(NO_SEQ) AS NO_SEQ
+        CD_DAT_ARR_AAM
     FROM DADP.dbo.DADP_STOCK
-    GROUP BY CD_EXPEDITEUR, CD_DAT_ARR_AAM
 ),
 perim AS (
-    -- Rang des arrêtés par expéditeur (rn=1 = le plus récent)
     SELECT
         CD_EXPEDITEUR,
         CD_DAT_ARR_AAM,
-        NO_SEQ,
         ROW_NUMBER() OVER (
             PARTITION BY CD_EXPEDITEUR
             ORDER BY CD_DAT_ARR_AAM DESC
@@ -30,105 +22,103 @@ perim AS (
     FROM mois
 ),
 agg AS (
-    -- Agrégation des flags sur la dernière séquence des 2 derniers arrêtés
     SELECT
-        p.CD_EXPEDITEUR,
-        p.CD_DAT_ARR_AAM,
-        p.NO_SEQ,
-        p.rn,
-        SUM(CASE WHEN s.FL_FOR = 1 THEN 1 ELSE 0 END) AS SommeFlgFOR,
-        SUM(CASE WHEN s.FL_DEF = 1 THEN 1 ELSE 0 END) AS SommeFlgDEF,
-        SUM(CASE WHEN s.FL_NPE = 1 THEN 1 ELSE 0 END) AS SommeFlgNPE,
-        SUM(CASE WHEN s.FL_IMP = 1 THEN 1 ELSE 0 END) AS SommeFlgIMP,
-        MAX(s.DT_MAJ) AS DT_MAJ
-    FROM perim p
-    JOIN DADP.dbo.DADP_STOCK s
-        ON  s.CD_EXPEDITEUR  = p.CD_EXPEDITEUR
-        AND s.CD_DAT_ARR_AAM = p.CD_DAT_ARR_AAM
-        AND s.NO_SEQ         = p.NO_SEQ        -- filtre sur la séquence max
-    WHERE p.rn <= 2
+        DS.CD_EXPEDITEUR,
+        DS.CD_DAT_ARR_AAM,
+        MAX(DS.NO_SEQ) AS NO_SEQ,
+        SUM(ISNULL(TRY_CONVERT(INT, DS.FL_FOR), 0)) AS SUM_FL_FOR,
+        SUM(ISNULL(TRY_CONVERT(INT, DS.FL_DEF), 0)) AS SUM_FL_DEF,
+        SUM(ISNULL(TRY_CONVERT(INT, DS.FL_NPE), 0)) AS SUM_FL_NPE,
+        SUM(ISNULL(TRY_CONVERT(INT, DS.FL_IMP), 0)) AS SUM_FL_IMP,
+        MAX(DS.DT_MAJ) AS DT_CHARGEMENT_INEO
+    FROM DADP.dbo.DADP_STOCK DS
+    INNER JOIN perim P
+        ON DS.CD_EXPEDITEUR  = P.CD_EXPEDITEUR
+       AND DS.CD_DAT_ARR_AAM = P.CD_DAT_ARR_AAM
+    WHERE P.rn <= 2
     GROUP BY
-        p.CD_EXPEDITEUR,
-        p.CD_DAT_ARR_AAM,
-        p.NO_SEQ,
-        p.rn
+        DS.CD_EXPEDITEUR,
+        DS.CD_DAT_ARR_AAM
 ),
 calc AS (
-    -- Calcul des évolutions par rapport à la période précédente (LAG)
-    -- + arrêté maximum par expéditeur pour le calcul du statut de retard
     SELECT
-        CD_EXPEDITEUR,
-        CD_DAT_ARR_AAM,
-        NO_SEQ,
-        rn,
-        SommeFlgFOR,
-        SommeFlgDEF,
-        SommeFlgNPE,
-        SommeFlgIMP,
-        DT_MAJ,
-        LAG(SommeFlgFOR) OVER (PARTITION BY CD_EXPEDITEUR ORDER BY CD_DAT_ARR_AAM) AS PrevFlgFOR,
-        LAG(SommeFlgDEF) OVER (PARTITION BY CD_EXPEDITEUR ORDER BY CD_DAT_ARR_AAM) AS PrevFlgDEF,
-        LAG(SommeFlgNPE) OVER (PARTITION BY CD_EXPEDITEUR ORDER BY CD_DAT_ARR_AAM) AS PrevFlgNPE,
-        LAG(SommeFlgIMP) OVER (PARTITION BY CD_EXPEDITEUR ORDER BY CD_DAT_ARR_AAM) AS PrevFlgIMP,
-        MAX(CD_DAT_ARR_AAM) OVER (PARTITION BY CD_EXPEDITEUR) AS MaxArrAAM
+        *,
+        LAG(SUM_FL_FOR) OVER (PARTITION BY CD_EXPEDITEUR ORDER BY CD_DAT_ARR_AAM) AS PREV_FL_FOR,
+        LAG(SUM_FL_DEF) OVER (PARTITION BY CD_EXPEDITEUR ORDER BY CD_DAT_ARR_AAM) AS PREV_FL_DEF,
+        LAG(SUM_FL_NPE) OVER (PARTITION BY CD_EXPEDITEUR ORDER BY CD_DAT_ARR_AAM) AS PREV_FL_NPE,
+        LAG(SUM_FL_IMP) OVER (PARTITION BY CD_EXPEDITEUR ORDER BY CD_DAT_ARR_AAM) AS PREV_FL_IMP,
+        -- arrêté le plus récent par expéditeur : sert à calculer le statut RECU/RETARD
+        MAX(CD_DAT_ARR_AAM) OVER (PARTITION BY CD_EXPEDITEUR) AS MAX_ARR_AAM
     FROM agg
 )
-INSERT INTO DADP.dbo.DADP_STOCK_EVOL_MAIL (
+
+INSERT INTO DADP.dbo.DADP_STOCK_EVOL_MAIL
+(
     Expediteur,
     Arrete,
-    Sequence,
-    [Somme Flag FOR],
-    [Evolution Flag FOR],
-    [Somme Flag DEF],
-    [Evolution Flag DEF],
-    [Somme Flag NPE],
-    [Evolution Flag NPE],
-    [Somme Flag IMP],
-    [Evolution FLAG IMP],
-    [Date chargement INEO],
+    [Sequence],
+    Somme_FOR,
+    Evolution_FOR,
+    Somme_DEF,
+    Evolution_DEF,
+    Somme_NPE,
+    Evolution_NPE,
+    Somme_IMP,
+    Evolution_IMP,
+    Date_chargement_INEO,
     Frequence,
     Statut
 )
 SELECT
     CD_EXPEDITEUR AS Expediteur,
-    DATEFROMPARTS(CD_DAT_ARR_AAM / 100, CD_DAT_ARR_AAM % 100, 1) AS Arrete,
-    NO_SEQ        AS Sequence,             -- séquence réelle (MAX par arrêté)
 
-    SommeFlgFOR AS [Somme Flag FOR],
+    TRY_CONVERT(
+        DATE,
+        RIGHT('000000' + CAST(CD_DAT_ARR_AAM AS VARCHAR(6)), 6) + '01',
+        112
+    ) AS Arrete,
+
+    NO_SEQ AS [Sequence],
+
+    SUM_FL_FOR AS Somme_FOR,
     CASE
-        WHEN PrevFlgFOR IS NULL OR PrevFlgFOR = 0 THEN ''
-        ELSE REPLACE(CONVERT(VARCHAR(10),
-             CAST(ROUND((SommeFlgFOR - PrevFlgFOR) * 100.0 / PrevFlgFOR, 1) AS DECIMAL(10,1))
-             ), '.', ',') + '%'
-    END AS [Evolution Flag FOR],
+        WHEN PREV_FL_FOR IS NULL OR PREV_FL_FOR = 0 THEN NULL
+        ELSE REPLACE(
+                 CONVERT(VARCHAR(20), CAST(ROUND(((SUM_FL_FOR * 1.0 / PREV_FL_FOR) - 1) * 100, 1) AS DECIMAL(10,1))),
+                 '.', ','
+             ) + '%'
+    END AS Evolution_FOR,
 
-    SommeFlgDEF AS [Somme Flag DEF],
+    SUM_FL_DEF AS Somme_DEF,
     CASE
-        WHEN PrevFlgDEF IS NULL OR PrevFlgDEF = 0 THEN ''
-        ELSE REPLACE(CONVERT(VARCHAR(10),
-             CAST(ROUND((SommeFlgDEF - PrevFlgDEF) * 100.0 / PrevFlgDEF, 1) AS DECIMAL(10,1))
-             ), '.', ',') + '%'
-    END AS [Evolution Flag DEF],
+        WHEN PREV_FL_DEF IS NULL OR PREV_FL_DEF = 0 THEN NULL
+        ELSE REPLACE(
+                 CONVERT(VARCHAR(20), CAST(ROUND(((SUM_FL_DEF * 1.0 / PREV_FL_DEF) - 1) * 100, 1) AS DECIMAL(10,1))),
+                 '.', ','
+             ) + '%'
+    END AS Evolution_DEF,
 
-    SommeFlgNPE AS [Somme Flag NPE],
+    SUM_FL_NPE AS Somme_NPE,
     CASE
-        WHEN PrevFlgNPE IS NULL OR PrevFlgNPE = 0 THEN ''
-        ELSE REPLACE(CONVERT(VARCHAR(10),
-             CAST(ROUND((SommeFlgNPE - PrevFlgNPE) * 100.0 / PrevFlgNPE, 1) AS DECIMAL(10,1))
-             ), '.', ',') + '%'
-    END AS [Evolution Flag NPE],
+        WHEN PREV_FL_NPE IS NULL OR PREV_FL_NPE = 0 THEN NULL
+        ELSE REPLACE(
+                 CONVERT(VARCHAR(20), CAST(ROUND(((SUM_FL_NPE * 1.0 / PREV_FL_NPE) - 1) * 100, 1) AS DECIMAL(10,1))),
+                 '.', ','
+             ) + '%'
+    END AS Evolution_NPE,
 
-    SommeFlgIMP AS [Somme Flag IMP],
+    SUM_FL_IMP AS Somme_IMP,
     CASE
-        WHEN PrevFlgIMP IS NULL OR PrevFlgIMP = 0 THEN ''
-        ELSE REPLACE(CONVERT(VARCHAR(10),
-             CAST(ROUND((SommeFlgIMP - PrevFlgIMP) * 100.0 / PrevFlgIMP, 1) AS DECIMAL(10,1))
-             ), '.', ',') + '%'
-    END AS [Evolution FLAG IMP],
+        WHEN PREV_FL_IMP IS NULL OR PREV_FL_IMP = 0 THEN NULL
+        ELSE REPLACE(
+                 CONVERT(VARCHAR(20), CAST(ROUND(((SUM_FL_IMP * 1.0 / PREV_FL_IMP) - 1) * 100, 1) AS DECIMAL(10,1))),
+                 '.', ','
+             ) + '%'
+    END AS Evolution_IMP,
 
-    DT_MAJ AS [Date chargement INEO],
+    DT_CHARGEMENT_INEO AS Date_chargement_INEO,
 
-    -- Fréquence d'envoi attendue par expéditeur (référentiel)
+    -- Fréquence d'envoi attendue par expéditeur
     CASE CD_EXPEDITEUR
         WHEN 'EXP_CA'  THEN 'Trimestrielle'
         WHEN 'EXP_CDN' THEN 'Trimestrielle'
@@ -136,14 +126,22 @@ SELECT
         ELSE                 'Mensuelle'
     END AS Frequence,
 
-    -- Statut calculé au moment de l'exécution selon le dernier arrêté reçu
-    -- Seuil Mensuelle     : 35 j (cycle) + 4 j (tolérance) = 39 j
-    -- Seuil Trimestrielle : 100 j (cycle) + 10 j (tolérance) = 110 j
+    -- Statut basé sur le délai depuis le dernier arrêté reçu
+    -- Mensuelle     : seuil 35 j (cycle) + 4 j (tolérance)  = 39 j
+    -- Trimestrielle : seuil 100 j (cycle) + 10 j (tolérance) = 110 j
     CASE CD_EXPEDITEUR
-        WHEN 'EXP_CA'  THEN CASE WHEN DATEDIFF(day, DATEFROMPARTS(MaxArrAAM / 100, MaxArrAAM % 100, 1), GETDATE()) > 110 THEN 'RETARD' ELSE 'RECU' END
-        WHEN 'EXP_CDN' THEN CASE WHEN DATEDIFF(day, DATEFROMPARTS(MaxArrAAM / 100, MaxArrAAM % 100, 1), GETDATE()) > 110 THEN 'RETARD' ELSE 'RECU' END
-        WHEN 'EXP_ING' THEN CASE WHEN DATEDIFF(day, DATEFROMPARTS(MaxArrAAM / 100, MaxArrAAM % 100, 1), GETDATE()) > 110 THEN 'RETARD' ELSE 'RECU' END
-        ELSE                 CASE WHEN DATEDIFF(day, DATEFROMPARTS(MaxArrAAM / 100, MaxArrAAM % 100, 1), GETDATE()) >  39 THEN 'RETARD' ELSE 'RECU' END
+        WHEN 'EXP_CA'  THEN CASE WHEN DATEDIFF(day,
+                                     TRY_CONVERT(DATE, RIGHT('000000' + CAST(MAX_ARR_AAM AS VARCHAR(6)), 6) + '01', 112),
+                                     GETDATE()) > 110 THEN 'RETARD' ELSE 'RECU' END
+        WHEN 'EXP_CDN' THEN CASE WHEN DATEDIFF(day,
+                                     TRY_CONVERT(DATE, RIGHT('000000' + CAST(MAX_ARR_AAM AS VARCHAR(6)), 6) + '01', 112),
+                                     GETDATE()) > 110 THEN 'RETARD' ELSE 'RECU' END
+        WHEN 'EXP_ING' THEN CASE WHEN DATEDIFF(day,
+                                     TRY_CONVERT(DATE, RIGHT('000000' + CAST(MAX_ARR_AAM AS VARCHAR(6)), 6) + '01', 112),
+                                     GETDATE()) > 110 THEN 'RETARD' ELSE 'RECU' END
+        ELSE                 CASE WHEN DATEDIFF(day,
+                                     TRY_CONVERT(DATE, RIGHT('000000' + CAST(MAX_ARR_AAM AS VARCHAR(6)), 6) + '01', 112),
+                                     GETDATE()) >  39 THEN 'RETARD' ELSE 'RECU' END
     END AS Statut
 
 FROM calc

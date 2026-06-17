@@ -59,6 +59,7 @@ powershell -NoProfile -ExecutionPolicy Bypass ^
   -ColonneStatut "Statut" ^
   -ColonneFrequence "Frequence" ^
   -ExclureColonnes "Statut","Frequence" ^
+  -Entetes "Arrete","Seq.","Somme FOR","Evol. FOR","Somme DEF","Evol. DEF","Somme NPE","Evol. NPE","Somme IMP","Evol. IMP","Date chargement INEO" ^
   -ConfigFile "%DADP_CONFIG%" ^
   -NomJob "DADP - Chargement donnees partenaires" ^
   -Status OK
