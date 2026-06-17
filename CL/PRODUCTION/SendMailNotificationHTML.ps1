@@ -257,10 +257,9 @@ $stColor = if ($colorMap.ContainsKey($Status)) { $colorMap[$Status] } else { '#8
 
 function Rnd-SectionTitle([string]$title, [string]$icon='') {
     if (-not $title) { return '' }
-    $iconHtml = if ($icon) { "<span style=`"font-size:12px;margin-right:6px;`">$icon</span>" } else { '' }
-    $h  = '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:8px;">'
-    $h += "<tr><td style=`"font-family:Calibri,sans-serif;font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:0.6px;color:#2B2B2B;padding-bottom:6px;`">${iconHtml}$(HtmlEnc $title)</td></tr>"
-    $h += '<tr><td height="2" bgcolor="#00A8A8" style="font-size:0;line-height:2px;">&nbsp;</td></tr>'
+    $iconHtml = if ($icon) { "<span style=`"font-size:13px;margin-right:6px;`">$icon</span>" } else { '' }
+    $h  = '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:10px;">'
+    $h += "<tr><td bgcolor=`"#f8f9fa`" style=`"background-color:#f8f9fa;padding:7px 12px;border-left:4px solid #0056b3;font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:15px;font-weight:600;color:#444444;`">${iconHtml}$(HtmlEnc $title)</td></tr>"
     $h += '</table>'
     return $h
 }
@@ -310,32 +309,41 @@ function Rnd-Etapes([array]$lines, [string]$title='Rapport d''ex&eacute;cution')
 }
 
 function Rnd-Table([string]$title, [array]$headers, [array]$rows, [string]$icon='&#9783;') {
-    $h = '<tr><td style="padding:14px 22px;">'
+    $h = '<tr><td style="padding:10px 22px 18px 22px;">'
+    # Wrapper section avec bordure (style expediteur-section)
+    $h += '<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="background-color:#ffffff;border:1px solid #eee;">'
+    $h += '<tr><td style="padding:15px;">'
     if ($title) { $h += Rnd-SectionTitle $title $icon }
-    $h += '<table width="100%" cellpadding="0" cellspacing="1" border="0" bgcolor="#C8CACA">'
+    # Tableau de données
+    $h += '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">'
     if ($headers -and $headers.Count -gt 0) {
-        $h += '<tr>'
+        $h += '<tr bgcolor="#ffffff" style="background-color:#ffffff;">'
         foreach ($hd in $headers) {
-            $h += "<td bgcolor=`"#2B2B2B`" style=`"background-color:#2B2B2B;padding:8px 10px;font-family:Calibri,sans-serif;font-size:11px;font-weight:bold;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.3px;`">$(HtmlEnc $hd)</td>"
+            $h += "<td style=`"padding:10px;font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:12px;font-weight:600;color:#666666;text-transform:uppercase;border-bottom:2px solid #dee2e6;`">$(HtmlEnc $hd)</td>"
         }
         $h += '</tr>'
     }
     $alt = $false
     foreach ($r in $rows) {
-        $bg = if($alt){'#F7FAFA'}else{'#FFFFFF'}
-        $h += '<tr>'
+        $bg = if($alt){'#f8f9fa'}else{'#ffffff'}
+        $h += "<tr bgcolor=`"$bg`" style=`"background-color:$bg;`">"
         foreach ($c in $r) {
             $cs = if($null -ne $c){$c.ToString()}else{''}
-            # Coloration conditionnelle des cellules
-            $cellColor = '#2B2B2B'
-            if     ($cs -match '^-[\d.,]+\s*%$')                                                         { $cellColor = '#C0392B' }
-            elseif ($cs -match '^\+?[\d.,]+\s*%$' -and $cs -notmatch '^\+?0([.,]0+)?\s*%$')             { $cellColor = '#1E8449' }
-            $h += "<td bgcolor=`"$bg`" style=`"background-color:$bg;padding:6px 10px;font-family:Calibri,sans-serif;font-size:12px;color:${cellColor};`">$(HtmlEnc $cs)</td>"
+            $cellColor = '#333333'
+            $extraStyle = ''
+            if ($cs -match '^-[\d.,]+\s*%$') {
+                $cellColor = '#dc3545'; $extraStyle = 'background-color:#fdf2f2;padding:2px 6px;border-radius:3px;'
+            } elseif ($cs -match '^\+?[\d.,]+\s*%$' -and $cs -notmatch '^\+?0([.,]0+)?\s*%$') {
+                $cellColor = '#28a745'; $extraStyle = 'background-color:#eafaf1;padding:2px 6px;border-radius:3px;'
+            }
+            $h += "<td style=`"padding:12px 10px;font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:13px;border-bottom:1px solid #eee;`"><span style=`"color:${cellColor};font-weight:$(if($extraStyle){'bold'}else{'normal'});${extraStyle}`">$(HtmlEnc $cs)</span></td>"
         }
         $h += '</tr>'
         $alt = -not $alt
     }
-    $h += '</table></td></tr>'
+    $h += '</table>'
+    $h += '</td></tr></table>'
+    $h += '</td></tr>'
     return $h
 }
 

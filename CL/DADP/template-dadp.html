@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <!--[if mso]>
+  <noscript><xml>
+    <o:OfficeDocumentSettings>
+      <o:PixelsPerInch>96</o:PixelsPerInch>
+    </o:OfficeDocumentSettings>
+  </xml></noscript>
+  <![endif]-->
+  <title>Compte-rendu DADP &mdash; {{DATE}}</title>
+  <style>
+    body { margin:0; padding:0; background-color:#f4f7f9; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table { mso-table-lspace:0pt; mso-table-rspace:0pt; border-collapse:collapse; }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f7f9;">
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f4f7f9" style="background-color:#f4f7f9;">
+  <tr>
+    <td align="center" style="padding:20px 12px;">
+
+      <!-- CONTENEUR PRINCIPAL 850px -->
+      <table width="850" cellpadding="0" cellspacing="0" border="0" align="center"
+             bgcolor="#ffffff" style="background-color:#ffffff;max-width:850px;width:100%;border:1px solid #e1e4e8;border-radius:2px;">
+        <tr>
+          <td>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+              <!-- BARRE BLEUE TOP -->
+              <tr>
+                <td height="4" bgcolor="#0056b3"
+                    style="background-color:#0056b3;font-size:0;line-height:4px;mso-line-height-rule:exactly;">&nbsp;</td>
+              </tr>
+
+              <!-- HEADER -->
+              <tr>
+                <td style="padding:20px 25px 15px 25px;border-bottom:3px solid #0056b3;">
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td>
+                        <div style="font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:22px;font-weight:bold;color:#0056b3;text-transform:uppercase;letter-spacing:0.5px;">
+                          Compte-rendu de Traitement DADP
+                        </div>
+                        <div style="font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:13px;color:#666;margin-top:5px;">
+                          Arr&ecirc;t&eacute; au&nbsp;: <strong>{{DATE}}</strong> &nbsp;&bull;&nbsp; Ex&eacute;cut&eacute; &agrave; {{HEURE}} &nbsp;&bull;&nbsp; {{ENVIRONNEMENT}}
+                        </div>
+                      </td>
+                      <td align="right" valign="middle">
+                        <table cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td bgcolor="{{STATUS_COLOR}}" style="background-color:{{STATUS_COLOR}};padding:7px 16px;">
+                              <span style="font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:11px;font-weight:bold;color:#ffffff;text-transform:uppercase;letter-spacing:0.8px;">
+                                {{STATUS_LABEL}}
+                              </span>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <!-- SALUTATION -->
+              <tr>
+                <td style="padding:20px 25px 6px 25px;font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:13px;color:#333;">
+                  Bonjour,
+                </td>
+              </tr>
+
+              <!-- BANDEAU STATUT (couleur dynamique) -->
+              <tr>
+                <td style="padding:8px 25px 18px 25px;">
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                         bgcolor="{{STATUS_COLOR}}" style="background-color:{{STATUS_COLOR}};border-radius:2px;">
+                    <tr>
+                      <td style="padding:12px 16px;font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:14px;font-weight:bold;color:#ffffff;">
+                        {{STATUS_MESSAGE}}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <!-- SEPARATEUR -->
+              <tr>
+                <td height="1" bgcolor="#e1e4e8"
+                    style="background-color:#e1e4e8;font-size:0;line-height:1px;mso-line-height-rule:exactly;">&nbsp;</td>
+              </tr>
+
+              <!-- SECTIONS DYNAMIQUES (1 bloc par expéditeur) -->
+              {{SECTIONS}}
+
+              <!-- SEPARATEUR -->
+              <tr>
+                <td height="1" bgcolor="#e1e4e8"
+                    style="background-color:#e1e4e8;font-size:0;line-height:1px;mso-line-height-rule:exactly;">&nbsp;</td>
+              </tr>
+
+              <!-- SIGNATURE -->
+              <tr>
+                <td style="padding:18px 25px 22px 25px;">
+                  <div style="font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:13px;color:#333;line-height:2.0;">
+                    Cordialement,<br>
+                    <strong style="color:#0056b3;">{{EQUIPE}}</strong>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- SEPARATEUR FOOTER -->
+              <tr>
+                <td height="1" bgcolor="#dee2e6"
+                    style="background-color:#dee2e6;font-size:0;line-height:1px;mso-line-height-rule:exactly;">&nbsp;</td>
+              </tr>
+
+              <!--FOOTER_START-->
+              <tr>
+                <td bgcolor="#f8f9fa" style="background-color:#f8f9fa;padding:12px 25px;text-align:center;">
+                  <div style="font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:12px;color:#999;line-height:1.6;">
+                    Rapport g&eacute;n&eacute;r&eacute; automatiquement par l'automate de pilotage DADP &mdash; Merci de ne pas r&eacute;pondre &agrave; cet email.<br>
+                    Environnement&nbsp;: <strong>{{HOSTNAME}}</strong> &nbsp;&bull;&nbsp; Notification INEO v3.1 &nbsp;&bull;&nbsp; {{DATE}} &agrave; {{HEURE}}
+                  </div>
+                </td>
+              </tr>
+              <!--FOOTER_END-->
+
+            </table>
+          </td>
+        </tr>
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
