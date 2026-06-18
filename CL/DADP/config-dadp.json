@@ -17,7 +17,6 @@
   },
 
   "GroupBy":      "Expediteur",
-  "StatusColumn": "Statut",
   "Columns": [
     "Arrete", "Sequence",
     "Somme_FOR",  "Evolution_FOR",

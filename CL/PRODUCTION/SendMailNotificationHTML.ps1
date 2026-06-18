@@ -1,76 +1,87 @@
 # ============================================================================
-# SendMailNotificationHTML.ps1 - MODULE UNIVERSEL v3.1
-#   v3.1 : coloration des cellules d'evolution en pourcentage (negatif=rouge,
-#          positif=vert) dans Rnd-Table. Retro-compatible (cf. ligne ~329).
+# SendMailNotificationHTML.ps1 - MOTEUR UNIVERSEL DE NOTIFICATION HTML  (v3.2)
 # ============================================================================
-# Moteur generique d'envoi de mails HTML avec analyse automatique de fichiers,
-# recuperation de logs, statistiques dynamiques, et sections intelligentes.
+# Outil ORGANISATIONNEL commun a tous les traitements (YHM, DADP, futurs jobs).
+# A partir d'un fichier de configuration JSON par job + de parametres en ligne
+# de commande, il construit un e-mail HTML (a partir d'un template) et l'envoie.
 #
-# Fonctionnalites v3.0 :
-#   - Multi-fichiers avec analyse automatique (CSV, LOG, TXT)
-#   - Recuperation et analyse de logs avec patterns
-#   - Statistiques dynamiques par fichier (comptages, ecarts, erreurs)
-#   - Sections inline JSON ou fichier externe
-#   - Mode DryRun (generation HTML sans envoi)
-#   - Export HTML pour archivage/debug
-#   - Compteurs automatiques depuis l'analyse des fichiers
-#   - Gestion des priorites mail
-#   - Rapport d'execution detaille avec metriques
-#   - Configuration avancee par JSON avec heritage de valeurs
+# PRINCIPE : l'intelligence metier reste dans le traitement (ODI / SQL / BAT).
+#            Ce moteur ne fait que METTRE EN FORME et ENVOYER, de facon generique.
+#
+# ----------------------------------------------------------------------------
+# CONTRAT D'APPEL (parametres) :
+#   Obligatoires : -ConfigFile -NomJob -Status
+#   Horodatage   : -Horodatage "yyyyMMdd_HHmmss"
+#   Contenu      : -KeyValues -Etapes -MessageLibre -TableCsv -TableTitle
+#                  -SectionFile -SectionsInline
+#   Multi-fichiers / logs : -Files -AutoAnalyze -LogDir -LogPattern ...
+#   Regroupement CSV (v3.2): -GroupBy -StatusColumn -Columns -Headers
+#                  (ces 4 peuvent aussi venir du JSON ; le parametre l'emporte)
+#   Options      : -Attachments -DryRun -ExportHtml -MailPriority -OverrideTo
+#                  -OverrideCc -ExtraSubject -NoFooter -Verbose2
+#
+# HISTORIQUE :
+#   v3.2 : regroupement CSV par colonne (-GroupBy), selection/renommage de
+#          colonnes (-Columns/-Headers) et badge statut par groupe
+#          (-StatusColumn, pire valeur du groupe). Configurables aussi via le
+#          JSON. Retro-compatible v3.1 (sans ces parametres : comportement v3.1).
+#   v3.1 : coloration des cellules d'evolution en pourcentage
+#          (negatif=rouge, positif=vert) dans Rnd-Table.
+#   v3.0 : multi-fichiers, recuperation de logs, statistiques dynamiques,
+#          sections inline/fichier, DryRun, export HTML.
 # ============================================================================
 
 [CmdletBinding()]
 param(
-    # --- OBLIGATOIRES ---
+    # --- OBLIGATOIRES --------------------------------------------------------
     [Parameter(Mandatory=$true)]  [string]   $ConfigFile,
     [Parameter(Mandatory=$true)]  [string]   $NomJob,
     [Parameter(Mandatory=$true)]  [string]   $Status,
 
-    # --- HORODATAGE ---
-    [string]   $Horodatage     = '',
+    # --- HORODATAGE ----------------------------------------------------------
+    [string]   $Horodatage      = '',           # "yyyyMMdd_HHmmss" (sinon = maintenant)
 
-    # --- CONTENU SECTIONS ---
-    [string]   $KeyValues      = '',            # "Cle1=Val1;Cle2=Val2"
-    [string]   $Etapes         = '',            # "etape1^etape2^etape3"
-    [string]   $MessageLibre   = '',
-    [string]   $TableCsv       = '',            # Chemin CSV unique (retro-compatible v2)
-    [string]   $TableTitle     = '',
-    [string]   $SectionFile    = '',            # Fichier JSON de sections
-    [string]   $SectionsInline = '',            # JSON inline de sections
+    # --- CONTENU DES SECTIONS ------------------------------------------------
+    [string]   $KeyValues       = '',           # "Cle1=Val1;Cle2=Val2"
+    [string]   $Etapes          = '',           # "etape1^etape2^etape3" (sep. ^ ou |)
+    [string]   $MessageLibre    = '',
+    [string]   $TableCsv        = '',           # Chemin d'un CSV (delimiteur ;)
+    [string]   $TableTitle      = '',
+    [string]   $SectionFile     = '',           # Fichier JSON de sections
+    [string]   $SectionsInline  = '',           # JSON inline de sections
 
-    # --- v3.0 : MULTI-FICHIERS ---
-    # Format : "chemin|titre|description;chemin2|titre2|desc2"
-    # Ou simplement : "chemin1;chemin2" (titres auto-generes)
-    [string]   $Files          = '',
+    # --- MULTI-FICHIERS (v3.0) ----------------------------------------------
+    # Format : "chemin|titre|description;chemin2|titre2|desc2" ou "chemin1;chemin2"
+    [string]   $Files           = '',
 
-    # --- v3.0 : ANALYSE AUTOMATIQUE ---
-    [switch]   $AutoAnalyze,                    # Analyser les fichiers et generer des stats
-    [int]      $MaxCsvRows     = 50,            # Limite lignes CSV affichees
-    [int]      $MaxCsvCols     = 10,            # Limite colonnes CSV affichees
+    # --- ANALYSE AUTOMATIQUE (v3.0) -----------------------------------------
+    [switch]   $AutoAnalyze,                     # Analyser les fichiers -> stats
+    [int]      $MaxCsvRows      = 50,            # Limite lignes CSV affichees
+    [int]      $MaxCsvCols      = 10,            # Limite colonnes CSV affichees
 
-    # --- v3.0 : RECUPERATION LOGS ---
-    [string]   $LogDir         = '',            # Repertoire des logs
-    [string]   $LogPattern     = '*.log',       # Pattern de recherche
-    [int]      $LogTailLines   = 30,            # Dernières N lignes
-    [string]   $LogErrorPattern = '(?i)(error|erreur|exception|fatal|critical|echec|failed)', # Regex erreurs
-    [switch]   $LogAttach,                      # Joindre les logs en PJ
+    # --- RECUPERATION DE LOGS (v3.0) ----------------------------------------
+    [string]   $LogDir          = '',
+    [string]   $LogPattern      = '*.log',
+    [int]      $LogTailLines    = 30,
+    [string]   $LogErrorPattern = '(?i)(error|erreur|exception|fatal|critical|echec|failed)',
+    [switch]   $LogAttach,                       # Joindre les logs en piece jointe
 
-    # --- v3.0 : OPTIONS AVANCEES ---
-    [string[]] $Attachments    = @(),
-    [switch]   $DryRun,                         # Generer HTML sans envoyer
-    [string]   $ExportHtml     = '',            # Sauver HTML genere dans un fichier
-    [string]   $MailPriority   = 'Normal',      # Low, Normal, High
-    [string]   $OverrideTo     = '',            # Forcer destinataires (debug)
-    [string]   $OverrideCc     = '',
-    [string]   $ExtraSubject   = '',            # Texte supplementaire dans le sujet
-    [switch]   $NoFooter,                       # Supprimer le footer
-    [switch]   $Verbose2,                       # Log detaille dans la console
+    # --- OPTIONS AVANCEES (v3.0) --------------------------------------------
+    [string[]] $Attachments     = @(),
+    [switch]   $DryRun,                          # Generer le HTML sans envoyer
+    [string]   $ExportHtml      = '',            # Sauvegarder le HTML genere
+    [string]   $MailPriority    = 'Normal',      # Low | Normal | High
+    [string]   $OverrideTo      = '',            # Forcer les destinataires (debug)
+    [string]   $OverrideCc      = '',
+    [string]   $ExtraSubject    = '',            # Texte ajoute au sujet
+    [switch]   $NoFooter,                        # Retirer le footer du template
+    [switch]   $Verbose2,                        # Journalisation detaillee console
 
-    # --- Regroupement et selection de colonnes CSV ---
-    [string]   $GroupBy      = '',   # Colonne de rupture : 1 section par valeur distincte
-    [string]   $StatusColumn = '',   # Colonne statut (pire valeur = badge sur le titre de section)
-    [string]   $Columns      = '',   # Colonnes a afficher, separees par virgule (surcharge config)
-    [string]   $Headers      = ''    # Noms d'affichage (meme ordre que -Columns, surcharge config)
+    # --- REGROUPEMENT / SELECTION DE COLONNES CSV (v3.2) --------------------
+    [string]   $GroupBy         = '',            # Colonne de rupture : 1 section / valeur
+    [string]   $StatusColumn    = '',            # Colonne statut -> badge (pire valeur du groupe)
+    [string]   $Columns         = '',            # Colonnes a afficher (CSV, surcharge config)
+    [string]   $Headers         = ''             # En-tetes affichees (meme ordre que -Columns)
 )
 
 # ============================================================================
@@ -82,12 +93,11 @@ try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 $script:Chrono = [System.Diagnostics.Stopwatch]::StartNew()
 $script:Logs   = [System.Collections.Generic.List[string]]::new()
 
-function Log([string]$msg, [string]$level='INFO') {
-    $ts = Get-Date -Format 'HH:mm:ss.fff'
-    $line = "[$ts] [$level] $msg"
+function Log([string]$msg, [string]$level = 'INFO') {
+    $line = "[$(Get-Date -Format 'HH:mm:ss.fff')] [$level] $msg"
     $script:Logs.Add($line)
     switch ($level) {
-        'ERROR'   { Write-Error $msg }
+        'ERROR'   { Write-Error   $msg }
         'WARNING' { Write-Warning $msg }
         default   { if ($Verbose2) { Write-Host $line -ForegroundColor DarkGray } }
     }
@@ -98,10 +108,11 @@ function HtmlEnc([string]$s) {
     return [System.Net.WebUtility]::HtmlEncode($s)
 }
 
+# Normalise une liste de destinataires (tableau JSON ou chaine "a,b;c")
 function Norm-Rcpt([object]$v) {
     if ($null -eq $v) { return @() }
     if ($v -is [System.Array]) {
-        return @($v | ForEach-Object { if($_){$_.ToString().Trim()} } | Where-Object { $_ -ne '' })
+        return @($v | ForEach-Object { if ($_) { $_.ToString().Trim() } } | Where-Object { $_ -ne '' })
     }
     return @($v.ToString() -split '[,;]' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' })
 }
@@ -113,30 +124,25 @@ function Format-Size([long]$bytes) {
     return "$bytes octets"
 }
 
-function Safe-Read([string]$path, [int]$maxLines=0) {
-    try {
-        if ($maxLines -gt 0) {
-            return Get-Content -LiteralPath $path -Encoding UTF8 -TotalCount $maxLines -ErrorAction Stop
-        }
-        return Get-Content -LiteralPath $path -Encoding UTF8 -ErrorAction Stop
-    } catch {
+# Lecture tolerante (UTF8 puis ANSI), avec limite optionnelle de lignes
+function Safe-Read([string]$path, [int]$maxLines = 0) {
+    foreach ($enc in @('UTF8', 'Default')) {
         try {
             if ($maxLines -gt 0) {
-                return Get-Content -LiteralPath $path -Encoding Default -TotalCount $maxLines -ErrorAction Stop
+                return Get-Content -LiteralPath $path -Encoding $enc -TotalCount $maxLines -ErrorAction Stop
             }
-            return Get-Content -LiteralPath $path -Encoding Default -ErrorAction Stop
-        } catch {
-            Log "Impossible de lire : $path" 'WARNING'
-            return @()
-        }
+            return Get-Content -LiteralPath $path -Encoding $enc -ErrorAction Stop
+        } catch { }
     }
+    Log "Impossible de lire : $path" 'WARNING'
+    return @()
 }
 
-Log "=== SendMailNotificationHTML v3.1 ==="
+Log "=== SendMailNotificationHTML v3.2 ==="
 Log "Job: $NomJob | Status: $Status | Config: $ConfigFile"
 
 # ============================================================================
-# CHARGEMENT CONFIG JSON
+# CHARGEMENT DE LA CONFIGURATION JSON
 # ============================================================================
 if (-not (Test-Path -LiteralPath $ConfigFile)) {
     Log "Fichier config introuvable : $ConfigFile" 'ERROR'
@@ -145,35 +151,33 @@ if (-not (Test-Path -LiteralPath $ConfigFile)) {
 
 $raw = Get-Content -LiteralPath $ConfigFile -Raw -Encoding UTF8
 
-# Remplacement variables d'environnement ${VAR}
+# Substitution des variables d'environnement ${VAR} (ex: ${SMTP_SERVER})
 $raw = [regex]::Replace($raw, '\$\{([^}]+)\}', {
     param($m)
-    $vn = $m.Groups[1].Value
-    $ev = [Environment]::GetEnvironmentVariable($vn)
-    if ($ev) { return $ev } else { return $m.Value }
+    $ev = [Environment]::GetEnvironmentVariable($m.Groups[1].Value)
+    if ($ev) { $ev } else { $m.Value }
 })
 
-# Correction backslashes Windows dans les chemins JSON
-$raw = [regex]::Replace($raw, '(?m)("(?:TemplatePath|LogDir|BasePath)"\s*:\s*")([^"]*)(")' , {
-    param($m); $p=$m.Groups[2].Value
-    if ($p -match '\\' -and $p -notmatch '\\\\') { $p = $p.Replace('\','\\') }
-    return "$($m.Groups[1].Value)$p$($m.Groups[3].Value)"
+# Echappement des backslashes Windows non doubles dans les chemins JSON
+$raw = [regex]::Replace($raw, '(?m)("(?:TemplatePath|LogDir|BasePath)"\s*:\s*")([^"]*)(")', {
+    param($m)
+    $p = $m.Groups[2].Value
+    if ($p -match '\\' -and $p -notmatch '\\\\') { $p = $p.Replace('\', '\\') }
+    "$($m.Groups[1].Value)$p$($m.Groups[3].Value)"
 })
 
 try { $cfg = $raw | ConvertFrom-Json -ErrorAction Stop }
 catch {
-    Log "Erreur parse JSON config : $($_.Exception.Message)" 'ERROR'
+    Log "Erreur de parsing JSON config : $($_.Exception.Message)" 'ERROR'
     exit 1
 }
 
-# Validation champs obligatoires
-foreach ($f in @('SmtpServer','From','To','TemplatePath')) {
-    if (-not $cfg.$f) {
-        Log "Champ manquant dans config : $f" 'ERROR'
-        exit 1
-    }
+# Validation des champs obligatoires
+foreach ($f in @('SmtpServer', 'From', 'To', 'TemplatePath')) {
+    if (-not $cfg.$f) { Log "Champ manquant dans la config : $f" 'ERROR'; exit 1 }
 }
 
+# Champs de configuration (avec valeurs par defaut)
 $SmtpSrv  = $cfg.SmtpServer
 $Port     = if ($cfg.Port) { [int]$cfg.Port } else { 25 }
 $From     = $cfg.From
@@ -183,31 +187,30 @@ $TplPath  = $cfg.TemplatePath
 $Env_Name = if ($cfg.Environnement) { $cfg.Environnement } else { 'N/A' }
 $SubjTpl  = if ($cfg.Subject) { $cfg.Subject } else { '[{{STATUS_LABEL}}] [{{ENVIRONNEMENT}}] {{JOB_NAME}} - {{DATE}}' }
 $stMsgs   = $cfg.StatusMessages
-$Equipe   = if ($cfg.EquipeNom) { $cfg.EquipeNom } else { "L'équipe INEO" }
+$Equipe   = if ($cfg.EquipeNom) { $cfg.EquipeNom } else { "L'equipe INEO" }
 
-# Heriter LogDir/LogPattern depuis config si non passes en parametre
-if (-not $LogDir -and $cfg.LogDir)         { $LogDir = $cfg.LogDir }
-if ($cfg.LogPattern -and $LogPattern -eq '*.log') { $LogPattern = $cfg.LogPattern }
-if ($cfg.LogTailLines)    { $LogTailLines   = [int]$cfg.LogTailLines }
-if ($cfg.LogErrorPattern) { $LogErrorPattern = $cfg.LogErrorPattern }
+# Heritage depuis la config si non passe en parametre (logs)
+if (-not $LogDir -and $cfg.LogDir)                  { $LogDir       = $cfg.LogDir }
+if ($cfg.LogPattern -and $LogPattern -eq '*.log')   { $LogPattern   = $cfg.LogPattern }
+if ($cfg.LogTailLines)                              { $LogTailLines = [int]$cfg.LogTailLines }
+if ($cfg.LogErrorPattern)                           { $LogErrorPattern = $cfg.LogErrorPattern }
 
 Log "Config chargee : SMTP=$SmtpSrv, Env=$Env_Name, To=$($To -join ',')"
 
-# Valeurs effectives GroupBy / StatusColumn / Columns / Headers (param > config)
+# ============================================================================
+# RESOLUTION GroupBy / StatusColumn / Columns / Headers   (parametre > config)
+# ============================================================================
+# Helper : transforme une valeur config (tableau JSON OU chaine "a,b,c") en tableau
+function ConvertTo-ColList([object]$v) {
+    if ($null -eq $v) { return @() }
+    if ($v -is [array]) { return @($v) }
+    return @([string]$v -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' })
+}
+
 $effGroupBy      = if ($GroupBy)      { $GroupBy }      elseif ($cfg.GroupBy)      { [string]$cfg.GroupBy }      else { '' }
 $effStatusColumn = if ($StatusColumn) { $StatusColumn } elseif ($cfg.StatusColumn) { [string]$cfg.StatusColumn } else { '' }
-$effColumns = if ($Columns) {
-    @($Columns -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' })
-} elseif ($cfg.Columns) {
-    if ($cfg.Columns -is [array]) { @($cfg.Columns) }
-    else { @([string]$cfg.Columns -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }) }
-} else { @() }
-$effHeaders = if ($Headers) {
-    @($Headers -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' })
-} elseif ($cfg.Headers) {
-    if ($cfg.Headers -is [array]) { @($cfg.Headers) }
-    else { @([string]$cfg.Headers -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }) }
-} else { @() }
+$effColumns      = if ($Columns) { ConvertTo-ColList $Columns } else { ConvertTo-ColList $cfg.Columns }
+$effHeaders      = if ($Headers) { ConvertTo-ColList $Headers } else { ConvertTo-ColList $cfg.Headers }
 
 # ============================================================================
 # TEMPLATE HTML
@@ -223,8 +226,8 @@ Log "Template charge : $TplPath"
 # HORODATAGE
 # ============================================================================
 if ($Horodatage -match '^\d{8}_\d{6}$') {
-    $dateFmt  = "{0}/{1}/{2}" -f $Horodatage.Substring(6,2),$Horodatage.Substring(4,2),$Horodatage.Substring(0,4)
-    $heureFmt = "{0}:{1}:{2}" -f $Horodatage.Substring(9,2),$Horodatage.Substring(11,2),$Horodatage.Substring(13,2)
+    $dateFmt  = '{0}/{1}/{2}' -f $Horodatage.Substring(6,2), $Horodatage.Substring(4,2), $Horodatage.Substring(0,4)
+    $heureFmt = '{0}:{1}:{2}' -f $Horodatage.Substring(9,2), $Horodatage.Substring(11,2), $Horodatage.Substring(13,2)
 } else {
     $n = Get-Date
     $dateFmt  = $n.ToString('dd/MM/yyyy')
@@ -233,7 +236,7 @@ if ($Horodatage -match '^\d{8}_\d{6}$') {
 }
 
 # ============================================================================
-# STATUS : LABEL + COULEUR + MESSAGE
+# STATUT : LIBELLE + MESSAGE + COULEUR
 # ============================================================================
 $statusLabelMap = @{
     'OK'            = 'SUCCES'
@@ -251,14 +254,14 @@ $stMsg = $null
 if ($stMsgs -and ($stMsgs.PSObject.Properties.Name -contains $Status)) { $stMsg = $stMsgs.$Status }
 if ([string]::IsNullOrWhiteSpace($stMsg)) {
     $defaults = @{
-        'OK'='Le traitement s''est termine avec succes.'
-        'SUCCES'='Le traitement s''est termine avec succes.'
-        'ERREUR'='Une ou plusieurs erreurs sont survenues.'
-        'ECHEC'='Une ou plusieurs erreurs sont survenues.'
-        'WARNING'='Le traitement s''est termine avec des avertissements.'
-        'INFO'='Information transmise par le traitement.'
-        'AUCUN_FICHIER'='Aucun fichier a traiter.'
-        'PARTIEL'='Le traitement s''est termine partiellement.'
+        'OK'            = 'Le traitement s''est termine avec succes.'
+        'SUCCES'        = 'Le traitement s''est termine avec succes.'
+        'ERREUR'        = 'Une ou plusieurs erreurs sont survenues.'
+        'ECHEC'         = 'Une ou plusieurs erreurs sont survenues.'
+        'WARNING'       = 'Le traitement s''est termine avec des avertissements.'
+        'INFO'          = 'Information transmise par le traitement.'
+        'AUCUN_FICHIER' = 'Aucun fichier a traiter.'
+        'PARTIEL'       = 'Le traitement s''est termine partiellement.'
     }
     $stMsg = if ($defaults.ContainsKey($Status)) { $defaults[$Status] } else { "Statut : $Status" }
 }
@@ -274,17 +277,19 @@ $colorMap = @{
 $stColor = if ($colorMap.ContainsKey($Status)) { $colorMap[$Status] } else { '#888888' }
 
 # ============================================================================
-# RENDERERS DE SECTIONS (ameliores v3.0)
+# RENDERERS DE SECTIONS  (palette Credit Logement)
 # ============================================================================
 
-function Rnd-SectionTitle([string]$title, [string]$icon='') {
+# Titre de section. Detecte un badge de statut en fin de titre :
+#   "EXP_BNP [RECU]" / "... [RETARD]" / "... [NON RECU]"  -> pastille coloree.
+function Rnd-SectionTitle([string]$title, [string]$icon = '') {
     if (-not $title) { return '' }
     $badgeHtml   = ''
     $borderColor = '#0056b3'
     $cleanTitle  = $title
     if ($title -match '\[((?:NON RECU|RETARD|RECU)[^\]]*)\]$') {
-        $badgeText = $Matches[0]
-        $badgeKey  = $Matches[1] -replace '\s*[—-].*', ''
+        $badgeText  = $Matches[0]
+        $badgeKey   = $Matches[1] -replace '\s*[—-].*', ''
         $cleanTitle = $title.Substring(0, $title.Length - $badgeText.Length).TrimEnd()
         $badgeColor = '#28a745'; $badgeBg = '#eafaf1'; $borderColor = '#28a745'
         switch -Wildcard ($badgeKey.Trim()) {
@@ -304,13 +309,13 @@ function Rnd-Separator() {
     return '<tr><td height="1" bgcolor="#E0E8E8" style="font-size:0;">&nbsp;</td></tr>'
 }
 
-function Rnd-Kv([array]$items, [string]$title='') {
+function Rnd-Kv([array]$items, [string]$title = '') {
     $h = '<tr><td style="padding:10px 22px;">'
     if ($title) { $h += Rnd-SectionTitle $title '&#9881;' }
     $h += '<table width="100%" cellpadding="0" cellspacing="0" border="0">'
     $alt = $false
     foreach ($p in $items) {
-        $bg = if($alt){'#FFFFFF'}else{'#F5F8F8'}
+        $bg = if ($alt) { '#FFFFFF' } else { '#F5F8F8' }
         $h += "<tr><td bgcolor=`"$bg`" style=`"background-color:$bg;padding:9px 22px;`">" +
               "<table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`"><tr>" +
               "<td width=`"200`" style=`"font-family:Calibri,'Segoe UI',sans-serif;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:0.4px;color:#00A8A8;vertical-align:top;`">$(HtmlEnc $p[0])</td>" +
@@ -322,11 +327,10 @@ function Rnd-Kv([array]$items, [string]$title='') {
     return $h
 }
 
-function Rnd-Etapes([array]$lines, [string]$title='Rapport d''ex&eacute;cution') {
+function Rnd-Etapes([array]$lines, [string]$title = 'Rapport d''ex&eacute;cution') {
     $h = '<tr><td style="padding:12px 22px;">'
     $h += Rnd-SectionTitle $title '&#9776;'
     $h += '<table width="100%" cellpadding="0" cellspacing="0" border="0">'
-
     foreach ($l in $lines) {
         $t = $l.Trim(); if (-not $t) { continue }
         $ic = '&#9679;'; $icc = '#888888'; $pad = ''; $weight = 'normal'
@@ -344,13 +348,13 @@ function Rnd-Etapes([array]$lines, [string]$title='Rapport d''ex&eacute;cution')
     return $h
 }
 
-function Rnd-Table([string]$title, [array]$headers, [array]$rows, [string]$icon='&#9783;') {
+# Tableau de donnees. Les cellules de type pourcentage sont colorees :
+#   negatif -> rouge, positif non nul -> vert (zero = neutre).
+function Rnd-Table([string]$title, [array]$headers, [array]$rows, [string]$icon = '&#9783;') {
     $h = '<tr><td style="padding:10px 22px 18px 22px;">'
-    # Wrapper section avec bordure (style expediteur-section)
     $h += '<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="background-color:#ffffff;border:1px solid #eee;">'
     $h += '<tr><td style="padding:15px;">'
     if ($title) { $h += Rnd-SectionTitle $title $icon }
-    # Tableau de données
     $h += '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">'
     if ($headers -and $headers.Count -gt 0) {
         $h += '<tr bgcolor="#ffffff" style="background-color:#ffffff;">'
@@ -361,10 +365,10 @@ function Rnd-Table([string]$title, [array]$headers, [array]$rows, [string]$icon=
     }
     $alt = $false
     foreach ($r in $rows) {
-        $bg = if($alt){'#f8f9fa'}else{'#ffffff'}
+        $bg = if ($alt) { '#f8f9fa' } else { '#ffffff' }
         $h += "<tr bgcolor=`"$bg`" style=`"background-color:$bg;`">"
         foreach ($c in $r) {
-            $cs = if($null -ne $c){$c.ToString()}else{''}
+            $cs = if ($null -ne $c) { $c.ToString() } else { '' }
             $cellColor = '#333333'
             $extraStyle = ''
             if ($cs -match '^-[\d.,]+\s*%$') {
@@ -377,23 +381,20 @@ function Rnd-Table([string]$title, [array]$headers, [array]$rows, [string]$icon=
         $h += '</tr>'
         $alt = -not $alt
     }
-    $h += '</table>'
-    $h += '</td></tr></table>'
-    $h += '</td></tr>'
+    $h += '</table></td></tr></table></td></tr>'
     return $h
 }
 
-function Rnd-Texte([string]$title, [string]$content, [string]$icon='') {
+function Rnd-Texte([string]$title, [string]$content, [string]$icon = '') {
     $h = '<tr><td style="padding:12px 22px;">'
     if ($title) { $h += Rnd-SectionTitle $title $icon }
-    # Gerer les retours a la ligne
     $htmlContent = (HtmlEnc $content) -replace "`r?`n", '<br/>'
     $h += "<div style=`"font-family:Calibri,sans-serif;font-size:13px;color:#2B2B2B;line-height:1.6;`">$htmlContent</div>"
     $h += '</td></tr>'
     return $h
 }
 
-function Rnd-CodeBlock([string]$title, [string[]]$lines, [string]$icon='&#128196;') {
+function Rnd-CodeBlock([string]$title, [string[]]$lines, [string]$icon = '&#128196;') {
     $h = '<tr><td style="padding:12px 22px;">'
     if ($title) { $h += Rnd-SectionTitle $title $icon }
     $h += '<table width="100%" cellpadding="0" cellspacing="0" border="0">'
@@ -402,12 +403,11 @@ function Rnd-CodeBlock([string]$title, [string[]]$lines, [string]$icon='&#128196
     foreach ($l in $lines) {
         $lineNum++
         $color = '#D4D4D4'
-        if ($l -match $LogErrorPattern) { $color = '#F44747' }
-        elseif ($l -match '(?i)(warn|attention|avert)') { $color = '#CCA700' }
+        if ($l -match $LogErrorPattern)                          { $color = '#F44747' }
+        elseif ($l -match '(?i)(warn|attention|avert)')          { $color = '#CCA700' }
         elseif ($l -match '(?i)(success|succes|ok|done|termine)') { $color = '#6A9955' }
-        $numColor = '#555555'
         $h += "<div style=`"font-family:'Courier New',Consolas,monospace;font-size:10px;line-height:1.5;white-space:pre-wrap;word-break:break-all;`">"
-        $h += "<span style=`"color:${numColor};margin-right:10px;user-select:none;`">$($lineNum.ToString().PadLeft(3,' '))</span>"
+        $h += "<span style=`"color:#555555;margin-right:10px;user-select:none;`">$($lineNum.ToString().PadLeft(3,' '))</span>"
         $h += "<span style=`"color:${color};`">$(HtmlEnc $l)</span></div>"
     }
     $h += '</td></tr></table></td></tr>'
@@ -453,91 +453,62 @@ function Rnd-FileCard([string]$filename, [string]$description, [hashtable]$meta)
 }
 
 # ============================================================================
-# MOTEUR D'ANALYSE DE FICHIERS v3.0
+# ANALYSEURS DE FICHIERS  (v3.0)
 # ============================================================================
 
+# Analyse un CSV : detection du delimiteur, stats numeriques automatiques,
+# rendu en tableau (limite a maxRows / maxCols).
 function Analyze-CsvFile([string]$path, [string]$title, [int]$maxRows, [int]$maxCols) {
     $result = @{ Sections = ''; Stats = [ordered]@{} }
     Log "Analyse CSV : $path"
-
     try {
-        # Essayer differents delimiteurs
-        $delimiters = @(';', ',', "`t", '|')
-        $csv = $null
-        $bestDelim = ';'
-        $bestCount = 0
-
-        foreach ($d in $delimiters) {
+        $csv = $null; $bestCount = 0
+        foreach ($d in @(';', ',', "`t", '|')) {
             try {
                 $test = Import-Csv -Path $path -Delimiter $d -Encoding Default -ErrorAction Stop
                 if ($test.Count -gt 0) {
                     $colCount = @($test[0].PSObject.Properties.Name).Count
-                    if ($colCount -gt $bestCount) {
-                        $bestCount = $colCount
-                        $bestDelim = $d
-                        $csv = $test
-                    }
+                    if ($colCount -gt $bestCount) { $bestCount = $colCount; $csv = $test }
                 }
-            } catch {}
+            } catch { }
         }
-
-        if (-not $csv -or $csv.Count -eq 0) {
-            Log "CSV vide ou illisible : $path" 'WARNING'
-            return $result
-        }
+        if (-not $csv -or $csv.Count -eq 0) { Log "CSV vide ou illisible : $path" 'WARNING'; return $result }
 
         $allHeaders = @($csv[0].PSObject.Properties.Name)
-        $headers = @($allHeaders | Select-Object -First $maxCols)
-        $truncCols = $allHeaders.Count -gt $maxCols
+        $headers    = @($allHeaders | Select-Object -First $maxCols)
+        $truncCols  = $allHeaders.Count -gt $maxCols
+        $totalRows  = $csv.Count
 
-        # Statistiques automatiques
-        $totalRows = $csv.Count
-        $result.Stats['Lignes'] = $totalRows
+        $result.Stats['Lignes']   = $totalRows
         $result.Stats['Colonnes'] = $allHeaders.Count
 
-        # Detection colonnes numeriques pour stats
+        # Somme des colonnes entierement numeriques
         foreach ($col in $headers) {
-            $numVals = @($csv | ForEach-Object { $_.$col } | Where-Object {
-                $_ -match '^\s*-?\d+([.,]\d+)?\s*$'
-            })
+            $numVals = @($csv | ForEach-Object { $_.$col } | Where-Object { $_ -match '^\s*-?\d+([.,]\d+)?\s*$' })
             if ($numVals.Count -eq $totalRows -and $totalRows -gt 0) {
-                $nums = $numVals | ForEach-Object { [double]($_ -replace ',','.') }
-                $sum = ($nums | Measure-Object -Sum).Sum
-                $result.Stats["Somme $col"] = $sum
+                $nums = $numVals | ForEach-Object { [double]($_ -replace ',', '.') }
+                $result.Stats["Somme $col"] = ($nums | Measure-Object -Sum).Sum
             }
         }
-
-        # Detection colonnes "ecart"/"diff" pour comptage non-zero
+        # Comptage des valeurs non nulles dans les colonnes ecart/diff/erreur
         foreach ($col in $headers) {
             if ($col -match '(?i)(ecart|diff|delta|erreur|error)') {
-                $nonZero = @($csv | ForEach-Object { $_.$col } | Where-Object {
-                    $_ -and $_ -ne '0' -and $_ -ne '0.0' -and $_ -ne ''
-                }).Count
-                if ($nonZero -gt 0) {
-                    $result.Stats["$col <> 0"] = $nonZero
-                }
+                $nonZero = @($csv | ForEach-Object { $_.$col } | Where-Object { $_ -and $_ -ne '0' -and $_ -ne '0.0' -and $_ -ne '' }).Count
+                if ($nonZero -gt 0) { $result.Stats["$col <> 0"] = $nonZero }
             }
         }
 
-        # Rendu tableau (limite a maxRows)
         $displayRows = @($csv | Select-Object -First $maxRows)
         $rws = @()
         foreach ($r in $displayRows) {
-            $row = @()
-            foreach ($col in $headers) { $row += $r.$col }
-            $rws += ,$row
+            $rws += ,@($headers | ForEach-Object { $r.$_ })
         }
 
         $displayTitle = if ($title) { $title } else { [System.IO.Path]::GetFileName($path) }
-        if ($totalRows -gt $maxRows) {
-            $displayTitle += " (${maxRows}/${totalRows} lignes)"
-        }
-        if ($truncCols) {
-            $displayTitle += " [${maxCols}/$($allHeaders.Count) colonnes]"
-        }
+        if ($totalRows -gt $maxRows) { $displayTitle += " (${maxRows}/${totalRows} lignes)" }
+        if ($truncCols)              { $displayTitle += " [${maxCols}/$($allHeaders.Count) colonnes]" }
 
         $result.Sections = Rnd-Table $displayTitle $headers $rws '&#128202;'
-
     } catch {
         Log "Erreur analyse CSV $path : $($_.Exception.Message)" 'WARNING'
     }
@@ -547,26 +518,20 @@ function Analyze-CsvFile([string]$path, [string]$title, [int]$maxRows, [int]$max
 function Analyze-LogFile([string]$path, [int]$tailLines, [string]$errPattern) {
     $result = @{ Sections = ''; Stats = [ordered]@{}; Errors = @() }
     Log "Analyse LOG : $path"
-
     try {
-        $allLines = Safe-Read $path
-        $totalLines = $allLines.Count
-        $result.Stats['Total lignes'] = $totalLines
+        $allLines   = Safe-Read $path
+        $result.Stats['Total lignes'] = $allLines.Count
 
-        # Comptage erreurs
         $errorLines = @($allLines | Where-Object { $_ -match $errPattern })
         $result.Stats['Erreurs'] = $errorLines.Count
-        $result.Errors = $errorLines
+        $result.Errors           = $errorLines
 
-        # Comptage warnings
-        $warnLines = @($allLines | Where-Object { $_ -match '(?i)(warn|avert|attention)' })
+        $warnLines  = @($allLines | Where-Object { $_ -match '(?i)(warn|avert|attention)' })
         $result.Stats['Avertissements'] = $warnLines.Count
 
-        # Dernières lignes
-        $tail = @($allLines | Select-Object -Last $tailLines)
+        $tail     = @($allLines | Select-Object -Last $tailLines)
         $filename = [System.IO.Path]::GetFileName($path)
         $result.Sections = Rnd-CodeBlock "Log : $filename (${tailLines} dernieres lignes)" $tail
-
     } catch {
         Log "Erreur analyse LOG $path : $($_.Exception.Message)" 'WARNING'
     }
@@ -577,13 +542,10 @@ function Analyze-GenericFile([string]$path) {
     $result = @{ Stats = [ordered]@{} }
     try {
         $fi = Get-Item -LiteralPath $path -ErrorAction Stop
-        $result.Stats['Taille'] = Format-Size $fi.Length
+        $result.Stats['Taille']  = Format-Size $fi.Length
         $result.Stats['Modifie'] = $fi.LastWriteTime.ToString('dd/MM/yyyy HH:mm')
-        $ext = $fi.Extension.ToLower()
-
-        if ($ext -in @('.txt','.log','.csv','.tsv','.dat','.sql','.xml','.json')) {
-            $lines = Safe-Read $path
-            $result.Stats['Lignes'] = $lines.Count
+        if ($fi.Extension.ToLower() -in @('.txt','.log','.csv','.tsv','.dat','.sql','.xml','.json')) {
+            $result.Stats['Lignes'] = (Safe-Read $path).Count
         }
     } catch {
         Log "Erreur lecture metadonnees $path : $($_.Exception.Message)" 'WARNING'
@@ -594,19 +556,18 @@ function Analyze-GenericFile([string]$path) {
 # ============================================================================
 # ASSEMBLAGE DES SECTIONS
 # ============================================================================
-
-$secHtml = ''
-$allAttachments = [System.Collections.Generic.List[string]]::new()
+$secHtml         = ''
+$globalStats     = [ordered]@{}
+$allAttachments  = [System.Collections.Generic.List[string]]::new()
 foreach ($a in $Attachments) {
     if (-not [string]::IsNullOrWhiteSpace($a)) { $allAttachments.Add($a.Trim()) }
 }
-$globalStats = [ordered]@{}
 
-# --- 1. KeyValues ---
+# --- 1. KeyValues -----------------------------------------------------------
 if ($KeyValues) {
     $kvList = @()
     foreach ($pair in ($KeyValues -split ';')) {
-        $pts = $pair -split '=',2
+        $pts = $pair -split '=', 2
         if ($pts.Count -eq 2) { $kvList += ,@($pts[0].Trim(), $pts[1].Trim()) }
     }
     if ($kvList.Count -gt 0) {
@@ -615,16 +576,15 @@ if ($KeyValues) {
     }
 }
 
-# --- 2. Multi-Fichiers v3.0 ---
+# --- 2. Multi-fichiers ------------------------------------------------------
 if ($Files) {
     Log "Traitement multi-fichiers..."
     $fileEntries = @($Files -split ';' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' })
-
     foreach ($entry in $fileEntries) {
-        $parts = $entry -split '\|'
-        $filePath = $parts[0].Trim()
+        $parts     = $entry -split '\|'
+        $filePath  = $parts[0].Trim()
         $fileTitle = if ($parts.Count -gt 1 -and $parts[1].Trim()) { $parts[1].Trim() } else { [System.IO.Path]::GetFileName($filePath) }
-        $fileDesc = if ($parts.Count -gt 2) { $parts[2].Trim() } else { '' }
+        $fileDesc  = if ($parts.Count -gt 2) { $parts[2].Trim() } else { '' }
 
         if (-not (Test-Path -LiteralPath $filePath)) {
             Log "Fichier introuvable : $filePath" 'WARNING'
@@ -632,13 +592,10 @@ if ($Files) {
             continue
         }
 
-        $ext = [System.IO.Path]::GetExtension($filePath).ToLower()
+        $ext      = [System.IO.Path]::GetExtension($filePath).ToLower()
         $fileMeta = (Analyze-GenericFile $filePath).Stats
-
-        # Carte du fichier
         $secHtml += Rnd-FileCard $fileTitle $fileDesc $fileMeta
 
-        # Analyse automatique selon le type
         if ($AutoAnalyze) {
             switch -regex ($ext) {
                 '\.(csv|tsv)' {
@@ -653,55 +610,42 @@ if ($Files) {
                 }
             }
         }
-
         $secHtml += Rnd-Separator
     }
 }
 
-# --- 3. Recuperation Logs v3.0 ---
+# --- 3. Recuperation de logs ------------------------------------------------
 if ($LogDir -and (Test-Path -LiteralPath $LogDir)) {
     Log "Recuperation logs depuis : $LogDir (pattern: $LogPattern)"
-    $logFiles = @(Get-ChildItem -Path $LogDir -Filter $LogPattern -File -ErrorAction SilentlyContinue |
-                  Sort-Object LastWriteTime -Descending)
-
+    $logFiles = @(Get-ChildItem -Path $LogDir -Filter $LogPattern -File -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
     if ($logFiles.Count -eq 0) {
         Log "Aucun log trouve dans $LogDir avec pattern $LogPattern" 'WARNING'
         $secHtml += Rnd-Texte 'Logs' "Aucun fichier log trouve dans $LogDir (pattern: $LogPattern)" '&#128270;'
     } else {
-        $totalLogErrors = 0
-        $totalLogWarnings = 0
-
+        $totalLogErrors = 0; $totalLogWarnings = 0
         foreach ($lf in $logFiles) {
             $logResult = Analyze-LogFile $lf.FullName $LogTailLines $LogErrorPattern
             $secHtml += $logResult.Sections
             $totalLogErrors   += $logResult.Stats['Erreurs']
             $totalLogWarnings += $logResult.Stats['Avertissements']
 
-            # Afficher les erreurs extraites en tableau si > 0
             if ($logResult.Errors.Count -gt 0) {
                 $errRows = @()
-                $displayErrors = @($logResult.Errors | Select-Object -First 20)
-                foreach ($el in $displayErrors) {
-                    $errRows += ,@($el)
-                }
+                foreach ($el in @($logResult.Errors | Select-Object -First 20)) { $errRows += ,@($el) }
                 $errTitle = "Erreurs detectees : $($lf.Name)"
                 if ($logResult.Errors.Count -gt 20) { $errTitle += " (20/$($logResult.Errors.Count))" }
                 $secHtml += Rnd-Table $errTitle @('Ligne') $errRows '&#128680;'
             }
-
-            if ($LogAttach) {
-                $allAttachments.Add($lf.FullName)
-            }
+            if ($LogAttach) { $allAttachments.Add($lf.FullName) }
         }
-
-        $globalStats['Fichiers log'] = $logFiles.Count
-        $globalStats['Erreurs (logs)'] = $totalLogErrors
+        $globalStats['Fichiers log']    = $logFiles.Count
+        $globalStats['Erreurs (logs)']  = $totalLogErrors
         $globalStats['Warnings (logs)'] = $totalLogWarnings
         $secHtml += Rnd-Separator
     }
 }
 
-# --- 4. SectionFile JSON externe ---
+# --- 4. SectionFile (JSON externe) ------------------------------------------
 if ($SectionFile -and (Test-Path -LiteralPath $SectionFile)) {
     Log "Chargement sections depuis fichier : $SectionFile"
     try {
@@ -709,36 +653,27 @@ if ($SectionFile -and (Test-Path -LiteralPath $SectionFile)) {
         foreach ($s in $jSec) {
             switch ($s.type) {
                 'kv' {
-                    $it = @()
-                    foreach ($i in $s.items) { $it += ,@($i[0], $i[1]) }
-                    $secHtml += Rnd-Kv $it $(if($s.title){$s.title}else{''})
+                    $it = @(); foreach ($i in $s.items) { $it += ,@($i[0], $i[1]) }
+                    $secHtml += Rnd-Kv $it $(if ($s.title) { $s.title } else { '' })
                 }
                 'etapes' {
                     $ln = @()
-                    foreach ($i in $s.items) {
-                        $ln += '['+$i[0]+'] '+$i[1]+$(if($i.Count -gt 2 -and $i[2]){' - '+$i[2]}else{''})
-                    }
-                    $secHtml += Rnd-Etapes $ln $(if($s.title){$s.title}else{'Rapport d''ex&eacute;cution'})
+                    foreach ($i in $s.items) { $ln += '[' + $i[0] + '] ' + $i[1] + $(if ($i.Count -gt 2 -and $i[2]) { ' - ' + $i[2] } else { '' }) }
+                    $secHtml += Rnd-Etapes $ln $(if ($s.title) { $s.title } else { 'Rapport d''ex&eacute;cution' })
                 }
                 'table' {
-                    $rw = @()
-                    foreach ($r in $s.rows) { $rw += ,@($r) }
+                    $rw = @(); foreach ($r in $s.rows) { $rw += ,@($r) }
                     $secHtml += Rnd-Table $s.title @($s.headers) $rw
                 }
                 'texte' {
-                    $secHtml += Rnd-Texte $s.title $s.content $(if($s.icon){$s.icon}else{''})
+                    $secHtml += Rnd-Texte $s.title $s.content $(if ($s.icon) { $s.icon } else { '' })
                 }
                 'code' {
-                    $cLines = if ($s.file -and (Test-Path $s.file)) {
-                        @(Safe-Read $s.file $s.maxLines)
-                    } else {
-                        @($s.content -split "`n")
-                    }
+                    $cLines = if ($s.file -and (Test-Path $s.file)) { @(Safe-Read $s.file $s.maxLines) } else { @($s.content -split "`n") }
                     $secHtml += Rnd-CodeBlock $s.title $cLines
                 }
                 'stats' {
-                    $st = [ordered]@{}
-                    foreach ($i in $s.items) { $st[$i[0]] = $i[1] }
+                    $st = [ordered]@{}; foreach ($i in $s.items) { $st[$i[0]] = $i[1] }
                     $secHtml += Rnd-StatsBar $s.title $st
                 }
             }
@@ -749,22 +684,22 @@ if ($SectionFile -and (Test-Path -LiteralPath $SectionFile)) {
     }
 }
 
-# --- 5. SectionsInline JSON ---
+# --- 5. SectionsInline (JSON en parametre) ----------------------------------
 if ($SectionsInline) {
     Log "Traitement sections inline JSON"
     try {
         $jInline = $SectionsInline | ConvertFrom-Json
         foreach ($s in $jInline) {
             switch ($s.type) {
-                'kv'     { $it=@(); foreach($i in $s.items){$it+=,@($i[0],$i[1])}; $secHtml += Rnd-Kv $it $(if($s.title){$s.title}else{''}) }
-                'table'  { $rw=@(); foreach($r in $s.rows){$rw+=,@($r)}; $secHtml += Rnd-Table $s.title @($s.headers) $rw }
+                'kv'     { $it=@(); foreach ($i in $s.items) { $it += ,@($i[0],$i[1]) }; $secHtml += Rnd-Kv $it $(if ($s.title) { $s.title } else { '' }) }
+                'table'  { $rw=@(); foreach ($r in $s.rows)  { $rw += ,@($r) };           $secHtml += Rnd-Table $s.title @($s.headers) $rw }
                 'texte'  { $secHtml += Rnd-Texte $s.title $s.content }
-                'stats'  { $st=[ordered]@{}; foreach($i in $s.items){$st[$i[0]]=$i[1]}; $secHtml += Rnd-StatsBar $s.title $st }
+                'stats'  { $st=[ordered]@{}; foreach ($i in $s.items) { $st[$i[0]] = $i[1] }; $secHtml += Rnd-StatsBar $s.title $st }
                 'code'   { $secHtml += Rnd-CodeBlock $s.title @($s.content -split "`n") }
                 'etapes' {
-                    $ln=@()
-                    foreach($i in $s.items){$ln+='['+$i[0]+'] '+$i[1]+$(if($i.Count -gt 2 -and $i[2]){' - '+$i[2]}else{''})}
-                    $secHtml += Rnd-Etapes $ln $(if($s.title){$s.title}else{'Rapport d''ex&eacute;cution'})
+                    $ln = @()
+                    foreach ($i in $s.items) { $ln += '[' + $i[0] + '] ' + $i[1] + $(if ($i.Count -gt 2 -and $i[2]) { ' - ' + $i[2] } else { '' }) }
+                    $secHtml += Rnd-Etapes $ln $(if ($s.title) { $s.title } else { 'Rapport d''ex&eacute;cution' })
                 }
             }
         }
@@ -774,7 +709,12 @@ if ($SectionsInline) {
     }
 }
 
-# --- 6. TableCsv ---
+# --- 6. TableCsv ------------------------------------------------------------
+# Deux modes :
+#   * AVANCE (v3.2) si -GroupBy / -Columns / -StatusColumn (param ou config) :
+#       selection de colonnes, 1 section par valeur de rupture, badge statut
+#       (pire valeur du groupe) sur le titre.
+#   * SIMPLE (v3.1) sinon : analyse automatique + tableau unique.
 if ($TableCsv -and (Test-Path -LiteralPath $TableCsv)) {
     if ($effGroupBy -or $effColumns.Count -gt 0 -or $effStatusColumn) {
         try {
@@ -784,11 +724,20 @@ if ($TableCsv -and (Test-Path -LiteralPath $TableCsv)) {
                 $dispCols = if ($effColumns.Count -gt 0) { $effColumns } else { $allCols }
                 $dispHdrs = if ($effHeaders.Count -eq $dispCols.Count) { $effHeaders } else { $dispCols }
 
+                # Alerte (non bloquante) si une colonne demandee n'existe pas
+                $unknownCols = @($dispCols | Where-Object { $allCols -notcontains $_ })
+                if ($unknownCols.Count -gt 0) {
+                    Log "Colonnes absentes du CSV (affichees vides) : $($unknownCols -join ', ')" 'WARNING'
+                }
+
                 if ($effGroupBy -and ($allCols -contains $effGroupBy)) {
-                    $sRank = @{ 'NON_RECU'=3;'ABSENT'=3;'ECHEC'=3;'KO'=3;'ERREUR'=3
-                                'RETARD'=2;'WARNING'=2;'PARTIEL'=2
-                                'RECU'=1;'OK'=1;'SUCCES'=1 }
-                    foreach ($g in ($csv | Group-Object -Property $effGroupBy)) {
+                    # Rang de gravite : sert a determiner la pire valeur d'un groupe
+                    $sRank = @{
+                        'NON_RECU'=3; 'ABSENT'=3; 'ECHEC'=3; 'KO'=3; 'ERREUR'=3
+                        'RETARD'=2;   'WARNING'=2; 'PARTIEL'=2
+                        'RECU'=1;     'OK'=1;      'SUCCES'=1
+                    }
+                    foreach ($g in ($csv | Group-Object -Property $effGroupBy | Sort-Object Name)) {
                         $suffix = ''
                         if ($effStatusColumn -and ($allCols -contains $effStatusColumn)) {
                             $worst = 0; $worstVal = ''
@@ -804,10 +753,12 @@ if ($TableCsv -and (Test-Path -LiteralPath $TableCsv)) {
                     }
                 } else {
                     $rws = @($csv | ForEach-Object { $r = $_; ,@($dispCols | ForEach-Object { [string]$r.$_ }) })
-                    $secHtml += Rnd-Table (if($TableTitle){$TableTitle}else{'Donnees'}) $dispHdrs $rws
+                    $secHtml += Rnd-Table $(if ($TableTitle) { $TableTitle } else { 'Donnees' }) $dispHdrs $rws
                 }
             }
-        } catch { Log "Erreur TableCsv (GroupBy) : $($_.Exception.Message)" 'WARNING' }
+        } catch {
+            Log "Erreur TableCsv (GroupBy) : $($_.Exception.Message)" 'WARNING'
+        }
     } else {
         $csvResult = Analyze-CsvFile $TableCsv $TableTitle $MaxCsvRows $MaxCsvCols
         $secHtml += $csvResult.Sections
@@ -815,7 +766,7 @@ if ($TableCsv -and (Test-Path -LiteralPath $TableCsv)) {
     $secHtml += Rnd-Separator
 }
 
-# --- 7. Etapes inline ---
+# --- 7. Etapes (en parametre) -----------------------------------------------
 if ($Etapes) {
     $el = @($Etapes -split '[\^|]' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' })
     if ($el.Count -gt 0) {
@@ -824,35 +775,32 @@ if ($Etapes) {
     }
 }
 
-# --- 8. MessageLibre ---
+# --- 8. Message libre -------------------------------------------------------
 if ($MessageLibre) {
     $secHtml += Rnd-Texte '' $MessageLibre '&#128172;'
 }
 
-# --- 9. Stats globales (si des analyses ont produit des stats) ---
+# --- 9. Statistiques globales (issues des analyses) -------------------------
 if ($globalStats.Count -gt 0) {
     $secHtml += Rnd-StatsBar 'Metriques' $globalStats
     $secHtml += Rnd-Separator
 }
 
-# --- 10. Metriques d'execution du script ---
+# --- 10. Informations d'execution -------------------------------------------
 $script:Chrono.Stop()
 $execTime = $script:Chrono.Elapsed
 $execKv = @(
     ,@('Duree execution', '{0:00}:{1:00}:{2:00}.{3:000}' -f $execTime.Hours, $execTime.Minutes, $execTime.Seconds, $execTime.Milliseconds)
-    ,@('Machine', $env:COMPUTERNAME)
-    ,@('Utilisateur', "$env:USERDOMAIN\$env:USERNAME")
-    ,@('Script', 'SendMailNotificationHTML v3.1')
+    ,@('Machine',         $env:COMPUTERNAME)
+    ,@('Utilisateur',     "$env:USERDOMAIN\$env:USERNAME")
+    ,@('Script',          'SendMailNotificationHTML v3.2')
 )
-if ($allAttachments.Count -gt 0) {
-    $execKv += ,@('Pieces jointes', $allAttachments.Count.ToString())
-}
+if ($allAttachments.Count -gt 0) { $execKv += ,@('Pieces jointes', $allAttachments.Count.ToString()) }
 $secHtml += Rnd-Kv $execKv 'Informations d''execution'
 
 # ============================================================================
-# REMPLACEMENT PLACEHOLDERS + GENERATION HTML
+# REMPLACEMENT DES PLACEHOLDERS + GENERATION DU CORPS
 # ============================================================================
-
 $vars = [ordered]@{
     '{{JOB_NAME}}'       = $NomJob
     '{{STATUS}}'         = $Status
@@ -868,20 +816,19 @@ $vars = [ordered]@{
 }
 
 $subj = $SubjTpl
-if ($ExtraSubject) { $subj = $subj + ' ' + $ExtraSubject }
+if ($ExtraSubject) { $subj = "$subj $ExtraSubject" }
 $body = $tplHtml
 foreach ($k in $vars.Keys) {
     $subj = $subj.Replace($k, $vars[$k])
     $body = $body.Replace($k, $vars[$k])
 }
 
-# Supprimer le footer si demande
 if ($NoFooter) {
     $body = $body -replace '(?s)<!--FOOTER_START-->.*?<!--FOOTER_END-->', ''
 }
 
 # ============================================================================
-# EXPORT HTML (debug/archivage)
+# EXPORT HTML (debug / archivage)
 # ============================================================================
 if ($ExportHtml) {
     try {
@@ -893,7 +840,7 @@ if ($ExportHtml) {
 }
 
 # ============================================================================
-# ENVOI MAIL
+# ENVOI DU MAIL
 # ============================================================================
 if ($DryRun) {
     Write-Output "DRYRUN_OK"
@@ -920,14 +867,9 @@ try {
     }
     if ($Cc -and $Cc.Count -gt 0) { $mp.Cc = $Cc }
 
-    # Verifier pieces jointes
     $validPJ = @()
     foreach ($a in $allAttachments) {
-        if (Test-Path -LiteralPath $a) {
-            $validPJ += $a
-        } else {
-            Log "PJ introuvable : $a" 'WARNING'
-        }
+        if (Test-Path -LiteralPath $a) { $validPJ += $a } else { Log "PJ introuvable : $a" 'WARNING' }
     }
     if ($validPJ.Count -gt 0) { $mp.Attachments = $validPJ }
 
@@ -935,7 +877,6 @@ try {
     Log "Mail envoye avec succes a $($To -join ',')"
     Write-Output "MAIL_OK"
     exit 0
-
 } catch {
     Log "Erreur envoi mail : $($_.Exception.Message)" 'ERROR'
     Write-Output "MAIL_ERROR: $($_.Exception.Message)"
