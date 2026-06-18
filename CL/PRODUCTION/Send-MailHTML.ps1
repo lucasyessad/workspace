@@ -272,29 +272,29 @@ function New-SummaryHtml([hashtable]$data) {
     if (-not $data -or $data.Count -eq 0) { return '' }
     $rows = ''; $i = 0
     foreach ($k in $data.Keys) {
-        $bg = if ($i % 2 -eq 0) { '#ffffff' } else { '#f8f9fa' }
+        $bg = if ($i % 2 -eq 0) { '#ffffff' } else { '#F7FAFA' }
         $rows += "<tr style=`"background-color:$bg;`">" +
-            "<td style=`"padding:6px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;font-weight:bold;color:#343E47;width:35%;border-bottom:1px solid #DDE3E9;white-space:nowrap;`">$(HtmlEnc $k)</td>" +
-            "<td style=`"padding:6px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;color:#2C3E50;border-bottom:1px solid #DDE3E9;`">$(HtmlEnc $data[$k])</td>" +
+            "<td style=`"padding:6px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;font-weight:bold;color:#2B2B2B;width:35%;border-bottom:1px solid #C8CACA;white-space:nowrap;`">$(HtmlEnc $k)</td>" +
+            "<td style=`"padding:6px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;color:#2B2B2B;border-bottom:1px solid #C8CACA;`">$(HtmlEnc $data[$k])</td>" +
             "</tr>"; $i++
     }
-    return "<tr><td style=`"padding:8px 28px 16px 28px;`"><table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`" style=`"border-collapse:collapse;border:1px solid #DDE3E9;`"><thead><tr style=`"background-color:#343E47;`"><th style=`"padding:7px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#fff;text-align:left;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;`">Paramètre</th><th style=`"padding:7px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#fff;text-align:left;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;`">Valeur</th></tr></thead><tbody>$rows</tbody></table></td></tr>"
+    return "<tr><td style=`"padding:8px 22px 14px 22px;`"><table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`" style=`"border-collapse:collapse;border:1px solid #C8CACA;`"><thead><tr style=`"background-color:#2B2B2B;`"><th style=`"padding:7px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#fff;text-align:left;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;`">Paramètre</th><th style=`"padding:7px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#fff;text-align:left;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;`">Valeur</th></tr></thead><tbody>$rows</tbody></table></td></tr>"
 }
 
 function New-StepsHtml([string[]]$stepList) {
     if (-not $stepList -or $stepList.Count -eq 0) { return '' }
     $rows = ''
     for ($i = 0; $i -lt $stepList.Count; $i++) {
-        $bg  = if ($i % 2 -eq 0) { '#ffffff' } else { '#f8f9fa' }
+        $bg  = if ($i % 2 -eq 0) { '#ffffff' } else { '#F7FAFA' }
         $num = ($i + 1).ToString().PadLeft(2,'0')
-        $rows += "<tr style=`"background-color:$bg;`"><td style=`"padding:6px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;color:#2C3E50;border-bottom:1px solid #DDE3E9;`"><span style=`"color:#8A9BB0;margin-right:10px;font-size:11px;`">$num.</span>$(HtmlEnc $stepList[$i])</td></tr>"
+        $rows += "<tr style=`"background-color:$bg;`"><td style=`"padding:6px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;color:#2B2B2B;border-bottom:1px solid #C8CACA;`"><span style=`"color:#9ECECE;margin-right:10px;font-size:11px;font-weight:bold;`">$num.</span>$(HtmlEnc $stepList[$i])</td></tr>"
     }
-    return "<tr><td style=`"padding:8px 28px 16px 28px;`"><table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`" style=`"border-collapse:collapse;border:1px solid #DDE3E9;`"><thead><tr style=`"background-color:#343E47;`"><th style=`"padding:7px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#fff;text-align:left;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;`">Étapes d'exécution</th></tr></thead><tbody>$rows</tbody></table></td></tr>"
+    return "<tr><td style=`"padding:8px 22px 14px 22px;`"><table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`" style=`"border-collapse:collapse;border:1px solid #C8CACA;`"><thead><tr style=`"background-color:#2B2B2B;`"><th style=`"padding:7px 14px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#fff;text-align:left;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;`">Étapes d'exécution</th></tr></thead><tbody>$rows</tbody></table></td></tr>"
 }
 
 function New-BadgeHtml([string]$value, $badgeColors) {
     if (-not $value) { return '' }
-    $bg = '#6B7F96'; $fg = '#ffffff'
+    $bg = '#6B7070'; $fg = '#ffffff'
     if ($badgeColors) {
         $key = $badgeColors.PSObject.Properties.Name | Where-Object { $_ -ieq $value } | Select-Object -First 1
         if ($key) { $bg = Get-Prop $badgeColors.$key 'Bg' $bg; $fg = Get-Prop $badgeColors.$key 'Text' $fg }
@@ -302,34 +302,34 @@ function New-BadgeHtml([string]$value, $badgeColors) {
     return " <span style=`"display:inline-block;padding:2px 9px;border-radius:3px;font-size:10px;font-weight:bold;background-color:$bg;color:$fg;font-family:Calibri,'Segoe UI',Arial,sans-serif;letter-spacing:0.3px;`">$(HtmlEnc $value)</span>"
 }
 
-function New-SectionTitleHtml([string]$title, [string]$badgeHtml, [string]$borderColor = '#343E47') {
-    return "<tr><td style=`"padding:14px 28px 4px 28px;`"><table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`"><tr><td style=`"background-color:#f8f9fa;padding:7px 14px;border-left:4px solid $borderColor;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;font-weight:bold;color:#343E47;`">$(HtmlEnc $title)$badgeHtml</td></tr></table></td></tr>"
+function New-SectionTitleHtml([string]$title, [string]$badgeHtml, [string]$borderColor = '#00A8A8') {
+    return "<tr><td style=`"padding:12px 22px 4px 22px;`"><table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`"><tr><td style=`"background-color:#F7FAFA;padding:7px 14px;border-left:4px solid $borderColor;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;font-weight:bold;color:#2B2B2B;`">$(HtmlEnc $title)$badgeHtml</td></tr></table></td></tr>"
 }
 
 function New-DataTableHtml([string[]]$dispHeaders, $rows, [string[]]$dispColumns, [int]$effMaxRows) {
     $show   = if ($effMaxRows -gt 0 -and $rows.Count -gt $effMaxRows) { @($rows[0..($effMaxRows-1)]) } else { @($rows) }
     $hidden = $rows.Count - $show.Count
 
-    $th = ($dispHeaders | ForEach-Object { "<th style=`"padding:6px 10px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#fff;text-align:left;font-weight:bold;white-space:nowrap;border-right:1px solid #2B343D;`">$(HtmlEnc $_)</th>" }) -join ''
+    $th = ($dispHeaders | ForEach-Object { "<th style=`"padding:6px 10px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#fff;text-align:left;font-weight:bold;white-space:nowrap;border-right:1px solid #3a3a3a;`">$(HtmlEnc $_)</th>" }) -join ''
 
     $tbody = ''
     for ($i = 0; $i -lt $show.Count; $i++) {
-        $bg = if ($i % 2 -eq 0) { '#ffffff' } else { '#f8f9fa' }
+        $bg = if ($i % 2 -eq 0) { '#ffffff' } else { '#F7FAFA' }
         $tds = ($dispColumns | ForEach-Object {
-            "<td style=`"padding:5px 10px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;color:#2C3E50;border-bottom:1px solid #DDE3E9;white-space:nowrap;`">$(HtmlEnc ([string]$show[$i].$_))</td>"
+            "<td style=`"padding:5px 10px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;color:#2B2B2B;border-bottom:1px solid #C8CACA;white-space:nowrap;`">$(HtmlEnc ([string]$show[$i].$_))</td>"
         }) -join ''
         $tbody += "<tr style=`"background-color:$bg;`">$tds</tr>"
     }
     if ($hidden -gt 0) {
         $span = $dispHeaders.Count
-        $tbody += "<tr><td colspan=`"$span`" style=`"padding:5px 10px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#8A9BB0;font-style:italic;border-top:1px solid #DDE3E9;`">... $hidden ligne(s) supplémentaire(s) non affichée(s)</td></tr>"
+        $tbody += "<tr><td colspan=`"$span`" style=`"padding:5px 10px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#6B7070;font-style:italic;border-top:1px solid #C8CACA;`">... $hidden ligne(s) supplémentaire(s) non affichée(s)</td></tr>"
     }
-    return "<tr><td style=`"padding:0 28px 16px 28px;overflow-x:auto;`"><table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`" style=`"border-collapse:collapse;`"><thead><tr style=`"background-color:#343E47;`">$th</tr></thead><tbody>$tbody</tbody></table></td></tr>"
+    return "<tr><td style=`"padding:0 22px 14px 22px;overflow-x:auto;`"><table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`" style=`"border-collapse:collapse;`"><thead><tr style=`"background-color:#2B2B2B;`">$th</tr></thead><tbody>$tbody</tbody></table></td></tr>"
 }
 
 function New-RunbookHtml([string]$url) {
     if (-not $url) { return '' }
-    return "<tr><td style=`"padding:4px 28px 16px 28px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;color:#6B7F96;`">Procédure : <a href=`"$(HtmlEnc $url)`" style=`"color:#407DD9;`">$(HtmlEnc $url)</a></td></tr>"
+    return "<tr><td style=`"padding:4px 22px 14px 22px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;color:#6B7070;`">Procédure : <a href=`"$(HtmlEnc $url)`" style=`"color:#00A8A8;`">$(HtmlEnc $url)</a></td></tr>"
 }
 
 # ============================================================================
@@ -465,7 +465,7 @@ if ($csvData.Count -gt 0) {
         foreach ($g in ($csvArr | Group-Object -Property $effGroupBy)) {
             # Badge depuis BadgeColumn
             $badgeVal    = ''
-            $borderColor = '#343E47'
+            $borderColor = '#00A8A8'
             if ($effBadgeCol -and $g.Group[0].PSObject.Properties[$effBadgeCol]) {
                 $badgeVal = $g.Group | ForEach-Object { $_.$effBadgeCol } |
                             Where-Object { $_ -ne '' } | Select-Object -First 1
