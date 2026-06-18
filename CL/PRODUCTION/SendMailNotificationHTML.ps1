@@ -1,5 +1,5 @@
 # ============================================================================
-# SendMailNotificationHTML.ps1 - MOTEUR UNIVERSEL DE NOTIFICATION HTML  (v3.2)
+# SendMailNotificationHTML.ps1 - MOTEUR UNIVERSEL DE NOTIFICATION HTML  (v3.3)
 # ============================================================================
 # Outil ORGANISATIONNEL commun a tous les traitements (YHM, DADP, futurs jobs).
 # A partir d'un fichier de configuration JSON par job + de parametres en ligne
@@ -8,19 +8,30 @@
 # PRINCIPE : l'intelligence metier reste dans le traitement (ODI / SQL / BAT).
 #            Ce moteur ne fait que METTRE EN FORME et ENVOYER, de facon generique.
 #
+# UN TRAITEMENT COMPLET = ce moteur + 1 config JSON par job.
+# Il n'y a AUCUNE couche intermediaire : chaque BAT appelle directement ce
+# script. Tout le confort autrefois porte par un wrapper (scan de repertoires,
+# raccourci statistiques, priorite automatique) est integre ici.
+#
 # ----------------------------------------------------------------------------
 # CONTRAT D'APPEL (parametres) :
 #   Obligatoires : -ConfigFile -NomJob -Status
 #   Horodatage   : -Horodatage "yyyyMMdd_HHmmss"
-#   Contenu      : -KeyValues -Etapes -MessageLibre -TableCsv -TableTitle
+#   Contenu      : -KeyValues -Etapes -Stats -MessageLibre -TableCsv -TableTitle
 #                  -SectionFile -SectionsInline
-#   Multi-fichiers / logs : -Files -AutoAnalyze -LogDir -LogPattern ...
+#   Multi-fichiers / logs : -Files -FileDir -AutoAnalyze -LogDir -LogPattern ...
+#   Pieces jointes : -Attachments -AttachDir -AttachPattern
 #   Regroupement CSV (v3.2): -GroupBy -StatusColumn -Columns -Headers
 #                  (ces 4 peuvent aussi venir du JSON ; le parametre l'emporte)
-#   Options      : -Attachments -DryRun -ExportHtml -MailPriority -OverrideTo
+#   Options      : -DryRun -ExportHtml -MailPriority -AutoPriority -OverrideTo
 #                  -OverrideCc -ExtraSubject -NoFooter -Verbose2
 #
 # HISTORIQUE :
+#   v3.3 : moteur autosuffisant (suppression du wrapper Invoke-MailNotification).
+#          Integration de : scan de repertoire fichiers (-FileDir/-FilePattern),
+#          scan de pieces jointes (-AttachDir/-AttachPattern), raccourci
+#          statistiques (-Stats "k=v;k=v") et priorite automatique
+#          (-AutoPriority : High si ERREUR/ECHEC).
 #   v3.2 : regroupement CSV par colonne (-GroupBy), selection/renommage de
 #          colonnes (-Columns/-Headers) et badge statut par groupe
 #          (-StatusColumn, pire valeur du groupe). Configurables aussi via le
@@ -44,6 +55,7 @@ param(
     # --- CONTENU DES SECTIONS ------------------------------------------------
     [string]   $KeyValues       = '',           # "Cle1=Val1;Cle2=Val2"
     [string]   $Etapes          = '',           # "etape1^etape2^etape3" (sep. ^ ou |)
+    [string]   $Stats           = '',           # "Lignes=1520;Erreurs=3" -> bloc metriques
     [string]   $MessageLibre    = '',
     [string]   $TableCsv        = '',           # Chemin d'un CSV (delimiteur ;)
     [string]   $TableTitle      = '',
@@ -53,6 +65,8 @@ param(
     # --- MULTI-FICHIERS (v3.0) ----------------------------------------------
     # Format : "chemin|titre|description;chemin2|titre2|desc2" ou "chemin1;chemin2"
     [string]   $Files           = '',
+    [string]   $FileDir         = '',           # Repertoire scanne -> fichiers ajoutes a -Files
+    [string]   $FilePattern     = '*.*',        # Filtre du scan -FileDir
 
     # --- ANALYSE AUTOMATIQUE (v3.0) -----------------------------------------
     [switch]   $AutoAnalyze,                     # Analyser les fichiers -> stats
@@ -68,9 +82,12 @@ param(
 
     # --- OPTIONS AVANCEES (v3.0) --------------------------------------------
     [string[]] $Attachments     = @(),
+    [string]   $AttachDir        = '',           # Repertoire scanne -> pieces jointes
+    [string]   $AttachPattern    = '*.*',        # Filtre du scan -AttachDir
     [switch]   $DryRun,                          # Generer le HTML sans envoyer
     [string]   $ExportHtml      = '',            # Sauvegarder le HTML genere
     [string]   $MailPriority    = 'Normal',      # Low | Normal | High
+    [switch]   $AutoPriority,                    # Priorite auto : High si ERREUR/ECHEC
     [string]   $OverrideTo      = '',            # Forcer les destinataires (debug)
     [string]   $OverrideCc      = '',
     [string]   $ExtraSubject    = '',            # Texte ajoute au sujet
@@ -124,6 +141,21 @@ function Format-Size([long]$bytes) {
     return "$bytes octets"
 }
 
+# Detection d'encodage par BOM : UTF-8 avec BOM -> 'UTF8', sinon 'Default'
+# (ANSI/Windows-1252 sur Windows francais). Garantit les accents quel que soit
+# l'export ODI/Excel sans configuration manuelle.
+function Detect-Encoding([string]$path) {
+    try {
+        $fs = [System.IO.File]::OpenRead($path)
+        try {
+            $b = New-Object byte[] 3
+            $n = $fs.Read($b, 0, 3)
+            if ($n -ge 3 -and $b[0] -eq 0xEF -and $b[1] -eq 0xBB -and $b[2] -eq 0xBF) { return 'UTF8' }
+        } finally { $fs.Close() }
+    } catch { }
+    return 'Default'
+}
+
 # Lecture tolerante (UTF8 puis ANSI), avec limite optionnelle de lignes
 function Safe-Read([string]$path, [int]$maxLines = 0) {
     foreach ($enc in @('UTF8', 'Default')) {
@@ -138,7 +170,7 @@ function Safe-Read([string]$path, [int]$maxLines = 0) {
     return @()
 }
 
-Log "=== SendMailNotificationHTML v3.2 ==="
+Log "=== SendMailNotificationHTML v3.3 ==="
 Log "Job: $NomJob | Status: $Status | Config: $ConfigFile"
 
 # ============================================================================
@@ -275,6 +307,12 @@ $colorMap = @{
     'PARTIEL'='#E67E22'
 }
 $stColor = if ($colorMap.ContainsKey($Status)) { $colorMap[$Status] } else { '#888888' }
+
+# Priorite mail automatique selon le statut (si -AutoPriority)
+if ($AutoPriority) {
+    $MailPriority = if ($Status -in 'ERREUR', 'ECHEC') { 'High' } else { 'Normal' }
+    Log "Priorite automatique -> $MailPriority (statut $Status)"
+}
 
 # ============================================================================
 # RENDERERS DE SECTIONS  (palette Credit Logement)
@@ -463,9 +501,10 @@ function Analyze-CsvFile([string]$path, [string]$title, [int]$maxRows, [int]$max
     Log "Analyse CSV : $path"
     try {
         $csv = $null; $bestCount = 0
+        $enc = Detect-Encoding $path
         foreach ($d in @(';', ',', "`t", '|')) {
             try {
-                $test = Import-Csv -Path $path -Delimiter $d -Encoding Default -ErrorAction Stop
+                $test = Import-Csv -Path $path -Delimiter $d -Encoding $enc -ErrorAction Stop
                 if ($test.Count -gt 0) {
                     $colCount = @($test[0].PSObject.Properties.Name).Count
                     if ($colCount -gt $bestCount) { $bestCount = $colCount; $csv = $test }
@@ -563,6 +602,24 @@ foreach ($a in $Attachments) {
     if (-not [string]::IsNullOrWhiteSpace($a)) { $allAttachments.Add($a.Trim()) }
 }
 
+# Scan automatique d'un repertoire de pieces jointes (-AttachDir)
+if ($AttachDir -and (Test-Path -LiteralPath $AttachDir)) {
+    Log "Scan pieces jointes : $AttachDir (pattern: $AttachPattern)"
+    Get-ChildItem -Path $AttachDir -Filter $AttachPattern -File -ErrorAction SilentlyContinue |
+        ForEach-Object { $allAttachments.Add($_.FullName) }
+}
+
+# Scan automatique d'un repertoire de fichiers (-FileDir) -> alimente -Files
+if ($FileDir -and (Test-Path -LiteralPath $FileDir)) {
+    Log "Scan fichiers : $FileDir (pattern: $FilePattern)"
+    $scanned = @(Get-ChildItem -Path $FileDir -Filter $FilePattern -File -ErrorAction SilentlyContinue |
+                 Sort-Object Name | ForEach-Object { "$($_.FullName)|$($_.Name)" })
+    if ($scanned.Count -gt 0) {
+        $Files = if ($Files) { "$Files;$($scanned -join ';')" } else { $scanned -join ';' }
+        Log "  -> $($scanned.Count) fichier(s) ajoute(s) a la liste"
+    }
+}
+
 # --- 1. KeyValues -----------------------------------------------------------
 if ($KeyValues) {
     $kvList = @()
@@ -572,6 +629,19 @@ if ($KeyValues) {
     }
     if ($kvList.Count -gt 0) {
         $secHtml += Rnd-Kv $kvList
+        $secHtml += Rnd-Separator
+    }
+}
+
+# --- 1bis. Stats (raccourci "k=v;k=v") -> bloc metriques --------------------
+if ($Stats) {
+    $stItems = [ordered]@{}
+    foreach ($pair in ($Stats -split ';')) {
+        $p = $pair -split '=', 2
+        if ($p.Count -eq 2) { $stItems[$p[0].Trim()] = $p[1].Trim() }
+    }
+    if ($stItems.Count -gt 0) {
+        $secHtml += Rnd-StatsBar 'Metriques' $stItems
         $secHtml += Rnd-Separator
     }
 }
@@ -718,7 +788,7 @@ if ($SectionsInline) {
 if ($TableCsv -and (Test-Path -LiteralPath $TableCsv)) {
     if ($effGroupBy -or $effColumns.Count -gt 0 -or $effStatusColumn) {
         try {
-            $csv = Import-Csv -Path $TableCsv -Delimiter ';' -Encoding Default
+            $csv = Import-Csv -Path $TableCsv -Delimiter ';' -Encoding (Detect-Encoding $TableCsv)
             if ($csv.Count -gt 0) {
                 $allCols  = @($csv[0].PSObject.Properties.Name)
                 $dispCols = if ($effColumns.Count -gt 0) { $effColumns } else { $allCols }
@@ -793,7 +863,7 @@ $execKv = @(
     ,@('Duree execution', '{0:00}:{1:00}:{2:00}.{3:000}' -f $execTime.Hours, $execTime.Minutes, $execTime.Seconds, $execTime.Milliseconds)
     ,@('Machine',         $env:COMPUTERNAME)
     ,@('Utilisateur',     "$env:USERDOMAIN\$env:USERNAME")
-    ,@('Script',          'SendMailNotificationHTML v3.2')
+    ,@('Script',          'SendMailNotificationHTML v3.3')
 )
 if ($allAttachments.Count -gt 0) { $execKv += ,@('Pieces jointes', $allAttachments.Count.ToString()) }
 $secHtml += Rnd-Kv $execKv 'Informations d''execution'

@@ -3,6 +3,11 @@
 Système **commun** de notification par e-mail HTML pour les jobs d'exploitation
 (YHM, DADP, et tout futur traitement). Un seul moteur, une configuration par job.
 
+> **Un traitement complet = le moteur `SendMailNotificationHTML.ps1` + 1 config JSON.**
+> Aucune couche intermédiaire : chaque BAT appelle directement le moteur.
+> Pour un guide pas à pas avec exemples complets, voir
+> [`GUIDE_UTILISATION.md`](GUIDE_UTILISATION.md).
+
 ## Objectifs
 
 1. **Un outil générique, jamais spécifique.** Le moteur
@@ -44,10 +49,9 @@ l'affichage.
 
 | Fichier | Rôle |
 |---|---|
-| `PRODUCTION/SendMailNotificationHTML.ps1` | **Moteur universel** (v3.2). Utilisé par tous les jobs. |
+| `PRODUCTION/SendMailNotificationHTML.ps1` | **Moteur universel** (v3.3). Utilisé par tous les jobs. |
 | `PRODUCTION/template-notification.html` | Template HTML (charte Crédit Logement, thème clair teal). |
-| `PRODUCTION/Invoke-MailNotification.ps1` | Wrapper optionnel (modes pré-configurés : etl, surveillance…). |
-| `PRODUCTION/Notify.bat` | Point d'entrée universel `CLE=VALEUR` depuis n'importe quel BAT. |
+| `PRODUCTION/Notify.bat` | Point d'entrée optionnel `CLE=VALEUR` qui appelle directement le moteur. |
 | `DADP/IMR_DADP_CHARGE_IMAGE.bat` | Job DADP : ODI + envoi de la notification. |
 | `DADP/config-dadp.json` | Config DADP (destinataires, sujet, messages, GroupBy, colonnes). |
 | `DADP/DADP_CREATE_EXPEDITEURS_REF.sql` | Table de référence des expéditeurs (+ seed). |
@@ -64,14 +68,17 @@ Obligatoires : `-ConfigFile -NomJob -Status`.
 | `-Horodatage` | `yyyyMMdd_HHmmss` (sinon = maintenant). |
 | `-KeyValues` | `"Cle1=Val1;Cle2=Val2"` → bloc clé/valeur. |
 | `-Etapes` | `"etape1^etape2"` (sép. `^` ou `\|`), badges `[SUCCES]`/`[ECHEC]`/`[WARNING]`. |
+| `-Stats` | `"Lignes=1520;Erreurs=3"` → bloc métriques (cartes chiffrées). |
 | `-MessageLibre` | Texte libre. |
 | `-TableCsv` / `-TableTitle` | CSV (`;`) rendu en tableau. |
 | `-GroupBy` | Colonne de rupture → 1 section par valeur. |
 | `-StatusColumn` | Colonne statut → badge (pire valeur du groupe) sur le titre. |
 | `-Columns` / `-Headers` | Colonnes affichées et leurs en-têtes (surchargent la config). |
 | `-SectionFile` / `-SectionsInline` | Sections JSON (fichier ou inline). |
-| `-Files` / `-AutoAnalyze` / `-LogDir` … | Multi-fichiers, analyse auto, récupération de logs. |
-| `-Attachments` | Pièces jointes. |
+| `-Files` / `-FileDir` / `-FilePattern` | Fichiers explicites ou scan auto d'un répertoire. |
+| `-AutoAnalyze` / `-LogDir` … | Analyse auto des fichiers, récupération de logs. |
+| `-Attachments` / `-AttachDir` / `-AttachPattern` | Pièces jointes explicites ou scan d'un répertoire. |
+| `-MailPriority` / `-AutoPriority` | Priorité fixe, ou auto (`High` si ERREUR/ECHEC). |
 | `-DryRun` | Génère le HTML **sans** envoyer. |
 | `-ExportHtml` | Sauvegarde le HTML généré dans un fichier. |
 

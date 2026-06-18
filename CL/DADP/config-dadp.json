@@ -8,11 +8,11 @@
   "Environnement": "PROD",
   "EquipeNom":     "DSI - Exploitation",
 
-  "Subject": "[{{STATUS_LABEL}}] [{{ENVIRONNEMENT}}] DADP - Chargement donnees partenaires - {{DATE}}",
+  "Subject": "[{{STATUS_LABEL}}] [{{ENVIRONNEMENT}}] DADP - Chargement données partenaires - {{DATE}}",
 
   "StatusMessages": {
-    "SUCCES":  "Le chargement des donnees partenaires DADP s'est deroule avec succes. La table DADP_STOCK a ete mise a jour.",
-    "WARNING": "Le chargement DADP est termine avec des alertes. Certains expediteurs sont en retard ou absents.",
+    "SUCCES":  "Le chargement des données partenaires DADP s'est déroulé avec succès. La table DADP_STOCK a été mise à jour.",
+    "WARNING": "Le chargement DADP est terminé avec des alertes. Certains expéditeurs sont en retard ou absents.",
     "ERREUR":  "Une erreur est survenue lors du chargement DADP ou des transmissions sont manquantes. Intervention requise."
   },
 
