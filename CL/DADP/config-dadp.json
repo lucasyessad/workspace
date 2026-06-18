@@ -1,62 +1,37 @@
 {
-  "Inherits": "%PROCLIB%\\CL\\config-global.json",
+  "SmtpServer":    "${SMTP_SERVER}",
+  "Port":          25,
+  "From":          "INEO.DADP.Exploitation@creditlogement.fr",
+  "To":            ["DRM@creditlogement.fr"],
+  "Cc":            [],
+  "TemplatePath":  "${TEMPLATE_PATH}",
+  "Environnement": "PROD",
+  "EquipeNom":     "DSI - Exploitation",
 
-  "From":    "INEO.DADP.Exploitation@creditlogement.fr",
-  "To":      ["DRM@creditlogement.fr"],
-  "Cc":      [],
+  "Subject": "[{{STATUS_LABEL}}] [{{ENVIRONNEMENT}}] DADP - Chargement donnees partenaires - {{DATE}}",
 
-  "SubjectPrefix":   "DADP —",
-  "DefaultSeverity": "Success",
-  "RunbookUrl":      "",
-
-  "RcMapping": {
-    "0": "Success",
-    "1": "Warning",
-    "*": "Error"
+  "StatusMessages": {
+    "SUCCES":  "Le chargement des donnees partenaires DADP s'est deroule avec succes. La table DADP_STOCK a ete mise a jour.",
+    "WARNING": "Le chargement DADP est termine avec des alertes. Certains expediteurs sont en retard ou absents.",
+    "ERREUR":  "Une erreur est survenue lors du chargement DADP ou des transmissions sont manquantes. Intervention requise."
   },
 
-  "AutoSeverity": [
-    { "Column": "Statut", "Operator": "Equals", "Value": "NON_RECU", "Severity": "Error"   },
-    { "Column": "Statut", "Operator": "Equals", "Value": "RETARD",   "Severity": "Warning" }
+  "GroupBy":      "Expediteur",
+  "StatusColumn": "Statut",
+  "Columns": [
+    "Arrete", "Sequence",
+    "Somme_FOR",  "Evolution_FOR",
+    "Somme_DEF",  "Evolution_DEF",
+    "Somme_NPE",  "Evolution_NPE",
+    "Somme_IMP",  "Evolution_IMP",
+    "Date_chargement_INEO"
   ],
-
-  "Messages": {
-    "Success":  "Le chargement des données partenaires DADP s'est déroulé avec succès. La table DADP_STOCK a bien été mise à jour. Vous trouverez ci-dessous la synthèse par expéditeur.",
-    "Warning":  "Le chargement DADP est terminé avec des alertes. Certains expéditeurs sont en retard ou absents. Veuillez consulter la synthèse ci-dessous.",
-    "Error":    "Une erreur est survenue lors du chargement DADP ou des transmissions sont manquantes. Intervention requise.",
-    "Critical": "Échec critique du chargement DADP. Intervention immédiate requise."
-  },
-
-  "Attachments": [],
-
-  "Data": {
-    "Delimiter":   ";",
-    "GroupBy":     "Expediteur",
-    "TitlePrefix": "Expéditeur",
-    "BadgeColumn": "Statut",
-    "BadgeColors": {
-      "RECU":     { "Bg": "#2E7D32", "Text": "#ffffff" },
-      "RETARD":   { "Bg": "#E65100", "Text": "#ffffff" },
-      "NON_RECU": { "Bg": "#C62828", "Text": "#ffffff" }
-    },
-    "Columns": [
-      "Arrete", "Sequence",
-      "Somme_FOR",  "Evolution_FOR",
-      "Somme_DEF",  "Evolution_DEF",
-      "Somme_NPE",  "Evolution_NPE",
-      "Somme_IMP",  "Evolution_IMP",
-      "Date_chargement_INEO"
-    ],
-    "Headers": [
-      "Arrêté",   "Séq.",
-      "FOR",      "Évol. FOR",
-      "DEF",      "Évol. DEF",
-      "NPE",      "Évol. NPE",
-      "IMP",      "Évol. IMP",
-      "Chargement INEO"
-    ],
-    "SortBy":     "Arrete",
-    "Descending": false,
-    "MaxRows":    0
-  }
+  "Headers": [
+    "Arrete",   "Seq.",
+    "FOR",      "Evol. FOR",
+    "DEF",      "Evol. DEF",
+    "NPE",      "Evol. NPE",
+    "IMP",      "Evol. IMP",
+    "Chargement INEO"
+  ]
 }

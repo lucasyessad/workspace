@@ -64,7 +64,13 @@ param(
     [string]   $OverrideCc     = '',
     [string]   $ExtraSubject   = '',            # Texte supplementaire dans le sujet
     [switch]   $NoFooter,                       # Supprimer le footer
-    [switch]   $Verbose2                        # Log detaille dans la console
+    [switch]   $Verbose2,                       # Log detaille dans la console
+
+    # --- Regroupement et selection de colonnes CSV ---
+    [string]   $GroupBy      = '',   # Colonne de rupture : 1 section par valeur distincte
+    [string]   $StatusColumn = '',   # Colonne statut (pire valeur = badge sur le titre de section)
+    [string]   $Columns      = '',   # Colonnes a afficher, separees par virgule (surcharge config)
+    [string]   $Headers      = ''    # Noms d'affichage (meme ordre que -Columns, surcharge config)
 )
 
 # ============================================================================
@@ -186,6 +192,22 @@ if ($cfg.LogTailLines)    { $LogTailLines   = [int]$cfg.LogTailLines }
 if ($cfg.LogErrorPattern) { $LogErrorPattern = $cfg.LogErrorPattern }
 
 Log "Config chargee : SMTP=$SmtpSrv, Env=$Env_Name, To=$($To -join ',')"
+
+# Valeurs effectives GroupBy / StatusColumn / Columns / Headers (param > config)
+$effGroupBy      = if ($GroupBy)      { $GroupBy }      elseif ($cfg.GroupBy)      { [string]$cfg.GroupBy }      else { '' }
+$effStatusColumn = if ($StatusColumn) { $StatusColumn } elseif ($cfg.StatusColumn) { [string]$cfg.StatusColumn } else { '' }
+$effColumns = if ($Columns) {
+    @($Columns -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' })
+} elseif ($cfg.Columns) {
+    if ($cfg.Columns -is [array]) { @($cfg.Columns) }
+    else { @([string]$cfg.Columns -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }) }
+} else { @() }
+$effHeaders = if ($Headers) {
+    @($Headers -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' })
+} elseif ($cfg.Headers) {
+    if ($cfg.Headers -is [array]) { @($cfg.Headers) }
+    else { @([string]$cfg.Headers -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }) }
+} else { @() }
 
 # ============================================================================
 # TEMPLATE HTML
@@ -752,10 +774,44 @@ if ($SectionsInline) {
     }
 }
 
-# --- 6. TableCsv (retro-compatible v2) ---
+# --- 6. TableCsv ---
 if ($TableCsv -and (Test-Path -LiteralPath $TableCsv)) {
-    $csvResult = Analyze-CsvFile $TableCsv $TableTitle $MaxCsvRows $MaxCsvCols
-    $secHtml += $csvResult.Sections
+    if ($effGroupBy -or $effColumns.Count -gt 0 -or $effStatusColumn) {
+        try {
+            $csv = Import-Csv -Path $TableCsv -Delimiter ';' -Encoding Default
+            if ($csv.Count -gt 0) {
+                $allCols  = @($csv[0].PSObject.Properties.Name)
+                $dispCols = if ($effColumns.Count -gt 0) { $effColumns } else { $allCols }
+                $dispHdrs = if ($effHeaders.Count -eq $dispCols.Count) { $effHeaders } else { $dispCols }
+
+                if ($effGroupBy -and ($allCols -contains $effGroupBy)) {
+                    $sRank = @{ 'NON_RECU'=3;'ABSENT'=3;'ECHEC'=3;'KO'=3;'ERREUR'=3
+                                'RETARD'=2;'WARNING'=2;'PARTIEL'=2
+                                'RECU'=1;'OK'=1;'SUCCES'=1 }
+                    foreach ($g in ($csv | Group-Object -Property $effGroupBy)) {
+                        $suffix = ''
+                        if ($effStatusColumn -and ($allCols -contains $effStatusColumn)) {
+                            $worst = 0; $worstVal = ''
+                            foreach ($row in $g.Group) {
+                                $sv = ([string]$row.$effStatusColumn).ToUpper().Trim()
+                                $rv = if ($sRank.ContainsKey($sv)) { $sRank[$sv] } else { 0 }
+                                if ($rv -gt $worst) { $worst = $rv; $worstVal = [string]$row.$effStatusColumn }
+                            }
+                            if ($worstVal) { $suffix = " [$($worstVal -replace '_',' ')]" }
+                        }
+                        $rws = @($g.Group | ForEach-Object { $r = $_; ,@($dispCols | ForEach-Object { [string]$r.$_ }) })
+                        $secHtml += Rnd-Table "$($g.Name)$suffix" $dispHdrs $rws
+                    }
+                } else {
+                    $rws = @($csv | ForEach-Object { $r = $_; ,@($dispCols | ForEach-Object { [string]$r.$_ }) })
+                    $secHtml += Rnd-Table (if($TableTitle){$TableTitle}else{'Donnees'}) $dispHdrs $rws
+                }
+            }
+        } catch { Log "Erreur TableCsv (GroupBy) : $($_.Exception.Message)" 'WARNING' }
+    } else {
+        $csvResult = Analyze-CsvFile $TableCsv $TableTitle $MaxCsvRows $MaxCsvCols
+        $secHtml += $csvResult.Sections
+    }
     $secHtml += Rnd-Separator
 }
 
