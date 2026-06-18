@@ -22,35 +22,30 @@
 <table width="100%" cellpadding="0" cellspacing="0" border="0"
        bgcolor="#EDEEEE" style="background-color:#EDEEEE;">
   <tr>
-    <td style="padding:16px 10px;">
+    <td style="padding:20px 12px;">
 
-      <!-- Carte principale avec bordure grise (cellspacing=1 sur #C8CACA) -->
-      <table width="100%" cellpadding="0" cellspacing="1" border="0"
-             bgcolor="#C8CACA" style="background-color:#C8CACA;width:100%;">
+      <!-- Carte principale -->
+      <table width="100%" cellpadding="0" cellspacing="0" border="0"
+             bgcolor="#FFFFFF" style="background-color:#FFFFFF;border-top:4px solid #00A8A8;">
         <tr>
-          <td bgcolor="#FFFFFF" style="background-color:#FFFFFF;">
+          <td>
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
 
-              <!-- BANDE STATUT (couleur dynamique, 4px) -->
+              <!-- HEADER CLAIR : fond blanc, bordure teal CL en haut -->
               <tr>
-                <td height="4" bgcolor="{{STATUS_COLOR}}"
-                    style="background-color:{{STATUS_COLOR}};font-size:0;line-height:4px;mso-line-height-rule:exactly;">&nbsp;</td>
-              </tr>
-
-              <!-- HEADER : fond très sombre, nom du job + badge env teal -->
-              <tr>
-                <td bgcolor="#2B2B2B" style="background-color:#2B2B2B;padding:16px 22px;">
+                <td style="padding:20px 24px 16px 24px;border-bottom:1px solid #EDEEEE;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td style="vertical-align:middle;">
-                        <div style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:bold;color:#FFFFFF;">{{JOB_NAME}}</div>
-                        <div style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#9ECECE;margin-top:5px;">{{DATE}} &agrave; {{HEURE}}</div>
+                        <div style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;font-weight:bold;color:#00A8A8;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">INEO &mdash; Exploitation</div>
+                        <div style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:bold;color:#2B2B2B;">{{JOB_NAME}}</div>
+                        <div style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;color:#6B7070;margin-top:4px;">{{DATE}} &agrave; {{HEURE}}</div>
                       </td>
-                      <td align="right" style="vertical-align:middle;white-space:nowrap;">
+                      <td align="right" style="vertical-align:top;white-space:nowrap;">
                         <table cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td bgcolor="#00A8A8" style="background-color:#00A8A8;padding:4px 11px;">
-                              <span style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:10px;font-weight:bold;color:#2B2B2B;text-transform:uppercase;letter-spacing:0.6px;">{{ENVIRONNEMENT}}</span>
+                            <td style="border:1px solid #00A8A8;padding:3px 10px;">
+                              <span style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:10px;font-weight:bold;color:#00A8A8;text-transform:uppercase;letter-spacing:0.6px;">{{ENVIRONNEMENT}}</span>
                             </td>
                           </tr>
                         </table>
@@ -60,38 +55,33 @@
                 </td>
               </tr>
 
-              <!-- BLOC STATUT : bandeau coloré gauche + badge + message -->
+              <!-- BANDE STATUT (couleur dynamique) -->
               <tr>
-                <td style="padding:18px 22px 14px 22px;">
-                  <table width="100%" cellpadding="0" cellspacing="0" border="0"
-                         bgcolor="{{STATUS_COLOR}}" style="background-color:{{STATUS_COLOR}};">
-                    <tr><td colspan="3" height="1" style="font-size:0;line-height:1px;">&nbsp;</td></tr>
+                <td height="3" bgcolor="{{STATUS_COLOR}}"
+                    style="background-color:{{STATUS_COLOR}};font-size:0;line-height:3px;mso-line-height-rule:exactly;">&nbsp;</td>
+              </tr>
+
+              <!-- BLOC STATUT : fond très clair, message -->
+              <tr>
+                <td bgcolor="#F7FAFA" style="background-color:#F7FAFA;padding:16px 24px;">
+                  <table cellpadding="0" cellspacing="0" border="0">
                     <tr>
-                      <td width="4" style="background-color:{{STATUS_COLOR}};font-size:0;">&nbsp;</td>
-                      <td bgcolor="#F7FAFA" style="background-color:#F7FAFA;padding:14px 18px;">
-                        <table cellpadding="0" cellspacing="0" border="0">
-                          <tr>
-                            <td bgcolor="{{STATUS_COLOR}}" style="background-color:{{STATUS_COLOR}};padding:5px 14px;white-space:nowrap;vertical-align:middle;">
-                              <span style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;font-weight:bold;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.7px;">{{STATUS_LABEL}}</span>
-                            </td>
-                            <td width="14" style="font-size:0;">&nbsp;</td>
-                            <td style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:13px;color:#2B2B2B;line-height:1.55;vertical-align:middle;">{{STATUS_MESSAGE}}</td>
-                          </tr>
-                        </table>
+                      <td bgcolor="{{STATUS_COLOR}}" style="background-color:{{STATUS_COLOR}};padding:4px 12px;white-space:nowrap;vertical-align:middle;">
+                        <span style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11px;font-weight:bold;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.7px;">{{STATUS_LABEL}}</span>
                       </td>
-                      <td width="1" style="background-color:{{STATUS_COLOR}};font-size:0;">&nbsp;</td>
+                      <td width="14" style="font-size:0;">&nbsp;</td>
+                      <td style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:13px;color:#2B2B2B;line-height:1.55;vertical-align:middle;">{{STATUS_MESSAGE}}</td>
                     </tr>
-                    <tr><td colspan="3" height="1" style="font-size:0;line-height:1px;">&nbsp;</td></tr>
                   </table>
                 </td>
               </tr>
 
-              <!-- SÉPARATEUR LÉGER -->
+              <!-- SÉPARATEUR -->
               <tr>
                 <td height="1" bgcolor="#EDEEEE" style="background-color:#EDEEEE;font-size:0;line-height:1px;">&nbsp;</td>
               </tr>
 
-              <!-- SECTIONS DYNAMIQUES (tableaux, étapes, résumé...) -->
+              <!-- SECTIONS DYNAMIQUES -->
               {{SECTIONS}}
 
               <!-- SÉPARATEUR -->
@@ -101,7 +91,7 @@
 
               <!-- SIGNATURE -->
               <tr>
-                <td style="padding:14px 22px 16px 22px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:13px;color:#2B2B2B;line-height:1.8;">
+                <td style="padding:14px 24px 16px 24px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:13px;color:#2B2B2B;line-height:1.8;">
                   Cordialement,<br>
                   <strong style="color:#2B2B2B;">{{EQUIPE}}</strong>
                 </td>
@@ -109,12 +99,12 @@
 
               <!-- SÉPARATEUR FOOTER -->
               <tr>
-                <td height="1" bgcolor="#C8CACA" style="background-color:#C8CACA;font-size:0;line-height:1px;mso-line-height-rule:exactly;">&nbsp;</td>
+                <td height="3" bgcolor="#00A8A8" style="background-color:#00A8A8;font-size:0;line-height:3px;mso-line-height-rule:exactly;">&nbsp;</td>
               </tr>
 
               <!--FOOTER_START-->
               <tr>
-                <td bgcolor="#F0F5F5" style="background-color:#F0F5F5;padding:10px 22px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:10px;color:#6B7070;line-height:1.6;">
+                <td bgcolor="#F0F5F5" style="background-color:#F0F5F5;padding:10px 24px;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:10px;color:#6B7070;line-height:1.6;">
                   Message g&eacute;n&eacute;r&eacute; automatiquement &mdash; Merci de ne pas r&eacute;pondre &agrave; cet email.<br>
                   Serveur&nbsp;: <strong style="color:#2B2B2B;">{{HOSTNAME}}</strong> &nbsp;&bull;&nbsp; {{DATE}} &agrave; {{HEURE}}
                 </td>
