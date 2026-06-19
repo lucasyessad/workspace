@@ -133,7 +133,6 @@ param(
 $ErrorActionPreference = 'Stop'
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
-$script:Chrono = [System.Diagnostics.Stopwatch]::StartNew()
 $script:Logs   = [System.Collections.Generic.List[string]]::new()
 
 function Log([string]$msg, [string]$level = 'INFO') {
@@ -1021,18 +1020,6 @@ if ($globalStats.Count -gt 0) {
     $secHtml += Rnd-StatsBar 'Metriques' $globalStats
     $secHtml += Rnd-Separator
 }
-
-# --- 10. Informations d'execution -------------------------------------------
-$script:Chrono.Stop()
-$execTime = $script:Chrono.Elapsed
-$execKv = @(
-    ,@('Duree execution', '{0:00}:{1:00}:{2:00}.{3:000}' -f $execTime.Hours, $execTime.Minutes, $execTime.Seconds, $execTime.Milliseconds)
-    ,@('Machine',         $env:COMPUTERNAME)
-    ,@('Utilisateur',     "$env:USERDOMAIN\$env:USERNAME")
-    ,@('Script',          'SendMailNotificationHTML v4.1')
-)
-if ($allAttachments.Count -gt 0) { $execKv += ,@('Pieces jointes', $allAttachments.Count.ToString()) }
-$secHtml += Rnd-Kv $execKv 'Informations d''execution'
 
 # ============================================================================
 # REMPLACEMENT DES PLACEHOLDERS + GENERATION DU CORPS
