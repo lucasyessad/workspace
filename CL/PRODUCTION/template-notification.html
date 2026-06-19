@@ -44,8 +44,16 @@
                       <td align="right" style="vertical-align:top;white-space:nowrap;">
                         <table cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td style="border:1px solid #00A8A8;padding:3px 10px;">
+                            <td align="center" style="border:1px solid #00A8A8;padding:3px 10px;">
                               <span style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:10px;font-weight:bold;color:#00A8A8;text-transform:uppercase;letter-spacing:0.6px;">{{ENVIRONNEMENT}}</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td height="8" style="font-size:0;line-height:8px;">&nbsp;</td>
+                          </tr>
+                          <tr>
+                            <td align="center" bgcolor="{{STATUS_COLOR}}" style="background-color:{{STATUS_COLOR}};padding:4px 10px;">
+                              <span style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:12px;font-weight:bold;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.7px;">{{STATUS_LABEL}}</span>
                             </td>
                           </tr>
                         </table>
@@ -61,19 +69,9 @@
                     style="background-color:{{STATUS_COLOR}};font-size:0;line-height:3px;mso-line-height-rule:exactly;">&nbsp;</td>
               </tr>
 
-              <!-- BLOC STATUT : fond très clair, message -->
+              <!-- BLOC STATUT : fond très clair, message seul -->
               <tr>
-                <td bgcolor="#F7FAFA" style="background-color:#F7FAFA;padding:16px 24px;">
-                  <table cellpadding="0" cellspacing="0" border="0">
-                    <tr>
-                      <td bgcolor="{{STATUS_COLOR}}" style="background-color:{{STATUS_COLOR}};padding:6px 14px;white-space:nowrap;vertical-align:middle;">
-                        <span style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:bold;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.7px;">{{STATUS_LABEL}}</span>
-                      </td>
-                      <td width="14" style="font-size:0;">&nbsp;</td>
-                      <td style="font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:13px;color:#2B2B2B;line-height:1.55;vertical-align:middle;">{{STATUS_MESSAGE}}</td>
-                    </tr>
-                  </table>
-                </td>
+                <td bgcolor="#F7FAFA" style="background-color:#F7FAFA;padding:16px 24px;border-left:4px solid {{STATUS_COLOR}};font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:13px;color:#2B2B2B;line-height:1.55;">{{STATUS_MESSAGE}}</td>
               </tr>
 
               <!-- SÉPARATEUR -->
@@ -83,6 +81,12 @@
 
               <!-- SECTIONS DYNAMIQUES -->
               {{SECTIONS}}
+
+              <!--MESSAGE_LIBRE_START-->
+              <tr>
+                <td bgcolor="#F7FAFA" style="background-color:#F7FAFA;padding:16px 24px;border-left:4px solid #00A8A8;font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:13px;color:#2B2B2B;line-height:1.55;">{{MESSAGE_LIBRE_TEXT}}</td>
+              </tr>
+              <!--MESSAGE_LIBRE_END-->
 
               <!-- SÉPARATEUR -->
               <tr>

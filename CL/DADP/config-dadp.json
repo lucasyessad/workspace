@@ -7,6 +7,8 @@
   "TemplatePath":  "${TEMPLATE_PATH}",
   "Environnement": "PROD",
   "EquipeNom":     "DSI - Exploitation",
+  "NomJob":        "IMR_DADP_CHARGE_IMAGE",
+  "MessageLibre":  "Note : les données sont arrêtées à J-1.",
 
   "Subject": "[{{STATUS_LABEL}}] [{{ENVIRONNEMENT}}] DADP - Chargement données partenaires - {{DATE}}",
 

@@ -65,7 +65,7 @@
 param(
     # --- OBLIGATOIRES --------------------------------------------------------
     [Parameter(Mandatory=$true)]  [string]   $ConfigFile,
-    [Parameter(Mandatory=$true)]  [string]   $NomJob,
+    [string]   $NomJob          = '',           # Nom du job (sinon lu depuis la config : cle "NomJob")
     [Parameter(Mandatory=$true)]  [string]   $Status,
 
     # --- HORODATAGE ----------------------------------------------------------
@@ -244,6 +244,7 @@ $TplPath  = $cfg.TemplatePath
 $Env_Name = if ($cfg.Environnement) { $cfg.Environnement } else { 'N/A' }
 $SubjTpl  = if ($cfg.Subject) { $cfg.Subject } else { '[{{STATUS_LABEL}}] [{{ENVIRONNEMENT}}] {{JOB_NAME}} - {{DATE}}' }
 $Equipe   = if ($cfg.EquipeNom) { $cfg.EquipeNom } else { "L'equipe INEO" }
+$effNomJob = if ($NomJob) { $NomJob } elseif ($cfg.NomJob) { [string]$cfg.NomJob } else { 'Traitement' }
 
 # Heritage depuis la config si non passe en parametre (logs)
 if (-not $LogDir -and $cfg.LogDir)                  { $LogDir       = $cfg.LogDir }
@@ -1011,9 +1012,10 @@ if ($Etapes) {
 }
 
 # --- 8. Message libre -------------------------------------------------------
-if ($MessageLibre) {
-    $secHtml += Rnd-Texte '' $MessageLibre '&#128172;'
-}
+# Priorite : -MessageLibre (ligne de commande) > MessageLibre (config JSON).
+# Le bloc HTML vit dans le template (entre <!--MESSAGE_LIBRE_START/END-->) ;
+# ici on ne fait que fournir le texte, puis retirer le bloc s'il est vide.
+$effMessageLibre = if ($MessageLibre) { $MessageLibre } elseif ($cfg.MessageLibre) { [string]$cfg.MessageLibre } else { '' }
 
 # --- 9. Statistiques globales (issues des analyses) -------------------------
 if ($globalStats.Count -gt 0) {
@@ -1025,7 +1027,7 @@ if ($globalStats.Count -gt 0) {
 # REMPLACEMENT DES PLACEHOLDERS + GENERATION DU CORPS
 # ============================================================================
 $vars = [ordered]@{
-    '{{JOB_NAME}}'       = $NomJob
+    '{{JOB_NAME}}'       = $effNomJob
     '{{STATUS}}'         = $Status
     '{{STATUS_LABEL}}'   = $statusLabel
     '{{DATE}}'           = $dateFmt
@@ -1035,7 +1037,8 @@ $vars = [ordered]@{
     '{{STATUS_COLOR}}'   = $stColor
     '{{HOSTNAME}}'       = $env:COMPUTERNAME
     '{{EQUIPE}}'         = $Equipe
-    '{{SECTIONS}}'       = $secHtml
+    '{{SECTIONS}}'           = $secHtml
+    '{{MESSAGE_LIBRE_TEXT}}' = $effMessageLibre
 }
 
 $subj = $SubjTpl
@@ -1048,6 +1051,10 @@ foreach ($k in $vars.Keys) {
 
 if ($NoFooter) {
     $body = $body -replace '(?s)<!--FOOTER_START-->.*?<!--FOOTER_END-->', ''
+}
+
+if (-not $effMessageLibre) {
+    $body = $body -replace '(?s)<!--MESSAGE_LIBRE_START-->.*?<!--MESSAGE_LIBRE_END-->', ''
 }
 
 # ============================================================================
