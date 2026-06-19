@@ -332,7 +332,7 @@ $DefaultStepDefault = @{ Icon = '&#9679;'; Color = '#888888'; Bold = $false }
 $DefaultTheme = @{
     Primary            = '#00A8A8'
     SectionTitleBg     = '#f8f9fa'
-    SectionTitleBorder = '#0056b3'
+    SectionTitleBorder = '#00A8A8'
     TableHeaderText    = '#666666'
     KvLabel            = '#00A8A8'
     PercentPositive    = '#28a745'
@@ -544,7 +544,7 @@ function Rnd-Etapes([array]$lines, [string]$title = 'Rapport d''ex&eacute;cution
 
 # Tableau de donnees. Les cellules de type pourcentage sont colorees :
 #   negatif -> rouge, positif non nul -> vert (zero = neutre).
-function Rnd-Table([string]$title, [array]$headers, [array]$rows, [string]$icon = '&#9783;') {
+function Rnd-Table([string]$title, [array]$headers, [array]$rows, [string]$icon = '') {
     $h = '<tr><td style="padding:10px 22px 18px 22px;">'
     $h += '<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="background-color:#ffffff;border:1px solid #eee;">'
     $h += '<tr><td style="padding:15px;">'
