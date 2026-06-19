@@ -27,13 +27,15 @@ set "SCEN_CTX=CTX_DEV"
 
 REM =====================================================================
 REM PARAMETRES  (>>> TODO : adapter les valeurs marquees <...> au site <<<)
+REM Bibliotheques %parmlib% / %datalib% / %proclib% definies par Chemin.bat :
+REM   JSON de config -> %parmlib%   |  donnees (CSV) -> %datalib%
+REM   procedures / outillage (PS1, template HTML) -> %proclib%
 REM =====================================================================
-set "PROCLIB=C:\proclib"
 set "SMTP_SERVER=<RELAIS_SMTP_INTERNE>"
-set "TEMPLATE_PATH=%PROCLIB%\CL\PRODUCTION\template-notification.html"
-set "DADP_CONFIG=%PROCLIB%\CL\DADP\config-dadp.json"
-set "SENDNOTIF=%PROCLIB%\CL\PRODUCTION\SendMailNotificationHTML.ps1"
-set "DADP_CSV=<CHEMIN_CSV_PRODUIT_PAR_ODI>\DADP_STOCK_EVOL_MAIL.csv"
+set "TEMPLATE_PATH=%proclib%\template-notification.html"
+set "DADP_CONFIG=%parmlib%\config-dadp.json"
+set "SENDNOTIF=%proclib%\SendMailNotificationHTML.ps1"
+set "DADP_CSV=%datalib%\DADP_STOCK_EVOL_MAIL.csv"
 
 REM =====================================================================
 REM HORODATAGE  (format attendu par le moteur : yyyyMMdd_HHmmss)
