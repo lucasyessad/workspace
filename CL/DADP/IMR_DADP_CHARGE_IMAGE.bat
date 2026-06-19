@@ -66,13 +66,7 @@ REM (GroupBy / Columns / Headers viennent de %DADP_CONFIG%)
 REM =====================================================================
 echo.
 echo ***** Envoi notification DADP (RC=%RC%, Statut=%MAIL_STATUS%)
-powershell -NoLogo -NoProfile -ExecutionPolicy Bypass ^
-  -File       "%SENDNOTIF%"            ^
-  -ConfigFile "%DADP_CONFIG%"          ^
-  -Status     "%MAIL_STATUS%"          ^
-  -NomJob     "IMR_DADP_CHARGE_IMAGE"  ^
-  -Horodatage "%TS%"                   ^
-  -TableCsv   "%DADP_CSV%"
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%SENDNOTIF%" -ConfigFile "%DADP_CONFIG%" -Status "%MAIL_STATUS%" -NomJob "IMR_DADP_CHARGE_IMAGE" -Horodatage "%TS%" -TableCsv "%DADP_CSV%"
 
 if errorlevel 1 echo [DADP] ATTENTION : echec d'envoi du mail (code=%ERRORLEVEL%)
 echo [DADP] Termine.
