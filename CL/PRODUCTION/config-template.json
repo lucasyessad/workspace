@@ -98,7 +98,7 @@
   "LogErrorPattern": "(?i)(error|erreur|exception|fatal|critical|echec|failed)",
   "_LogErrorPattern": "Expression régulière de détection des erreurs dans les logs",
 
-  "=== AFFICHAGE / TRI (v4.0, optionnel) ===": "",
+  "=== AFFICHAGE / TRI (optionnel) ===": "",
 
   "Delimiter": ";",
   "_Delimiter": "Délimiteur du CSV passé à -TableCsv (défaut ;)",
@@ -112,8 +112,8 @@
   "TitlePrefix": "",
   "_TitlePrefix": "Préfixe ajouté au titre de chaque groupe (ex: 'Expéditeur' -> 'Expéditeur EXP_BNP')",
 
-  "=== SURCHARGE DU THEME (v4.0, optionnel) ===": "",
-  "_theme_intro": "Tout le vocabulaire (statuts, couleurs, badges, étapes, palette) vit dans PRODUCTION/theme.json. Les clés ci-dessous permettent à CE job de surcharger le thème. Omettez-les pour utiliser les défauts du thème.",
+  "=== SURCHARGE DU VOCABULAIRE (optionnel) ===": "",
+  "_theme_intro": "Le moteur embarque des DÉFAUTS internes (statuts, couleurs, badges, étapes, palette) : aucun fichier externe n'est requis. Les clés ci-dessous permettent à CE job de surcharger ces défauts. Omettez-les pour utiliser les défauts du moteur.",
 
   "BadgeColors": {},
   "_BadgeColors": "Couleur des badges par valeur de StatusColumn. Ex: { \"NON_RECU\": { \"Bg\": \"#C62828\", \"Text\": \"#FFFFFF\" } } ou forme courte { \"NON_RECU\": \"#C62828\" }",
@@ -128,5 +128,5 @@
   "_Theme": "Surcharger la palette pour ce job. Ex: { \"Primary\": \"#005F73\", \"PercentNegative\": \"#B00020\" }",
 
   "ThemeFile": "",
-  "_ThemeFile": "Chemin d'un theme.json alternatif (défaut : PRODUCTION/theme.json à côté du moteur)"
+  "_ThemeFile": "OPTIONNEL (avancé) : chemin d'un fichier JSON de vocabulaire partagé par plusieurs jobs (mêmes clés que ci-dessus). Fusionné par-dessus les défauts du moteur, puis surchargé par CE fichier. Laisser '' pour n'utiliser que les défauts internes + les surcharges ci-dessus."
 }

@@ -1,5 +1,5 @@
 # ============================================================================
-# SendMailNotificationHTML.ps1 - MOTEUR UNIVERSEL DE NOTIFICATION HTML  (v4.0)
+# SendMailNotificationHTML.ps1 - MOTEUR UNIVERSEL DE NOTIFICATION HTML  (v4.1)
 # ============================================================================
 # Outil ORGANISATIONNEL commun a tous les traitements (YHM, DADP, futurs jobs).
 # A partir d'un fichier de configuration JSON par job + de parametres en ligne
@@ -8,14 +8,17 @@
 # PRINCIPE : l'intelligence metier reste dans le traitement (ODI / SQL / BAT).
 #            Ce moteur ne fait que METTRE EN FORME et ENVOYER, de facon generique.
 #
-# UN TRAITEMENT COMPLET = ce moteur + 1 config JSON par job (+ theme.json partage).
-# Il n'y a AUCUNE couche intermediaire : chaque BAT appelle directement ce
-# script. Tout le confort autrefois porte par un wrapper (scan de repertoires,
-# raccourci statistiques, priorite automatique) est integre ici.
+# UN TRAITEMENT COMPLET = ce moteur + 1 config JSON par job. Aucun autre fichier
+# n'est requis. Il n'y a AUCUNE couche intermediaire : chaque BAT appelle
+# directement ce script. Tout le confort autrefois porte par un wrapper (scan de
+# repertoires, raccourci statistiques, priorite automatique) est integre ici.
 #
-# RIEN N'EST CODE EN DUR : tout le vocabulaire (statuts, libelles, messages,
-# couleurs, badges, etapes, palette) vit dans theme.json (ressource partagee du
-# moteur). La config d'un job peut surcharger n'importe quelle cle (job > theme).
+# TOUT EST SURCHARGEABLE : le vocabulaire (statuts, libelles, messages, couleurs,
+# badges, etapes, palette) a des DEFAUTS internes au moteur. Ce ne sont pas des
+# valeurs metier figees : la config d'un job surcharge n'importe quelle cle
+# (Statuses / StatusMessages / BadgeColors / BadgeSeverity / StepBadges / Theme).
+# Un -ThemeFile optionnel permet, en plus, de partager un vocabulaire commun a
+# toute l'organisation. Precedence : config job > theme externe > defauts moteur.
 #
 # ----------------------------------------------------------------------------
 # CONTRAT D'APPEL (parametres) :
@@ -27,17 +30,22 @@
 #   Pieces jointes : -Attachments -AttachDir -AttachPattern
 #   Regroupement CSV (v3.2): -GroupBy -StatusColumn -Columns -Headers
 #                  (ces 4 peuvent aussi venir du JSON ; le parametre l'emporte)
-#   Affichage (v4.0): -Delimiter -SortBy -Descending -TitlePrefix -ThemeFile
+#   Affichage    : -Delimiter -SortBy -Descending -TitlePrefix
+#   Theme (opt.) : -ThemeFile (vocabulaire externe partage, sinon defauts moteur)
 #   Options      : -DryRun -ExportHtml -MailPriority -AutoPriority -OverrideTo
 #                  -OverrideCc -ExtraSubject -NoFooter -Verbose2
 #
 # HISTORIQUE :
-#   v4.0 : externalisation TOTALE du vocabulaire dans theme.json (statuts,
-#          libelles, messages, priorites, couleurs de bandeau, badges par ligne
-#          + gravite, vocabulaire des etapes, palette complete). Plus aucune
-#          valeur metier ni couleur en dur dans le moteur. Tri des lignes
-#          (-SortBy/-Descending), prefixe de titre (-TitlePrefix), delimiteur
-#          configurable (-Delimiter). Surcharge par la config du job (job > theme).
+#   v4.1 : suppression du fichier theme.json. Le vocabulaire (statuts, libelles,
+#          messages, priorites, couleurs de bandeau, badges par ligne + gravite,
+#          vocabulaire des etapes, palette) revient dans le moteur sous forme de
+#          DEFAUTS surchargeables par la config du job. -ThemeFile devient
+#          optionnel (partage d'un vocabulaire commun). Plus aucun fichier
+#          externe obligatoire : moteur + 1 config = traitement complet.
+#   v4.0 : externalisation du vocabulaire (statuts, libelles, messages,
+#          priorites, couleurs, badges + gravite, etapes, palette). Tri des
+#          lignes (-SortBy/-Descending), prefixe de titre (-TitlePrefix),
+#          delimiteur configurable (-Delimiter). Surcharge par la config du job.
 #   v3.3 : moteur autosuffisant (suppression du wrapper Invoke-MailNotification).
 #          Integration de : scan de repertoire fichiers (-FileDir/-FilePattern),
 #          scan de pieces jointes (-AttachDir/-AttachPattern), raccourci
@@ -111,12 +119,12 @@ param(
     [string]   $Columns         = '',            # Colonnes a afficher (CSV, surcharge config)
     [string]   $Headers         = '',            # En-tetes affichees (meme ordre que -Columns)
 
-    # --- AFFICHAGE / TRI / THEME (v4.0) -------------------------------------
+    # --- AFFICHAGE / TRI / THEME --------------------------------------------
     [string]   $Delimiter       = '',            # Delimiteur CSV (defaut ; via config, sinon ;)
     [string]   $SortBy          = '',            # Trier les lignes de chaque groupe par cette colonne
     [switch]   $Descending,                      # Tri descendant
     [string]   $TitlePrefix     = '',            # Prefixe du titre de groupe (ex: "Expediteur")
-    [string]   $ThemeFile       = ''             # Chemin de theme.json (defaut : a cote du script)
+    [string]   $ThemeFile       = ''             # OPTIONNEL : theme externe partage (sinon defauts internes)
 )
 
 # ============================================================================
@@ -188,7 +196,7 @@ function Safe-Read([string]$path, [int]$maxLines = 0) {
     return @()
 }
 
-Log "=== SendMailNotificationHTML v4.0 ==="
+Log "=== SendMailNotificationHTML v4.1 ==="
 Log "Job: $NomJob | Status: $Status | Config: $ConfigFile"
 
 # ============================================================================
@@ -247,11 +255,14 @@ if ($cfg.LogErrorPattern)                           { $LogErrorPattern = $cfg.Lo
 Log "Config chargee : SMTP=$SmtpSrv, Env=$Env_Name, To=$($To -join ',')"
 
 # ============================================================================
-# CHARGEMENT DU THEME (vocabulaire + palette)  -  theme.json partage
+# VOCABULAIRE + PALETTE  (defauts internes du moteur, surchargeables)
 # ============================================================================
 # Tout le vocabulaire (statuts, libelles, messages, couleurs, badges, etapes,
-# palette) vit dans theme.json. Le moteur ne code RIEN en dur. La config du job
-# peut surcharger n'importe quelle cle (precedence : job > theme).
+# palette) a des DEFAUTS internes ci-dessous. Ce ne sont PAS des valeurs metier
+# figees : la config d'un job peut surcharger n'importe quelle cle via les cles
+# Statuses / StatusMessages / BadgeColors / BadgeSeverity / StepBadges / Theme.
+# Precedence : config du job > theme externe optionnel (-ThemeFile) > defauts.
+# Aucun fichier externe n'est requis : moteur + 1 config = traitement complet.
 
 # PSCustomObject (issu de ConvertFrom-Json) -> hashtable insensible a la casse
 function ConvertTo-Ht([object]$o) {
@@ -287,24 +298,76 @@ function Norm-Key([string]$s) {
     return ([string]$s).ToUpper().Replace('_', ' ').Trim()
 }
 
-# Localisation : -ThemeFile > config.ThemeFile > theme.json (a cote du script)
-$ThemePath = if ($ThemeFile)      { $ThemeFile }
-             elseif ($cfg.ThemeFile) { [string]$cfg.ThemeFile }
-             else { Join-Path $PSScriptRoot 'theme.json' }
-if (-not (Test-Path -LiteralPath $ThemePath)) {
-    Log "Theme introuvable : $ThemePath (ressource obligatoire du moteur)" 'ERROR'
-    exit 1
+# --- DEFAUTS INTERNES (anciennement theme.json) -----------------------------
+$DefaultStatuses = @{
+    'OK'            = @{ Label = 'SUCCÈS';         Color = '#00A8A8'; Priority = 'Normal'; Message = "Le traitement s'est terminé avec succès." }
+    'SUCCES'        = @{ Label = 'SUCCÈS';         Color = '#00A8A8'; Priority = 'Normal'; Message = "Le traitement s'est terminé avec succès." }
+    'ERREUR'        = @{ Label = 'ÉCHEC';          Color = '#C0392B'; Priority = 'High';   Message = "Une ou plusieurs erreurs sont survenues." }
+    'ECHEC'         = @{ Label = 'ÉCHEC';          Color = '#C0392B'; Priority = 'High';   Message = "Une ou plusieurs erreurs sont survenues." }
+    'WARNING'       = @{ Label = 'AVERTISSEMENT';  Color = '#D8A825'; Priority = 'Normal'; Message = "Le traitement s'est terminé avec des avertissements." }
+    'INFO'          = @{ Label = 'INFORMATION';    Color = '#2E75B6'; Priority = 'Normal'; Message = "Information transmise par le traitement." }
+    'AUCUN_FICHIER' = @{ Label = 'AUCUN FICHIER';  Color = '#6BCFCF'; Priority = 'Normal'; Message = "Aucun fichier à traiter." }
+    'PARTIEL'       = @{ Label = 'SUCCÈS PARTIEL'; Color = '#E67E22'; Priority = 'Normal'; Message = "Le traitement s'est terminé partiellement." }
 }
-try {
-    $themeObj = (Get-Content -LiteralPath $ThemePath -Raw -Encoding UTF8) | ConvertFrom-Json -ErrorAction Stop
-} catch {
-    Log "Erreur de parsing theme.json : $($_.Exception.Message)" 'ERROR'
-    exit 1
+$DefaultStatusDefault = @{ Label = ''; Color = '#888888'; Priority = 'Normal'; Message = '' }
+$DefaultBadgeColors = @{
+    'RECU'     = @{ Bg = '#2E7D32'; Text = '#FFFFFF' }
+    'RETARD'   = @{ Bg = '#E65100'; Text = '#FFFFFF' }
+    'NON_RECU' = @{ Bg = '#C62828'; Text = '#FFFFFF' }
 }
-Log "Theme charge : $ThemePath"
+$DefaultBadgeSeverity = @{
+    'NON_RECU' = 3; 'ABSENT' = 3; 'ECHEC' = 3; 'KO' = 3; 'ERREUR' = 3
+    'RETARD'   = 2; 'WARNING' = 2; 'PARTIEL' = 2
+    'RECU'     = 1; 'OK' = 1; 'SUCCES' = 1
+}
+$DefaultStepBadges = @{
+    'SUCCES'  = @{ Icon = '&#10003;'; Color = '#00A8A8'; Bold = $true }
+    'OK'      = @{ Icon = '&#10003;'; Color = '#00A8A8'; Bold = $true }
+    'ECHEC'   = @{ Icon = '&#10007;'; Color = '#C0392B'; Bold = $true }
+    'ERREUR'  = @{ Icon = '&#10007;'; Color = '#C0392B'; Bold = $true }
+    'WARNING' = @{ Icon = '&#9888;';  Color = '#D8A825'; Bold = $false }
+    'INFO'    = @{ Icon = '&#8505;';  Color = '#2E75B6'; Bold = $false }
+    'SKIP'    = @{ Icon = '&#8594;';  Color = '#AAAAAA'; Bold = $false }
+}
+$DefaultStepDefault = @{ Icon = '&#9679;'; Color = '#888888'; Bold = $false }
+$DefaultTheme = @{
+    Primary            = '#00A8A8'
+    SectionTitleBg     = '#f8f9fa'
+    SectionTitleBorder = '#0056b3'
+    TableHeaderText    = '#666666'
+    KvLabel            = '#00A8A8'
+    PercentPositive    = '#28a745'
+    PercentPositiveBg  = '#eafaf1'
+    PercentNegative    = '#dc3545'
+    PercentNegativeBg  = '#fdf2f2'
+    LogError           = '#F44747'
+    LogWarning         = '#CCA700'
+    LogSuccess         = '#6A9955'
+    StatsPalette       = @('#00A8A8', '#2E75B6', '#D8A825', '#C0392B', '#6BCFCF', '#E67E22', '#8E44AD', '#27AE60')
+}
 
-# Statuts (libelle/couleur/priorite/message) + surcharge config
-$script:Statuses = Merge-Ht (ConvertTo-Ht $themeObj.Statuses) $cfg.Statuses
+# --- THEME EXTERNE OPTIONNEL (-ThemeFile ou config.ThemeFile) ---------------
+# Avance : permet a une organisation de partager un vocabulaire commun. S'il est
+# fourni et existe, il est fusionne PAR-DESSUS les defauts internes. Sinon, on
+# utilise les defauts. Aucune erreur si absent.
+$themeObj = $null
+$ThemePath = if ($ThemeFile) { $ThemeFile } elseif ($cfg.ThemeFile) { [string]$cfg.ThemeFile } else { '' }
+if ($ThemePath) {
+    if (Test-Path -LiteralPath $ThemePath) {
+        try {
+            $themeObj = (Get-Content -LiteralPath $ThemePath -Raw -Encoding UTF8) | ConvertFrom-Json -ErrorAction Stop
+            Log "Theme externe charge : $ThemePath"
+        } catch {
+            Log "Theme externe illisible ($ThemePath), defauts internes utilises : $($_.Exception.Message)" 'WARNING'
+        }
+    } else {
+        Log "Theme externe introuvable ($ThemePath), defauts internes utilises" 'WARNING'
+    }
+}
+
+# Statuts (libelle/couleur/priorite/message) : defauts > theme externe > config
+$script:Statuses = Merge-Ht $DefaultStatuses $(if ($themeObj) { $themeObj.Statuses } else { $null })
+$script:Statuses = Merge-Ht $script:Statuses $cfg.Statuses
 # Surcharge des messages via la cle historique StatusMessages (Message par statut)
 if ($cfg.StatusMessages) {
     foreach ($p in $cfg.StatusMessages.PSObject.Properties) {
@@ -312,18 +375,21 @@ if ($cfg.StatusMessages) {
         $script:Statuses[$p.Name]['Message'] = $p.Value
     }
 }
-$script:StatusDefault = ConvertTo-Ht $themeObj.DefaultStatus
+$script:StatusDefault = Merge-Ht $DefaultStatusDefault $(if ($themeObj) { $themeObj.DefaultStatus } else { $null })
 
 # Vocabulaire des etapes
-$script:StepBadges  = Merge-Ht (ConvertTo-Ht $themeObj.StepBadges) $cfg.StepBadges
-$script:StepDefault = ConvertTo-Ht $themeObj.StepDefault
+$script:StepBadges  = Merge-Ht $DefaultStepBadges $(if ($themeObj) { $themeObj.StepBadges } else { $null })
+$script:StepBadges  = Merge-Ht $script:StepBadges $cfg.StepBadges
+$script:StepDefault = Merge-Ht $DefaultStepDefault $(if ($themeObj) { $themeObj.StepDefault } else { $null })
 
 # Palette
-$script:Theme = Merge-Ht (ConvertTo-Ht $themeObj.Theme) $cfg.Theme
+$script:Theme = Merge-Ht $DefaultTheme $(if ($themeObj) { $themeObj.Theme } else { $null })
+$script:Theme = Merge-Ht $script:Theme $cfg.Theme
 
 # Badges par ligne : couleurs et gravite, cles normalisees (MAJUSCULE, _ -> espace)
 $script:BadgeColors = @{}
-$bcSrc = Merge-Ht (ConvertTo-Ht $themeObj.BadgeColors) $cfg.BadgeColors
+$bcSrc = Merge-Ht $DefaultBadgeColors $(if ($themeObj) { $themeObj.BadgeColors } else { $null })
+$bcSrc = Merge-Ht $bcSrc $cfg.BadgeColors
 foreach ($k in @($bcSrc.Keys)) {
     $v = $bcSrc[$k]
     if ($v -is [hashtable]) {
@@ -336,7 +402,8 @@ foreach ($k in @($bcSrc.Keys)) {
     $script:BadgeColors[(Norm-Key $k)] = @{ Bg = $bg; Text = $tx; Border = $bd }
 }
 $script:BadgeSeverity = @{}
-$bsSrc = Merge-Ht (ConvertTo-Ht $themeObj.BadgeSeverity) $cfg.BadgeSeverity
+$bsSrc = Merge-Ht $DefaultBadgeSeverity $(if ($themeObj) { $themeObj.BadgeSeverity } else { $null })
+$bsSrc = Merge-Ht $bsSrc $cfg.BadgeSeverity
 foreach ($k in @($bsSrc.Keys)) { $script:BadgeSeverity[(Norm-Key $k)] = [int]$bsSrc[$k] }
 
 # ============================================================================
@@ -962,7 +1029,7 @@ $execKv = @(
     ,@('Duree execution', '{0:00}:{1:00}:{2:00}.{3:000}' -f $execTime.Hours, $execTime.Minutes, $execTime.Seconds, $execTime.Milliseconds)
     ,@('Machine',         $env:COMPUTERNAME)
     ,@('Utilisateur',     "$env:USERDOMAIN\$env:USERNAME")
-    ,@('Script',          'SendMailNotificationHTML v4.0')
+    ,@('Script',          'SendMailNotificationHTML v4.1')
 )
 if ($allAttachments.Count -gt 0) { $execKv += ,@('Pieces jointes', $allAttachments.Count.ToString()) }
 $secHtml += Rnd-Kv $execKv 'Informations d''execution'

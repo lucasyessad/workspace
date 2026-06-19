@@ -223,23 +223,24 @@ set "TEMPLATE_PATH=C:\proclib\CL\PRODUCTION\template-notification.html"
 > `GroupBy`, `StatusColumn`, `Columns`, `Headers` peuvent être mis **soit dans la
 > config, soit en paramètre** de ligne de commande. Le paramètre l'emporte.
 
-## 5bis. Le thème `theme.json` — rien n'est codé en dur
+## 5bis. Le vocabulaire — défauts du moteur, tout surchargeable
 
-Tout le **vocabulaire** et toute la **palette** vivent dans
-`PRODUCTION/theme.json`, partagé par tous les jobs. Le moteur ne connaît **aucun**
-statut ni couleur a priori. On peut donc tout changer **sans toucher au
-PowerShell**.
+Tout le **vocabulaire** et toute la **palette** ont des **défauts internes** au
+moteur : **aucun fichier externe n'est nécessaire**. Ces défauts ne sont pas
+figés — chaque clé peut être **surchargée par la config du job**, sans toucher au
+PowerShell.
 
-| Bloc du thème | Définit |
+| Clé de config | Définit |
 |---|---|
 | `Statuses` | Par statut : `Label`, `Color` (bandeau), `Priority`, `Message`. |
+| `StatusMessages` | Raccourci pour ne surcharger que le `Message` d'un statut. |
 | `BadgeColors` | Couleur des badges par ligne (par valeur de `StatusColumn`). |
 | `BadgeSeverity` | Gravité (nombre) de chaque statut → choix de la « pire » ligne d'un groupe. |
 | `StepBadges` | Icône + couleur du vocabulaire des étapes (`[SUCCES]`, `[ECHEC]`…). |
 | `Theme` | Palette : couleur primaire, couleurs des %, des logs, des métriques. |
 
 **Inventer un statut** (ex. un job de surveillance avec `EN_COURS`) — il suffit de
-l'ajouter, soit dans `theme.json` (pour tous), soit dans la config du job :
+l'ajouter dans la config du job :
 
 ```json
 "Statuses": {
@@ -254,13 +255,15 @@ l'ajouter, soit dans `theme.json` (pour tous), soit dans la config du job :
 "BadgeColors": { "NON_RECU": { "Bg": "#B00020", "Text": "#FFFFFF" } }
 ```
 
-**Précédence** : `paramètre CLI` > `config du job` > `theme.json`. Une clé absente
-de la config du job retombe sur le thème ; une clé absente du thème prend une
-valeur neutre (jamais d'erreur).
+**Précédence** : `paramètre CLI` > `config du job` > `-ThemeFile (optionnel)` >
+`défauts du moteur`. Une clé absente de la config retombe sur les défauts ; rien
+n'est jamais en erreur pour une clé manquante.
 
-> ⚠️ `theme.json` est une **ressource obligatoire** du moteur (comme le template).
-> Il doit rester à côté de `SendMailNotificationHTML.ps1` (ou être désigné par
-> `-ThemeFile` / la clé `ThemeFile` de la config).
+> 💡 **`-ThemeFile` (optionnel, avancé)** : si plusieurs jobs doivent partager un
+> même vocabulaire commun, on peut le décrire une seule fois dans un fichier JSON
+> (mêmes clés que ci-dessus) et le désigner via `-ThemeFile` ou la clé
+> `ThemeFile` de la config. Il est fusionné par-dessus les défauts du moteur, et
+> la config du job garde le dernier mot. Sans lui, les défauts internes suffisent.
 
 ---
 
