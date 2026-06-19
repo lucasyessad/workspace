@@ -57,24 +57,24 @@ REM =====================================================================
 REM STATUT GLOBAL DU MAIL (a partir du code retour ODI)
 REM =====================================================================
 set "MAIL_STATUS=SUCCES"
-if "!RC!" NEQ "0" set "MAIL_STATUS=ERREUR"
-if "!RC!"=="1"    set "MAIL_STATUS=WARNING"
+if %RC% NEQ 0 set "MAIL_STATUS=ERREUR"
+if %RC%==1   set "MAIL_STATUS=WARNING"
 
 REM =====================================================================
 REM ENVOI DE LA NOTIFICATION
 REM (GroupBy / Columns / Headers viennent de %DADP_CONFIG%)
 REM =====================================================================
 echo.
-echo ***** Envoi notification DADP (RC=!RC!, Statut=!MAIL_STATUS!)
+echo ***** Envoi notification DADP (RC=%RC%, Statut=%MAIL_STATUS%)
 powershell -NoLogo -NoProfile -ExecutionPolicy Bypass ^
   -File       "%SENDNOTIF%"            ^
   -ConfigFile "%DADP_CONFIG%"          ^
-  -Status     "!MAIL_STATUS!"          ^
+  -Status     "%MAIL_STATUS%"          ^
   -NomJob     "IMR_DADP_CHARGE_IMAGE"  ^
-  -Horodatage "!TS!"                   ^
+  -Horodatage "%TS%"                   ^
   -TableCsv   "%DADP_CSV%"
 
 if errorlevel 1 echo [DADP] ATTENTION : echec d'envoi du mail (code=%ERRORLEVEL%)
 echo [DADP] Termine.
 
-exit /B !RC!
+exit /B %RC%
