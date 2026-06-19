@@ -1,5 +1,5 @@
 # ============================================================================
-# SendMailNotificationHTML.ps1 - MOTEUR UNIVERSEL DE NOTIFICATION HTML  (v4.1)
+# SendMailNotificationHTML.ps1 - MOTEUR UNIVERSEL DE NOTIFICATION HTML  (v4.2)
 # ============================================================================
 # Outil ORGANISATIONNEL commun a tous les traitements (YHM, DADP, futurs jobs).
 # A partir d'un fichier de configuration JSON par job + de parametres en ligne
@@ -22,7 +22,7 @@
 #
 # ----------------------------------------------------------------------------
 # CONTRAT D'APPEL (parametres) :
-#   Obligatoires : -ConfigFile -NomJob -Status
+#   Obligatoires : -ConfigFile -Status   | -NomJob optionnel (cle JSON "NomJob" sinon)
 #   Horodatage   : -Horodatage "yyyyMMdd_HHmmss"
 #   Contenu      : -KeyValues -Etapes -Stats -MessageLibre -TableCsv -TableTitle
 #                  -SectionFile -SectionsInline
@@ -36,6 +36,10 @@
 #                  -OverrideCc -ExtraSubject -NoFooter -Verbose2
 #
 # HISTORIQUE :
+#   v4.2 : -NomJob devient optionnel (lu depuis la config JSON si absent).
+#          Conversion \n -> <br/> pour STATUS_MESSAGE et MESSAGE_LIBRE_TEXT.
+#          Log initial corrige (apres chargement config, avec effNomJob).
+#          Suppression de {{STATUS}} inutilise dans les vars du template.
 #   v4.1 : suppression du fichier theme.json. Le vocabulaire (statuts, libelles,
 #          messages, priorites, couleurs de bandeau, badges par ligne + gravite,
 #          vocabulaire des etapes, palette) revient dans le moteur sous forme de
@@ -195,8 +199,8 @@ function Safe-Read([string]$path, [int]$maxLines = 0) {
     return @()
 }
 
-Log "=== SendMailNotificationHTML v4.1 ==="
-Log "Job: $NomJob | Status: $Status | Config: $ConfigFile"
+Log "=== SendMailNotificationHTML v4.2 ==="
+Log "Status: $Status | Config: $ConfigFile"
 
 # ============================================================================
 # CHARGEMENT DE LA CONFIGURATION JSON
@@ -252,7 +256,7 @@ if ($cfg.LogPattern -and $LogPattern -eq '*.log')   { $LogPattern   = $cfg.LogPa
 if ($cfg.LogTailLines)                              { $LogTailLines = [int]$cfg.LogTailLines }
 if ($cfg.LogErrorPattern)                           { $LogErrorPattern = $cfg.LogErrorPattern }
 
-Log "Config chargee : SMTP=$SmtpSrv, Env=$Env_Name, To=$($To -join ',')"
+Log "Job: $effNomJob | Config chargee : SMTP=$SmtpSrv, Env=$Env_Name, To=$($To -join ',')"
 
 # ============================================================================
 # VOCABULAIRE + PALETTE  (defauts internes du moteur, surchargeables)
@@ -1027,18 +1031,17 @@ if ($globalStats.Count -gt 0) {
 # REMPLACEMENT DES PLACEHOLDERS + GENERATION DU CORPS
 # ============================================================================
 $vars = [ordered]@{
-    '{{JOB_NAME}}'       = $effNomJob
-    '{{STATUS}}'         = $Status
-    '{{STATUS_LABEL}}'   = $statusLabel
-    '{{DATE}}'           = $dateFmt
-    '{{HEURE}}'          = $heureFmt
-    '{{STATUS_MESSAGE}}' = $stMsg
-    '{{ENVIRONNEMENT}}'  = $Env_Name
-    '{{STATUS_COLOR}}'   = $stColor
-    '{{HOSTNAME}}'       = $env:COMPUTERNAME
-    '{{EQUIPE}}'         = $Equipe
+    '{{JOB_NAME}}'           = $effNomJob
+    '{{STATUS_LABEL}}'       = $statusLabel
+    '{{DATE}}'               = $dateFmt
+    '{{HEURE}}'              = $heureFmt
+    '{{STATUS_MESSAGE}}'     = ($stMsg -replace "`r?`n", '<br/>')
+    '{{ENVIRONNEMENT}}'      = $Env_Name
+    '{{STATUS_COLOR}}'       = $stColor
+    '{{HOSTNAME}}'           = $env:COMPUTERNAME
+    '{{EQUIPE}}'             = $Equipe
     '{{SECTIONS}}'           = $secHtml
-    '{{MESSAGE_LIBRE_TEXT}}' = $effMessageLibre
+    '{{MESSAGE_LIBRE_TEXT}}' = ($effMessageLibre -replace "`r?`n", '<br/>')
 }
 
 $subj = $SubjTpl
