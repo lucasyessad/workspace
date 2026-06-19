@@ -154,13 +154,19 @@ powershell -ExecutionPolicy Bypass -File CL\PRODUCTION\SendMailNotificationHTML.
 ```
 
 `apercu.html` contient alors le rendu exact du mail (à ouvrir dans un navigateur).
+(Ci-dessus, chemins relatifs au dépôt pour un test local. Sur le serveur, les
+fichiers vivent dans les bibliothèques `%proclib%` (moteur + template),
+`%parmlib%` (config JSON) et `%datalib%` (CSV), désignées par `Chemin.bat`.)
 
 ## Ajouter un nouveau job
 
-1. Créer `MONJOB/config-monjob.json` (format plat ci-dessus).
-2. Dans le BAT du job : positionner `SMTP_SERVER` / `TEMPLATE_PATH`, calculer le
-   statut, appeler `SendMailNotificationHTML.ps1` avec la config et le contenu
-   voulu (`-KeyValues`, `-Etapes`, `-TableCsv` + `-GroupBy`…).
+1. Déposer `config-monjob.json` (format plat ci-dessus) dans `%parmlib%`. Le
+   moteur et le template restent partagés dans `%proclib%`.
+2. Dans le BAT du job : charger `Chemin.bat`, positionner `SMTP_SERVER` /
+   `TEMPLATE_PATH` (`%proclib%\template-notification.html`), calculer le statut,
+   appeler `%proclib%\SendMailNotificationHTML.ps1` avec `-ConfigFile`
+   `%parmlib%\config-monjob.json` et le contenu voulu (`-KeyValues`, `-Etapes`,
+   `-TableCsv` pointant `%datalib%` + `-GroupBy`…).
 3. Aucune modification du moteur : tout passe par la config et les paramètres.
 
 ## Statut global vs statut par ligne

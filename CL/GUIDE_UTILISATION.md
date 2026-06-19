@@ -62,8 +62,12 @@ Les 3 fichiers de production :
 - **Windows** avec **PowerShell 5.1** (présent par défaut) ou supérieur.
 - Un **relais SMTP** interne joignable (port 25 en général) — le moteur utilise
   `Send-MailMessage`.
-- Les fichiers `.ps1`, `.html`, `.json` déposés sur le serveur (ex. dans
-  `C:\proclib\CL\`).
+- Les fichiers déposés sur le serveur dans les **bibliothèques standard**
+  (définies par `Chemin.bat`) :
+  - `%proclib%` → procédures / outillage : `SendMailNotificationHTML.ps1`,
+    `template-notification.html`, `Notify.bat` ;
+  - `%parmlib%` → fichiers de **configuration** JSON : `config-<job>.json` ;
+  - `%datalib%` → **données** : le CSV produit par ODI.
 
 L'exécution se fait toujours avec ces options (déjà incluses dans les BAT
 fournis), pour ne pas dépendre de la politique d'exécution du serveur :
@@ -217,7 +221,7 @@ c'est le BAT qui fixe les valeurs du serveur.
 
 ```bat
 set "SMTP_SERVER=smtp.interne.creditlogement.fr"
-set "TEMPLATE_PATH=C:\proclib\CL\PRODUCTION\template-notification.html"
+set "TEMPLATE_PATH=%proclib%\template-notification.html"
 ```
 
 > `GroupBy`, `StatusColumn`, `Columns`, `Headers` peuvent être mis **soit dans la
@@ -334,12 +338,12 @@ Valeurs de `-Status` reconnues : `SUCCES`/`OK`, `WARNING`, `ERREUR`/`ECHEC`,
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
-REM --- Paramètres du serveur ---
-set "PROCLIB=C:\proclib"
+REM --- Bibliotheques (definies par Chemin.bat) + parametres serveur ---
+call e:\dsi\exploit\parmlib\Chemin.bat
 set "SMTP_SERVER=smtp.interne.creditlogement.fr"
-set "TEMPLATE_PATH=%PROCLIB%\CL\PRODUCTION\template-notification.html"
-set "ENGINE=%PROCLIB%\CL\PRODUCTION\SendMailNotificationHTML.ps1"
-set "CONFIG=%PROCLIB%\CL\MONJOB\config-monjob.json"
+set "TEMPLATE_PATH=%proclib%\template-notification.html"
+set "ENGINE=%proclib%\SendMailNotificationHTML.ps1"
+set "CONFIG=%parmlib%\config-monjob.json"
 
 REM --- Mon traitement ---
 call mon_traitement.bat
@@ -374,7 +378,7 @@ Le BAT ne fait que passer le CSV ; **tout le reste est dans la config**
 ```bat
 powershell -NoLogo -NoProfile -ExecutionPolicy Bypass ^
   -File       "%ENGINE%"                ^
-  -ConfigFile "%PROCLIB%\CL\DADP\config-dadp.json" ^
+  -ConfigFile "%parmlib%\config-dadp.json" ^
   -Status     "!MAIL_STATUS!"           ^
   -NomJob     "IMR_DADP_CHARGE_IMAGE"   ^
   -Horodatage "!TS!"                    ^
@@ -408,8 +412,8 @@ le CSV de rejets est joint.
 Pour un appel rapide sans écrire la longue ligne PowerShell :
 
 ```bat
-call C:\proclib\CL\PRODUCTION\Notify.bat ^
-     CONFIG=C:\proclib\CL\MONJOB\config-monjob.json ^
+call %proclib%\Notify.bat ^
+     CONFIG=%parmlib%\config-monjob.json ^
      JOB=MON_JOB ^
      STATUS=ERREUR ^
      MESSAGE="Échec du chargement, voir les logs" ^
@@ -425,10 +429,10 @@ moteur** (aucune couche intermédiaire).
 ```bat
 powershell -NoLogo -NoProfile -ExecutionPolicy Bypass ^
   -File       "%ENGINE%" ^
-  -ConfigFile "C:\proclib\CL\DADP\config-dadp.json" ^
+  -ConfigFile "%parmlib%\config-dadp.json" ^
   -NomJob     "IMR_DADP_CHARGE_IMAGE" ^
   -Status     "SUCCES" ^
-  -TableCsv   "C:\proclib\CL\DADP\DADP_STOCK_EVOL_MAIL_exemple.csv" ^
+  -TableCsv   "%datalib%\DADP_STOCK_EVOL_MAIL_exemple.csv" ^
   -DryRun -ExportHtml "C:\temp\apercu.html"
 ```
 
@@ -439,14 +443,17 @@ pour vérifier la mise en forme **et les accents** avant la mise en production.
 
 ## 8. Ajouter un nouveau traitement (pas à pas)
 
-1. **Créer le dossier et la config** : `CL\MONJOB\config-monjob.json` (copier le
-   modèle du [§5](#5-le-fichier-de-configuration-json), l'enregistrer en
-   **UTF-8**, renseigner destinataires / sujet / messages).
+1. **Créer la config** : `%parmlib%\config-monjob.json` (copier le modèle du
+   [§5](#5-le-fichier-de-configuration-json), l'enregistrer en **UTF-8**,
+   renseigner destinataires / sujet / messages). Le moteur et le template restent
+   partagés dans `%proclib%` — rien à dupliquer.
 2. **Dans le BAT du job** :
-   - poser `SMTP_SERVER` et `TEMPLATE_PATH` ;
+   - charger les bibliothèques (`call …\Chemin.bat`) puis poser `SMTP_SERVER` et
+     `TEMPLATE_PATH` (`%proclib%\template-notification.html`) ;
    - lancer le traitement et **calculer le statut** à partir du code retour ;
-   - appeler `SendMailNotificationHTML.ps1` avec `-ConfigFile`, `-NomJob`,
-     `-Status` et le contenu voulu (`-KeyValues`, `-Etapes`, `-TableCsv`…).
+   - appeler `%proclib%\SendMailNotificationHTML.ps1` avec `-ConfigFile`
+     (`%parmlib%\config-monjob.json`), `-NomJob`, `-Status` et le contenu voulu
+     (`-KeyValues`, `-Etapes`, `-TableCsv` pointant le CSV dans `%datalib%`…).
 3. **C'est tout.** Aucune modification du moteur ni du template : l'affichage se
    pilote par la config et les paramètres.
 

@@ -28,7 +28,7 @@
   "=== TEMPLATE ===": "",
 
   "TemplatePath": "${TEMPLATE_PATH}",
-  "_TemplatePath": "Remplace par ${TEMPLATE_PATH} (variable BAT) ou chemin absolu ex: C:\\proclib\\CL\\PRODUCTION\\template-notification.html",
+  "_TemplatePath": "Remplace par ${TEMPLATE_PATH} (variable BAT) ou chemin absolu ex: %proclib%\\template-notification.html",
 
   "=== IDENTITE ===": "",
 
