@@ -1,6 +1,6 @@
 {
-  "_commentaire": "MODELE DE CONFIGURATION â€” copier ce fichier dans votre dossier job",
-  "_encodage": "Ce fichier DOIT etre enregistre en UTF-8 (sans BOM) pour que les accents fonctionnent",
+  "_commentaire": "MODELE DE CONFIGURATION — copier ce fichier dans votre dossier job",
+  "_encodage": "Ce fichier peut etre enregistre en ANSI (Windows-1252) ou UTF-8 avec BOM",
 
   "=== SMTP ===": "",
 
@@ -13,7 +13,7 @@
   "=== EXPEDITEUR ===": "",
 
   "From": "INEO.EXPLOITATION@creditlogement.fr",
-  "_From": "Adresse expÃ©diteur (doit Ãªtre autorisÃ©e sur le relais SMTP)",
+  "_From": "Adresse expéditeur (doit être autorisée sur le relais SMTP)",
 
   "=== DESTINATAIRES ===": "",
 
@@ -51,57 +51,57 @@
   "=== MESSAGES DE STATUT ===": "",
 
   "StatusMessages": {
-    "SUCCES":        "Le traitement s'est terminÃ© avec succÃ¨s.",
-    "OK":            "Le traitement s'est terminÃ© avec succÃ¨s.",
-    "WARNING":       "Le traitement s'est terminÃ© avec des avertissements. VÃ©rification recommandÃ©e.",
+    "SUCCES":        "Le traitement s'est terminé avec succès.",
+    "OK":            "Le traitement s'est terminé avec succès.",
+    "WARNING":       "Le traitement s'est terminé avec des avertissements. Vérification recommandée.",
     "ERREUR":        "Une erreur est survenue lors du traitement. Intervention requise.",
     "ECHEC":         "Une erreur est survenue lors du traitement. Intervention requise.",
     "INFO":          "Information transmise par le traitement.",
-    "PARTIEL":       "Le traitement s'est terminÃ© partiellement. Certains Ã©lÃ©ments n'ont pas Ã©tÃ© traitÃ©s.",
-    "AUCUN_FICHIER": "Aucun fichier Ã  traiter pour cette exÃ©cution."
+    "PARTIEL":       "Le traitement s'est terminé partiellement. Certains éléments n'ont pas été traités.",
+    "AUCUN_FICHIER": "Aucun fichier à traiter pour cette exécution."
   },
-  "_StatusMessages": "Le message affichÃ© dans le bandeau colorÃ©. La clÃ© doit correspondre exactement Ã  la valeur de -Status passÃ©e par le BAT",
+  "_StatusMessages": "Le message affiché dans le bandeau coloré. La clé doit correspondre exactement à la valeur de -Status passée par le BAT",
 
-  "=== TABLEAU CSV â€” OPTIONS DE REGROUPEMENT ===": "",
-  "_CSV_intro": "Ces 4 champs sont optionnels. Ils pilotent l'affichage du CSV passÃ© par -TableCsv.",
-  "_CSV_intro2": "Ils peuvent aussi Ãªtre surchargÃ©s par les paramÃ¨tres en ligne de commande (-GroupBy, -Columns...).",
+  "=== TABLEAU CSV — OPTIONS DE REGROUPEMENT ===": "",
+  "_CSV_intro": "Ces 4 champs sont optionnels. Ils pilotent l'affichage du CSV passé par -TableCsv.",
+  "_CSV_intro2": "Ils peuvent aussi être surchargés par les paramètres en ligne de commande (-GroupBy, -Columns...).",
 
   "GroupBy": "",
-  "_GroupBy": "Colonne du CSV utilisÃ©e comme rupture : 1 tableau par valeur unique. Ex: 'Expediteur'",
-  "_GroupBy_vide": "Laisser '' ou supprimer le champ pour afficher un seul tableau (comportement par dÃ©faut)",
+  "_GroupBy": "Colonne du CSV utilisée comme rupture : 1 tableau par valeur unique. Ex: 'Expediteur'",
+  "_GroupBy_vide": "Laisser '' ou supprimer le champ pour afficher un seul tableau (comportement par défaut)",
 
   "StatusColumn": "",
   "_StatusColumn": "Colonne du CSV contenant le statut par ligne (RECU / RETARD / NON_RECU).",
-  "_StatusColumn2": "Le moteur affiche un badge colorÃ© sur le titre du groupe (pire valeur du groupe).",
+  "_StatusColumn2": "Le moteur affiche un badge coloré sur le titre du groupe (pire valeur du groupe).",
   "_StatusColumn3": "Valeurs reconnues : RECU / OK / SUCCES (vert) | RETARD / WARNING / PARTIEL (orange) | NON_RECU / ABSENT / ECHEC / KO / ERREUR (rouge)",
 
   "Columns": [],
-  "_Columns": "Liste des colonnes du CSV Ã  afficher et dans quel ordre. Ex: ['Arrete','Somme_FOR','Evolution_FOR']",
-  "_Columns2": "Tableau vide [] = toutes les colonnes du CSV sont affichÃ©es",
+  "_Columns": "Liste des colonnes du CSV à afficher et dans quel ordre. Ex: ['Arrete','Somme_FOR','Evolution_FOR']",
+  "_Columns2": "Tableau vide [] = toutes les colonnes du CSV sont affichées",
 
   "Headers": [],
-  "_Headers": "En-tÃªtes affichÃ©es Ã  la place des noms de colonnes (mÃªme ordre que Columns). Ex: ['ArrÃªtÃ©','FOR','Evol. FOR']",
-  "_Headers2": "Tableau vide [] ou longueur diffÃ©rente de Columns = noms de colonnes bruts",
+  "_Headers": "En-têtes affichées à la place des noms de colonnes (même ordre que Columns). Ex: ['Arrêté','FOR','Evol. FOR']",
+  "_Headers2": "Tableau vide [] ou longueur différente de Columns = noms de colonnes bruts",
 
   "=== LOGS (optionnel) ===": "",
-  "_Logs_intro": "Ces champs sont optionnels. Ils Ã©vitent de passer LogDir/LogPattern Ã  chaque appel.",
+  "_Logs_intro": "Ces champs sont optionnels. Ils évitent de passer LogDir/LogPattern à chaque appel.",
 
   "LogDir": "",
-  "_LogDir": "RÃ©pertoire de logs Ã  scanner automatiquement. Ex: 'C:\\logs\\monjob'",
+  "_LogDir": "Répertoire de logs à scanner automatiquement. Ex: 'C:\\logs\\monjob'",
 
   "LogPattern": "*.log",
   "_LogPattern": "Filtre des fichiers de log. Ex: '*.log' | 'monjob_*.txt'",
 
   "LogTailLines": 30,
-  "_LogTailLines": "Nombre de derniÃ¨res lignes affichÃ©es par log (dÃ©faut : 30)",
+  "_LogTailLines": "Nombre de dernières lignes affichées par log (défaut : 30)",
 
   "LogErrorPattern": "(?i)(error|erreur|exception|fatal|critical|echec|failed)",
-  "_LogErrorPattern": "Expression rÃ©guliÃ¨re de dÃ©tection des erreurs dans les logs",
+  "_LogErrorPattern": "Expression régulière de détection des erreurs dans les logs",
 
   "=== AFFICHAGE / TRI (optionnel) ===": "",
 
   "Delimiter": ";",
-  "_Delimiter": "DÃ©limiteur du CSV passÃ© Ã  -TableCsv (dÃ©faut ;)",
+  "_Delimiter": "Délimiteur du CSV passé à -TableCsv (défaut ;)",
 
   "SortBy": "",
   "_SortBy": "Trier les lignes de chaque groupe par cette colonne (ex: 'Arrete'). Vide = ordre du CSV",
@@ -110,23 +110,23 @@
   "_Descending": "true pour un tri descendant",
 
   "TitlePrefix": "",
-  "_TitlePrefix": "PrÃ©fixe ajoutÃ© au titre de chaque groupe (ex: 'ExpÃ©diteur' -> 'ExpÃ©diteur EXP_BNP')",
+  "_TitlePrefix": "Préfixe ajouté au titre de chaque groupe (ex: 'Expéditeur' -> 'Expéditeur EXP_BNP')",
 
   "=== SURCHARGE DU VOCABULAIRE (optionnel) ===": "",
-  "_theme_intro": "Le moteur embarque des DÃ‰FAUTS internes (statuts, couleurs, badges, Ã©tapes, palette) : aucun fichier externe n'est requis. Les clÃ©s ci-dessous permettent Ã  CE job de surcharger ces dÃ©fauts. Omettez-les pour utiliser les dÃ©fauts du moteur.",
+  "_theme_intro": "Le moteur embarque des DÉFAUTS internes (statuts, couleurs, badges, étapes, palette) : aucun fichier externe n'est requis. Les clés ci-dessous permettent à CE job de surcharger ces défauts. Omettez-les pour utiliser les défauts du moteur.",
 
   "BadgeColors": {},
   "_BadgeColors": "Couleur des badges par valeur de StatusColumn. Ex: { \"NON_RECU\": { \"Bg\": \"#C62828\", \"Text\": \"#FFFFFF\" } } ou forme courte { \"NON_RECU\": \"#C62828\" }",
 
   "BadgeSeverity": {},
-  "_BadgeSeverity": "GravitÃ© (nombre) par statut, pour choisir la pire ligne d'un groupe. Ex: { \"NON_RECU\": 3, \"RETARD\": 2, \"RECU\": 1 }",
+  "_BadgeSeverity": "Gravité (nombre) par statut, pour choisir la pire ligne d'un groupe. Ex: { \"NON_RECU\": 3, \"RETARD\": 2, \"RECU\": 1 }",
 
   "Statuses": {},
-  "_Statuses": "DÃ©finir/surcharger un statut global. Ex: { \"EN_COURS\": { \"Label\": \"EN COURS\", \"Color\": \"#8E44AD\", \"Priority\": \"Normal\", \"Message\": \"...\" } }",
+  "_Statuses": "Définir/surcharger un statut global. Ex: { \"EN_COURS\": { \"Label\": \"EN COURS\", \"Color\": \"#8E44AD\", \"Priority\": \"Normal\", \"Message\": \"...\" } }",
 
   "Theme": {},
   "_Theme": "Surcharger la palette pour ce job. Ex: { \"Primary\": \"#005F73\", \"PercentNegative\": \"#B00020\" }",
 
   "ThemeFile": "",
-  "_ThemeFile": "OPTIONNEL (avancÃ©) : chemin d'un fichier JSON de vocabulaire partagÃ© par plusieurs jobs (mÃªmes clÃ©s que ci-dessus). FusionnÃ© par-dessus les dÃ©fauts du moteur, puis surchargÃ© par CE fichier. Laisser '' pour n'utiliser que les dÃ©fauts internes + les surcharges ci-dessus."
+  "_ThemeFile": "OPTIONNEL (avancé) : chemin d'un fichier JSON de vocabulaire partagé par plusieurs jobs (mêmes clés que ci-dessus). Fusionné par-dessus les défauts du moteur, puis surchargé par CE fichier. Laisser '' pour n'utiliser que les défauts internes + les surcharges ci-dessus."
 }

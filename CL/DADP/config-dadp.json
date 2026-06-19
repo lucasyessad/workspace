@@ -8,18 +8,18 @@
   "Environnement": "PROD",
   "EquipeNom":     "DSI - Exploitation",
 
-  "Subject": "[{{STATUS_LABEL}}] [{{ENVIRONNEMENT}}] DADP - Chargement donnÃ©es partenaires - {{DATE}}",
+  "Subject": "[{{STATUS_LABEL}}] [{{ENVIRONNEMENT}}] DADP - Chargement données partenaires - {{DATE}}",
 
   "StatusMessages": {
-    "SUCCES":  "Le chargement des donnÃ©es partenaires DADP s'est dÃ©roulÃ© avec succÃ¨s. La table DADP_STOCK a Ã©tÃ© mise Ã  jour.",
-    "WARNING": "Le chargement DADP est terminÃ© avec des alertes. Certains expÃ©diteurs sont en retard ou absents.",
+    "SUCCES":  "Le chargement des données partenaires DADP s'est déroulé avec succès. La table DADP_STOCK a été mise à jour.",
+    "WARNING": "Le chargement DADP est terminé avec des alertes. Certains expéditeurs sont en retard ou absents.",
     "ERREUR":  "Une erreur est survenue lors du chargement DADP ou des transmissions sont manquantes. Intervention requise."
   },
 
   "GroupBy":      "Expediteur",
   "StatusColumn": "Statut",
   "Delimiter":    ";",
-  "TitlePrefix":  "ExpÃ©diteur",
+  "TitlePrefix":  "Expéditeur",
   "SortBy":       "Arrete",
   "Descending":   false,
 
@@ -39,11 +39,11 @@
     "Date_chargement_INEO"
   ],
   "Headers": [
-    "ArrÃªtÃ©",   "SÃ©q.",
-    "FOR",      "Ã‰vol. FOR",
-    "DEF",      "Ã‰vol. DEF",
-    "NPE",      "Ã‰vol. NPE",
-    "IMP",      "Ã‰vol. IMP",
+    "Arrêté",   "Séq.",
+    "FOR",      "Évol. FOR",
+    "DEF",      "Évol. DEF",
+    "NPE",      "Évol. NPE",
+    "IMP",      "Évol. IMP",
     "Chargement INEO"
   ]
 }

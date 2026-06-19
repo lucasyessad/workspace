@@ -207,7 +207,7 @@ if (-not (Test-Path -LiteralPath $ConfigFile)) {
     exit 1
 }
 
-$raw = Get-Content -LiteralPath $ConfigFile -Raw -Encoding UTF8
+$raw = Get-Content -LiteralPath $ConfigFile -Raw -Encoding (Detect-Encoding $ConfigFile)
 
 # Substitution des variables d'environnement ${VAR} (ex: ${SMTP_SERVER})
 $raw = [regex]::Replace($raw, '\$\{([^}]+)\}', {
@@ -300,14 +300,14 @@ function Norm-Key([string]$s) {
 
 # --- DEFAUTS INTERNES (anciennement theme.json) -----------------------------
 $DefaultStatuses = @{
-    'OK'            = @{ Label = 'SUCCÃˆS';         Color = '#00A8A8'; Priority = 'Normal'; Message = "Le traitement s'est terminÃ© avec succÃ¨s." }
-    'SUCCES'        = @{ Label = 'SUCCÃˆS';         Color = '#00A8A8'; Priority = 'Normal'; Message = "Le traitement s'est terminÃ© avec succÃ¨s." }
-    'ERREUR'        = @{ Label = 'Ã‰CHEC';          Color = '#C0392B'; Priority = 'High';   Message = "Une ou plusieurs erreurs sont survenues." }
-    'ECHEC'         = @{ Label = 'Ã‰CHEC';          Color = '#C0392B'; Priority = 'High';   Message = "Une ou plusieurs erreurs sont survenues." }
-    'WARNING'       = @{ Label = 'AVERTISSEMENT';  Color = '#D8A825'; Priority = 'Normal'; Message = "Le traitement s'est terminÃ© avec des avertissements." }
+    'OK'            = @{ Label = 'SUCCÈS';         Color = '#00A8A8'; Priority = 'Normal'; Message = "Le traitement s'est terminé avec succès." }
+    'SUCCES'        = @{ Label = 'SUCCÈS';         Color = '#00A8A8'; Priority = 'Normal'; Message = "Le traitement s'est terminé avec succès." }
+    'ERREUR'        = @{ Label = 'ÉCHEC';          Color = '#C0392B'; Priority = 'High';   Message = "Une ou plusieurs erreurs sont survenues." }
+    'ECHEC'         = @{ Label = 'ÉCHEC';          Color = '#C0392B'; Priority = 'High';   Message = "Une ou plusieurs erreurs sont survenues." }
+    'WARNING'       = @{ Label = 'AVERTISSEMENT';  Color = '#D8A825'; Priority = 'Normal'; Message = "Le traitement s'est terminé avec des avertissements." }
     'INFO'          = @{ Label = 'INFORMATION';    Color = '#2E75B6'; Priority = 'Normal'; Message = "Information transmise par le traitement." }
-    'AUCUN_FICHIER' = @{ Label = 'AUCUN FICHIER';  Color = '#6BCFCF'; Priority = 'Normal'; Message = "Aucun fichier Ã  traiter." }
-    'PARTIEL'       = @{ Label = 'SUCCÃˆS PARTIEL'; Color = '#E67E22'; Priority = 'Normal'; Message = "Le traitement s'est terminÃ© partiellement." }
+    'AUCUN_FICHIER' = @{ Label = 'AUCUN FICHIER';  Color = '#6BCFCF'; Priority = 'Normal'; Message = "Aucun fichier à traiter." }
+    'PARTIEL'       = @{ Label = 'SUCCÈS PARTIEL'; Color = '#E67E22'; Priority = 'Normal'; Message = "Le traitement s'est terminé partiellement." }
 }
 $DefaultStatusDefault = @{ Label = ''; Color = '#888888'; Priority = 'Normal'; Message = '' }
 $DefaultBadgeColors = @{
@@ -355,7 +355,7 @@ $ThemePath = if ($ThemeFile) { $ThemeFile } elseif ($cfg.ThemeFile) { [string]$c
 if ($ThemePath) {
     if (Test-Path -LiteralPath $ThemePath) {
         try {
-            $themeObj = (Get-Content -LiteralPath $ThemePath -Raw -Encoding UTF8) | ConvertFrom-Json -ErrorAction Stop
+            $themeObj = (Get-Content -LiteralPath $ThemePath -Raw -Encoding (Detect-Encoding $ThemePath)) | ConvertFrom-Json -ErrorAction Stop
             Log "Theme externe charge : $ThemePath"
         } catch {
             Log "Theme externe illisible ($ThemePath), defauts internes utilises : $($_.Exception.Message)" 'WARNING'
@@ -432,7 +432,7 @@ if (-not (Test-Path -LiteralPath $TplPath)) {
     Log "Template introuvable : $TplPath" 'ERROR'
     exit 1
 }
-$tplHtml = Get-Content -LiteralPath $TplPath -Raw -Encoding UTF8
+$tplHtml = Get-Content -LiteralPath $TplPath -Raw -Encoding (Detect-Encoding $TplPath)
 Log "Template charge : $TplPath"
 
 # ============================================================================
@@ -883,7 +883,7 @@ if ($LogDir -and (Test-Path -LiteralPath $LogDir)) {
 if ($SectionFile -and (Test-Path -LiteralPath $SectionFile)) {
     Log "Chargement sections depuis fichier : $SectionFile"
     try {
-        $jSec = Get-Content -LiteralPath $SectionFile -Raw -Encoding UTF8 | ConvertFrom-Json
+        $jSec = Get-Content -LiteralPath $SectionFile -Raw -Encoding (Detect-Encoding $SectionFile) | ConvertFrom-Json
         foreach ($s in $jSec) {
             switch ($s.type) {
                 'kv' {
