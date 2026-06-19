@@ -12,7 +12,9 @@ Système **commun** de notification par e-mail HTML pour les jobs d'exploitation
 
 1. **Un outil générique, jamais spécifique.** Le moteur
    `SendMailNotificationHTML.ps1` ne connaît aucun métier : il met en forme et
-   envoie. Chaque job apporte sa propre config JSON.
+   envoie. Chaque job apporte sa propre config JSON. **Aucun statut, libellé,
+   couleur ou seuil n'est codé en dur** : tout le vocabulaire vit dans
+   `theme.json` (partagé) et peut être surchargé par la config d'un job.
 2. **L'intelligence reste dans ODI / SQL**, pas dans l'envoi du mail. Les
    calculs (évolutions, statuts, retards, expéditeurs manquants…) sont faits en
    base ; le mail ne fait qu'afficher le résultat.
@@ -49,8 +51,10 @@ l'affichage.
 
 | Fichier | Rôle |
 |---|---|
-| `PRODUCTION/SendMailNotificationHTML.ps1` | **Moteur universel** (v3.3). Utilisé par tous les jobs. |
+| `PRODUCTION/SendMailNotificationHTML.ps1` | **Moteur universel** (v4.0). Utilisé par tous les jobs. |
+| `PRODUCTION/theme.json` | **Thème partagé** : tout le vocabulaire (statuts, couleurs, badges, étapes, palette). Rien n'est codé en dur dans le moteur. |
 | `PRODUCTION/template-notification.html` | Template HTML (charte Crédit Logement, thème clair teal). |
+| `PRODUCTION/config-template.json` | Modèle de configuration commenté pour un nouveau job. |
 | `PRODUCTION/Notify.bat` | Point d'entrée optionnel `CLE=VALEUR` qui appelle directement le moteur. |
 | `DADP/IMR_DADP_CHARGE_IMAGE.bat` | Job DADP : ODI + envoi de la notification. |
 | `DADP/config-dadp.json` | Config DADP (destinataires, sujet, messages, GroupBy, colonnes). |
@@ -74,6 +78,10 @@ Obligatoires : `-ConfigFile -NomJob -Status`.
 | `-GroupBy` | Colonne de rupture → 1 section par valeur. |
 | `-StatusColumn` | Colonne statut → badge (pire valeur du groupe) sur le titre. |
 | `-Columns` / `-Headers` | Colonnes affichées et leurs en-têtes (surchargent la config). |
+| `-Delimiter` | Délimiteur du CSV (défaut `;`). |
+| `-SortBy` / `-Descending` | Tri des lignes de chaque groupe par une colonne. |
+| `-TitlePrefix` | Préfixe du titre de groupe (ex. `Expéditeur`). |
+| `-ThemeFile` | Thème alternatif (défaut : `PRODUCTION/theme.json`). |
 | `-SectionFile` / `-SectionsInline` | Sections JSON (fichier ou inline). |
 | `-Files` / `-FileDir` / `-FilePattern` | Fichiers explicites ou scan auto d'un répertoire. |
 | `-AutoAnalyze` / `-LogDir` … | Analyse auto des fichiers, récupération de logs. |
@@ -82,8 +90,30 @@ Obligatoires : `-ConfigFile -NomJob -Status`.
 | `-DryRun` | Génère le HTML **sans** envoyer. |
 | `-ExportHtml` | Sauvegarde le HTML généré dans un fichier. |
 
-`GroupBy`, `StatusColumn`, `Columns`, `Headers` peuvent aussi être placés dans le
-JSON de config ; le paramètre en ligne de commande l'emporte sur la config.
+`GroupBy`, `StatusColumn`, `Columns`, `Headers`, `Delimiter`, `SortBy`,
+`Descending`, `TitlePrefix` peuvent aussi être placés dans le JSON de config ;
+le paramètre en ligne de commande l'emporte sur la config.
+
+### Tout est configurable : le thème (`theme.json`)
+
+Le moteur ne code **aucun** statut ni couleur en dur. Le fichier
+`PRODUCTION/theme.json` définit, pour toute l'organisation :
+
+- **`Statuses`** : par statut → `Label`, `Color` (bandeau), `Priority`, `Message`.
+  Un job peut **inventer ses propres statuts** (ex. `EN_COURS`, `REJETE`).
+- **`BadgeColors`** / **`BadgeSeverity`** : couleur et gravité des badges par
+  ligne (la « pire » valeur d'un groupe).
+- **`StepBadges`** : icône + couleur du vocabulaire des étapes (`[SUCCES]`…).
+- **`Theme`** : palette complète (primaire, couleurs des %, logs, métriques…).
+
+N'importe quelle clé du thème peut être **surchargée par la config d'un job**
+(précédence : `job > theme`). Exemple, dans `config-monjob.json` :
+
+```json
+"Statuses":     { "EN_COURS": { "Label": "EN COURS", "Color": "#8E44AD", "Message": "..." } },
+"BadgeColors":  { "NON_RECU": { "Bg": "#C62828", "Text": "#FFFFFF" } },
+"Theme":        { "Primary": "#005F73" }
+```
 
 ## Configuration d'un job (format plat)
 

@@ -17,6 +17,19 @@
   },
 
   "GroupBy":      "Expediteur",
+  "StatusColumn": "Statut",
+  "Delimiter":    ";",
+  "TitlePrefix":  "Expéditeur",
+  "SortBy":       "Arrete",
+  "Descending":   false,
+
+  "BadgeColors": {
+    "RECU":     { "Bg": "#2E7D32", "Text": "#FFFFFF" },
+    "RETARD":   { "Bg": "#E65100", "Text": "#FFFFFF" },
+    "NON_RECU": { "Bg": "#C62828", "Text": "#FFFFFF" }
+  },
+  "BadgeSeverity": { "NON_RECU": 3, "RETARD": 2, "RECU": 1 },
+
   "Columns": [
     "Arrete", "Sequence",
     "Somme_FOR",  "Evolution_FOR",
@@ -26,11 +39,11 @@
     "Date_chargement_INEO"
   ],
   "Headers": [
-    "Arrete",   "Seq.",
-    "FOR",      "Evol. FOR",
-    "DEF",      "Evol. DEF",
-    "NPE",      "Evol. NPE",
-    "IMP",      "Evol. IMP",
+    "Arrêté",   "Séq.",
+    "FOR",      "Évol. FOR",
+    "DEF",      "Évol. DEF",
+    "NPE",      "Évol. NPE",
+    "IMP",      "Évol. IMP",
     "Chargement INEO"
   ]
 }

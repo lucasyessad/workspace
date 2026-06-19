@@ -223,6 +223,45 @@ set "TEMPLATE_PATH=C:\proclib\CL\PRODUCTION\template-notification.html"
 > `GroupBy`, `StatusColumn`, `Columns`, `Headers` peuvent être mis **soit dans la
 > config, soit en paramètre** de ligne de commande. Le paramètre l'emporte.
 
+## 5bis. Le thème `theme.json` — rien n'est codé en dur
+
+Tout le **vocabulaire** et toute la **palette** vivent dans
+`PRODUCTION/theme.json`, partagé par tous les jobs. Le moteur ne connaît **aucun**
+statut ni couleur a priori. On peut donc tout changer **sans toucher au
+PowerShell**.
+
+| Bloc du thème | Définit |
+|---|---|
+| `Statuses` | Par statut : `Label`, `Color` (bandeau), `Priority`, `Message`. |
+| `BadgeColors` | Couleur des badges par ligne (par valeur de `StatusColumn`). |
+| `BadgeSeverity` | Gravité (nombre) de chaque statut → choix de la « pire » ligne d'un groupe. |
+| `StepBadges` | Icône + couleur du vocabulaire des étapes (`[SUCCES]`, `[ECHEC]`…). |
+| `Theme` | Palette : couleur primaire, couleurs des %, des logs, des métriques. |
+
+**Inventer un statut** (ex. un job de surveillance avec `EN_COURS`) — il suffit de
+l'ajouter, soit dans `theme.json` (pour tous), soit dans la config du job :
+
+```json
+"Statuses": {
+  "EN_COURS": { "Label": "EN COURS", "Color": "#8E44AD", "Priority": "Normal",
+                "Message": "Le traitement est en cours d'exécution." }
+}
+```
+
+**Changer une couleur de badge** pour un job précis, sans impacter les autres :
+
+```json
+"BadgeColors": { "NON_RECU": { "Bg": "#B00020", "Text": "#FFFFFF" } }
+```
+
+**Précédence** : `paramètre CLI` > `config du job` > `theme.json`. Une clé absente
+de la config du job retombe sur le thème ; une clé absente du thème prend une
+valeur neutre (jamais d'erreur).
+
+> ⚠️ `theme.json` est une **ressource obligatoire** du moteur (comme le template).
+> Il doit rester à côté de `SendMailNotificationHTML.ps1` (ou être désigné par
+> `-ThemeFile` / la clé `ThemeFile` de la config).
+
 ---
 
 ## 6. Les paramètres du moteur

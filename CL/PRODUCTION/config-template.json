@@ -96,5 +96,37 @@
   "_LogTailLines": "Nombre de dernières lignes affichées par log (défaut : 30)",
 
   "LogErrorPattern": "(?i)(error|erreur|exception|fatal|critical|echec|failed)",
-  "_LogErrorPattern": "Expression régulière de détection des erreurs dans les logs"
+  "_LogErrorPattern": "Expression régulière de détection des erreurs dans les logs",
+
+  "=== AFFICHAGE / TRI (v4.0, optionnel) ===": "",
+
+  "Delimiter": ";",
+  "_Delimiter": "Délimiteur du CSV passé à -TableCsv (défaut ;)",
+
+  "SortBy": "",
+  "_SortBy": "Trier les lignes de chaque groupe par cette colonne (ex: 'Arrete'). Vide = ordre du CSV",
+
+  "Descending": false,
+  "_Descending": "true pour un tri descendant",
+
+  "TitlePrefix": "",
+  "_TitlePrefix": "Préfixe ajouté au titre de chaque groupe (ex: 'Expéditeur' -> 'Expéditeur EXP_BNP')",
+
+  "=== SURCHARGE DU THEME (v4.0, optionnel) ===": "",
+  "_theme_intro": "Tout le vocabulaire (statuts, couleurs, badges, étapes, palette) vit dans PRODUCTION/theme.json. Les clés ci-dessous permettent à CE job de surcharger le thème. Omettez-les pour utiliser les défauts du thème.",
+
+  "BadgeColors": {},
+  "_BadgeColors": "Couleur des badges par valeur de StatusColumn. Ex: { \"NON_RECU\": { \"Bg\": \"#C62828\", \"Text\": \"#FFFFFF\" } } ou forme courte { \"NON_RECU\": \"#C62828\" }",
+
+  "BadgeSeverity": {},
+  "_BadgeSeverity": "Gravité (nombre) par statut, pour choisir la pire ligne d'un groupe. Ex: { \"NON_RECU\": 3, \"RETARD\": 2, \"RECU\": 1 }",
+
+  "Statuses": {},
+  "_Statuses": "Définir/surcharger un statut global. Ex: { \"EN_COURS\": { \"Label\": \"EN COURS\", \"Color\": \"#8E44AD\", \"Priority\": \"Normal\", \"Message\": \"...\" } }",
+
+  "Theme": {},
+  "_Theme": "Surcharger la palette pour ce job. Ex: { \"Primary\": \"#005F73\", \"PercentNegative\": \"#B00020\" }",
+
+  "ThemeFile": "",
+  "_ThemeFile": "Chemin d'un theme.json alternatif (défaut : PRODUCTION/theme.json à côté du moteur)"
 }

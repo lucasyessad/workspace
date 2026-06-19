@@ -1,5 +1,5 @@
 # ============================================================================
-# SendMailNotificationHTML.ps1 - MOTEUR UNIVERSEL DE NOTIFICATION HTML  (v3.3)
+# SendMailNotificationHTML.ps1 - MOTEUR UNIVERSEL DE NOTIFICATION HTML  (v4.0)
 # ============================================================================
 # Outil ORGANISATIONNEL commun a tous les traitements (YHM, DADP, futurs jobs).
 # A partir d'un fichier de configuration JSON par job + de parametres en ligne
@@ -8,10 +8,14 @@
 # PRINCIPE : l'intelligence metier reste dans le traitement (ODI / SQL / BAT).
 #            Ce moteur ne fait que METTRE EN FORME et ENVOYER, de facon generique.
 #
-# UN TRAITEMENT COMPLET = ce moteur + 1 config JSON par job.
+# UN TRAITEMENT COMPLET = ce moteur + 1 config JSON par job (+ theme.json partage).
 # Il n'y a AUCUNE couche intermediaire : chaque BAT appelle directement ce
 # script. Tout le confort autrefois porte par un wrapper (scan de repertoires,
 # raccourci statistiques, priorite automatique) est integre ici.
+#
+# RIEN N'EST CODE EN DUR : tout le vocabulaire (statuts, libelles, messages,
+# couleurs, badges, etapes, palette) vit dans theme.json (ressource partagee du
+# moteur). La config d'un job peut surcharger n'importe quelle cle (job > theme).
 #
 # ----------------------------------------------------------------------------
 # CONTRAT D'APPEL (parametres) :
@@ -23,10 +27,17 @@
 #   Pieces jointes : -Attachments -AttachDir -AttachPattern
 #   Regroupement CSV (v3.2): -GroupBy -StatusColumn -Columns -Headers
 #                  (ces 4 peuvent aussi venir du JSON ; le parametre l'emporte)
+#   Affichage (v4.0): -Delimiter -SortBy -Descending -TitlePrefix -ThemeFile
 #   Options      : -DryRun -ExportHtml -MailPriority -AutoPriority -OverrideTo
 #                  -OverrideCc -ExtraSubject -NoFooter -Verbose2
 #
 # HISTORIQUE :
+#   v4.0 : externalisation TOTALE du vocabulaire dans theme.json (statuts,
+#          libelles, messages, priorites, couleurs de bandeau, badges par ligne
+#          + gravite, vocabulaire des etapes, palette complete). Plus aucune
+#          valeur metier ni couleur en dur dans le moteur. Tri des lignes
+#          (-SortBy/-Descending), prefixe de titre (-TitlePrefix), delimiteur
+#          configurable (-Delimiter). Surcharge par la config du job (job > theme).
 #   v3.3 : moteur autosuffisant (suppression du wrapper Invoke-MailNotification).
 #          Integration de : scan de repertoire fichiers (-FileDir/-FilePattern),
 #          scan de pieces jointes (-AttachDir/-AttachPattern), raccourci
@@ -98,7 +109,14 @@ param(
     [string]   $GroupBy         = '',            # Colonne de rupture : 1 section / valeur
     [string]   $StatusColumn    = '',            # Colonne statut -> badge (pire valeur du groupe)
     [string]   $Columns         = '',            # Colonnes a afficher (CSV, surcharge config)
-    [string]   $Headers         = ''             # En-tetes affichees (meme ordre que -Columns)
+    [string]   $Headers         = '',            # En-tetes affichees (meme ordre que -Columns)
+
+    # --- AFFICHAGE / TRI / THEME (v4.0) -------------------------------------
+    [string]   $Delimiter       = '',            # Delimiteur CSV (defaut ; via config, sinon ;)
+    [string]   $SortBy          = '',            # Trier les lignes de chaque groupe par cette colonne
+    [switch]   $Descending,                      # Tri descendant
+    [string]   $TitlePrefix     = '',            # Prefixe du titre de groupe (ex: "Expediteur")
+    [string]   $ThemeFile       = ''             # Chemin de theme.json (defaut : a cote du script)
 )
 
 # ============================================================================
@@ -170,7 +188,7 @@ function Safe-Read([string]$path, [int]$maxLines = 0) {
     return @()
 }
 
-Log "=== SendMailNotificationHTML v3.3 ==="
+Log "=== SendMailNotificationHTML v4.0 ==="
 Log "Job: $NomJob | Status: $Status | Config: $ConfigFile"
 
 # ============================================================================
@@ -218,7 +236,6 @@ $Cc       = if ($OverrideCc) { Norm-Rcpt $OverrideCc } else { Norm-Rcpt $cfg.Cc 
 $TplPath  = $cfg.TemplatePath
 $Env_Name = if ($cfg.Environnement) { $cfg.Environnement } else { 'N/A' }
 $SubjTpl  = if ($cfg.Subject) { $cfg.Subject } else { '[{{STATUS_LABEL}}] [{{ENVIRONNEMENT}}] {{JOB_NAME}} - {{DATE}}' }
-$stMsgs   = $cfg.StatusMessages
 $Equipe   = if ($cfg.EquipeNom) { $cfg.EquipeNom } else { "L'equipe INEO" }
 
 # Heritage depuis la config si non passe en parametre (logs)
@@ -230,7 +247,100 @@ if ($cfg.LogErrorPattern)                           { $LogErrorPattern = $cfg.Lo
 Log "Config chargee : SMTP=$SmtpSrv, Env=$Env_Name, To=$($To -join ',')"
 
 # ============================================================================
-# RESOLUTION GroupBy / StatusColumn / Columns / Headers   (parametre > config)
+# CHARGEMENT DU THEME (vocabulaire + palette)  -  theme.json partage
+# ============================================================================
+# Tout le vocabulaire (statuts, libelles, messages, couleurs, badges, etapes,
+# palette) vit dans theme.json. Le moteur ne code RIEN en dur. La config du job
+# peut surcharger n'importe quelle cle (precedence : job > theme).
+
+# PSCustomObject (issu de ConvertFrom-Json) -> hashtable insensible a la casse
+function ConvertTo-Ht([object]$o) {
+    if ($o -is [System.Management.Automation.PSCustomObject]) {
+        $h = @{}
+        foreach ($p in $o.PSObject.Properties) { $h[$p.Name] = ConvertTo-Ht $p.Value }
+        return $h
+    } elseif ($o -is [System.Array]) {
+        return @($o | ForEach-Object { ConvertTo-Ht $_ })
+    }
+    return $o
+}
+
+# Fusion recursive : les cles de $over ecrasent celles de $base
+function Merge-Ht([object]$base, [object]$over) {
+    if ($base -isnot [hashtable]) { $base = @{} }
+    if ($null -eq $over) { return $base }
+    $o = ConvertTo-Ht $over
+    if ($o -isnot [hashtable]) { return $base }
+    foreach ($k in @($o.Keys)) {
+        if ($base.ContainsKey($k) -and ($base[$k] -is [hashtable]) -and ($o[$k] -is [hashtable])) {
+            $base[$k] = Merge-Ht $base[$k] $o[$k]
+        } else {
+            $base[$k] = $o[$k]
+        }
+    }
+    return $base
+}
+
+# Normalisation des cles de statut : MAJUSCULE, '_' -> espace, trim
+function Norm-Key([string]$s) {
+    if ($null -eq $s) { return '' }
+    return ([string]$s).ToUpper().Replace('_', ' ').Trim()
+}
+
+# Localisation : -ThemeFile > config.ThemeFile > theme.json (a cote du script)
+$ThemePath = if ($ThemeFile)      { $ThemeFile }
+             elseif ($cfg.ThemeFile) { [string]$cfg.ThemeFile }
+             else { Join-Path $PSScriptRoot 'theme.json' }
+if (-not (Test-Path -LiteralPath $ThemePath)) {
+    Log "Theme introuvable : $ThemePath (ressource obligatoire du moteur)" 'ERROR'
+    exit 1
+}
+try {
+    $themeObj = (Get-Content -LiteralPath $ThemePath -Raw -Encoding UTF8) | ConvertFrom-Json -ErrorAction Stop
+} catch {
+    Log "Erreur de parsing theme.json : $($_.Exception.Message)" 'ERROR'
+    exit 1
+}
+Log "Theme charge : $ThemePath"
+
+# Statuts (libelle/couleur/priorite/message) + surcharge config
+$script:Statuses = Merge-Ht (ConvertTo-Ht $themeObj.Statuses) $cfg.Statuses
+# Surcharge des messages via la cle historique StatusMessages (Message par statut)
+if ($cfg.StatusMessages) {
+    foreach ($p in $cfg.StatusMessages.PSObject.Properties) {
+        if (-not $script:Statuses.ContainsKey($p.Name)) { $script:Statuses[$p.Name] = @{} }
+        $script:Statuses[$p.Name]['Message'] = $p.Value
+    }
+}
+$script:StatusDefault = ConvertTo-Ht $themeObj.DefaultStatus
+
+# Vocabulaire des etapes
+$script:StepBadges  = Merge-Ht (ConvertTo-Ht $themeObj.StepBadges) $cfg.StepBadges
+$script:StepDefault = ConvertTo-Ht $themeObj.StepDefault
+
+# Palette
+$script:Theme = Merge-Ht (ConvertTo-Ht $themeObj.Theme) $cfg.Theme
+
+# Badges par ligne : couleurs et gravite, cles normalisees (MAJUSCULE, _ -> espace)
+$script:BadgeColors = @{}
+$bcSrc = Merge-Ht (ConvertTo-Ht $themeObj.BadgeColors) $cfg.BadgeColors
+foreach ($k in @($bcSrc.Keys)) {
+    $v = $bcSrc[$k]
+    if ($v -is [hashtable]) {
+        $bg = $v['Bg']
+        $tx = if ($v.ContainsKey('Text'))   { $v['Text'] }   else { '#FFFFFF' }
+        $bd = if ($v.ContainsKey('Border')) { $v['Border'] } else { $bg }
+    } else {
+        $bg = [string]$v; $tx = '#FFFFFF'; $bd = [string]$v
+    }
+    $script:BadgeColors[(Norm-Key $k)] = @{ Bg = $bg; Text = $tx; Border = $bd }
+}
+$script:BadgeSeverity = @{}
+$bsSrc = Merge-Ht (ConvertTo-Ht $themeObj.BadgeSeverity) $cfg.BadgeSeverity
+foreach ($k in @($bsSrc.Keys)) { $script:BadgeSeverity[(Norm-Key $k)] = [int]$bsSrc[$k] }
+
+# ============================================================================
+# RESOLUTION DES OPTIONS D'AFFICHAGE   (parametre > config > defaut)
 # ============================================================================
 # Helper : transforme une valeur config (tableau JSON OU chaine "a,b,c") en tableau
 function ConvertTo-ColList([object]$v) {
@@ -243,6 +353,10 @@ $effGroupBy      = if ($GroupBy)      { $GroupBy }      elseif ($cfg.GroupBy)   
 $effStatusColumn = if ($StatusColumn) { $StatusColumn } elseif ($cfg.StatusColumn) { [string]$cfg.StatusColumn } else { '' }
 $effColumns      = if ($Columns) { ConvertTo-ColList $Columns } else { ConvertTo-ColList $cfg.Columns }
 $effHeaders      = if ($Headers) { ConvertTo-ColList $Headers } else { ConvertTo-ColList $cfg.Headers }
+$effDelimiter    = if ($Delimiter)   { $Delimiter }   elseif ($cfg.Delimiter)   { [string]$cfg.Delimiter }   else { ';' }
+$effSortBy       = if ($SortBy)      { $SortBy }      elseif ($cfg.SortBy)      { [string]$cfg.SortBy }      else { '' }
+$effDescending   = if ($Descending)  { $true }        elseif ($null -ne $cfg.Descending) { [bool]$cfg.Descending } else { $false }
+$effTitlePrefix  = if ($TitlePrefix) { $TitlePrefix } elseif ($cfg.TitlePrefix) { [string]$cfg.TitlePrefix } else { '' }
 
 # ============================================================================
 # TEMPLATE HTML
@@ -268,49 +382,19 @@ if ($Horodatage -match '^\d{8}_\d{6}$') {
 }
 
 # ============================================================================
-# STATUT : LIBELLE + MESSAGE + COULEUR
+# STATUT : LIBELLE + MESSAGE + COULEUR + PRIORITE  (tout depuis theme/config)
 # ============================================================================
-$statusLabelMap = @{
-    'OK'            = 'SUCCES'
-    'SUCCES'        = 'SUCCES'
-    'ERREUR'        = 'ECHEC'
-    'ECHEC'         = 'ECHEC'
-    'WARNING'       = 'AVERTISSEMENT'
-    'INFO'          = 'INFORMATION'
-    'AUCUN_FICHIER' = 'AUCUN FICHIER'
-    'PARTIEL'       = 'SUCCES PARTIEL'
-}
-$statusLabel = if ($statusLabelMap.ContainsKey($Status)) { $statusLabelMap[$Status] } else { $Status }
+$st = if ($script:Statuses.ContainsKey($Status)) { $script:Statuses[$Status] } else { $null }
 
-$stMsg = $null
-if ($stMsgs -and ($stMsgs.PSObject.Properties.Name -contains $Status)) { $stMsg = $stMsgs.$Status }
-if ([string]::IsNullOrWhiteSpace($stMsg)) {
-    $defaults = @{
-        'OK'            = 'Le traitement s''est termine avec succes.'
-        'SUCCES'        = 'Le traitement s''est termine avec succes.'
-        'ERREUR'        = 'Une ou plusieurs erreurs sont survenues.'
-        'ECHEC'         = 'Une ou plusieurs erreurs sont survenues.'
-        'WARNING'       = 'Le traitement s''est termine avec des avertissements.'
-        'INFO'          = 'Information transmise par le traitement.'
-        'AUCUN_FICHIER' = 'Aucun fichier a traiter.'
-        'PARTIEL'       = 'Le traitement s''est termine partiellement.'
-    }
-    $stMsg = if ($defaults.ContainsKey($Status)) { $defaults[$Status] } else { "Statut : $Status" }
-}
+$statusLabel = if ($st -and $st['Label']) { $st['Label'] } else { $Status }
+$stMsg       = if ($st -and $st['Message']) { $st['Message'] } else { "Statut : $Status" }
+$stColor     = if ($st -and $st['Color']) { $st['Color'] }
+               elseif ($script:StatusDefault -and $script:StatusDefault['Color']) { $script:StatusDefault['Color'] }
+               else { '#888888' }
 
-$colorMap = @{
-    'OK'='#00A8A8'; 'SUCCES'='#00A8A8'
-    'ERREUR'='#C0392B'; 'ECHEC'='#C0392B'
-    'WARNING'='#D8A825'
-    'INFO'='#2E75B6'
-    'AUCUN_FICHIER'='#6BCFCF'
-    'PARTIEL'='#E67E22'
-}
-$stColor = if ($colorMap.ContainsKey($Status)) { $colorMap[$Status] } else { '#888888' }
-
-# Priorite mail automatique selon le statut (si -AutoPriority)
+# Priorite mail automatique selon le statut (si -AutoPriority) : depuis le theme
 if ($AutoPriority) {
-    $MailPriority = if ($Status -in 'ERREUR', 'ECHEC') { 'High' } else { 'Normal' }
+    $MailPriority = if ($st -and $st['Priority']) { $st['Priority'] } else { 'Normal' }
     Log "Priorite automatique -> $MailPriority (statut $Status)"
 }
 
@@ -318,27 +402,28 @@ if ($AutoPriority) {
 # RENDERERS DE SECTIONS  (palette Credit Logement)
 # ============================================================================
 
-# Titre de section. Detecte un badge de statut en fin de titre :
-#   "EXP_BNP [RECU]" / "... [RETARD]" / "... [NON RECU]"  -> pastille coloree.
+# Titre de section. Si le titre se termine par "[XXX]" et que XXX correspond a
+# une cle de BadgeColors (theme/config), une pastille coloree est affichee. Le
+# vocabulaire et les couleurs viennent ENTIEREMENT du theme (rien en dur).
 function Rnd-SectionTitle([string]$title, [string]$icon = '') {
     if (-not $title) { return '' }
     $badgeHtml   = ''
-    $borderColor = '#0056b3'
+    $borderColor = $script:Theme['SectionTitleBorder']
+    $titleBg     = $script:Theme['SectionTitleBg']
     $cleanTitle  = $title
-    if ($title -match '\[((?:NON RECU|RETARD|RECU)[^\]]*)\]$') {
-        $badgeText  = $Matches[0]
-        $badgeKey   = $Matches[1] -replace '\s*[—-].*', ''
-        $cleanTitle = $title.Substring(0, $title.Length - $badgeText.Length).TrimEnd()
-        $badgeColor = '#28a745'; $badgeBg = '#eafaf1'; $borderColor = '#28a745'
-        switch -Wildcard ($badgeKey.Trim()) {
-            'NON RECU' { $badgeColor = '#dc3545'; $badgeBg = '#fdf2f2'; $borderColor = '#dc3545' }
-            'RETARD'   { $badgeColor = '#E67E22'; $badgeBg = '#fef9f0'; $borderColor = '#E67E22' }
+    if ($title -match '\[([^\]]+)\]\s*$') {
+        $key = Norm-Key $Matches[1]
+        if ($script:BadgeColors.ContainsKey($key)) {
+            $bc         = $script:BadgeColors[$key]
+            $badgeBg    = $bc['Bg']; $badgeFg = $bc['Text']; $borderColor = $bc['Border']
+            $cleanTitle = $title.Substring(0, $title.Length - $Matches[0].Length).TrimEnd()
+            $badgeTxt   = $Matches[1].Trim()
+            $badgeHtml  = " <span style=`"display:inline-block;padding:2px 10px;border-radius:3px;font-size:11px;font-weight:700;background-color:${badgeBg};color:${badgeFg};border:1px solid ${borderColor};`">$(HtmlEnc $badgeTxt)</span>"
         }
-        $badgeHtml = " <span style=`"display:inline-block;padding:2px 10px;border-radius:3px;font-size:11px;font-weight:700;background-color:${badgeBg};color:${badgeColor};border:1px solid ${badgeColor};`">$(HtmlEnc $badgeText)</span>"
     }
     $iconHtml = if ($icon) { "<span style=`"font-size:13px;margin-right:6px;`">$icon</span>" } else { '' }
     $h  = '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:10px;">'
-    $h += "<tr><td bgcolor=`"#f8f9fa`" style=`"background-color:#f8f9fa;padding:7px 12px;border-left:4px solid ${borderColor};font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:15px;font-weight:600;color:#444444;`">${iconHtml}$(HtmlEnc $cleanTitle)${badgeHtml}</td></tr>"
+    $h += "<tr><td bgcolor=`"${titleBg}`" style=`"background-color:${titleBg};padding:7px 12px;border-left:4px solid ${borderColor};font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:15px;font-weight:600;color:#444444;`">${iconHtml}$(HtmlEnc $cleanTitle)${badgeHtml}</td></tr>"
     $h += '</table>'
     return $h
 }
@@ -351,12 +436,13 @@ function Rnd-Kv([array]$items, [string]$title = '') {
     $h = '<tr><td style="padding:10px 22px;">'
     if ($title) { $h += Rnd-SectionTitle $title '&#9881;' }
     $h += '<table width="100%" cellpadding="0" cellspacing="0" border="0">'
+    $kvLabel = $script:Theme['KvLabel']
     $alt = $false
     foreach ($p in $items) {
         $bg = if ($alt) { '#FFFFFF' } else { '#F5F8F8' }
         $h += "<tr><td bgcolor=`"$bg`" style=`"background-color:$bg;padding:9px 22px;`">" +
               "<table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`"><tr>" +
-              "<td width=`"200`" style=`"font-family:Calibri,'Segoe UI',sans-serif;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:0.4px;color:#00A8A8;vertical-align:top;`">$(HtmlEnc $p[0])</td>" +
+              "<td width=`"200`" style=`"font-family:Calibri,'Segoe UI',sans-serif;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:0.4px;color:${kvLabel};vertical-align:top;`">$(HtmlEnc $p[0])</td>" +
               "<td style=`"font-family:Calibri,'Segoe UI',sans-serif;font-size:13px;font-weight:bold;color:#2B2B2B;`">$(HtmlEnc $p[1])</td>" +
               "</tr></table></td></tr>"
         $alt = -not $alt
@@ -371,15 +457,19 @@ function Rnd-Etapes([array]$lines, [string]$title = 'Rapport d''ex&eacute;cution
     $h += '<table width="100%" cellpadding="0" cellspacing="0" border="0">'
     foreach ($l in $lines) {
         $t = $l.Trim(); if (-not $t) { continue }
-        $ic = '&#9679;'; $icc = '#888888'; $pad = ''; $weight = 'normal'
-        if ($t -match '^\[SUCCES\]')  { $ic = '&#10003;'; $icc = '#00A8A8'; $weight = 'bold' }
-        if ($t -match '^\[OK\]')      { $ic = '&#10003;'; $icc = '#00A8A8'; $weight = 'bold' }
-        if ($t -match '^\[ECHEC\]')   { $ic = '&#10007;'; $icc = '#C0392B'; $weight = 'bold' }
-        if ($t -match '^\[ERREUR\]')  { $ic = '&#10007;'; $icc = '#C0392B'; $weight = 'bold' }
-        if ($t -match '^\[WARNING\]') { $ic = '&#9888;';  $icc = '#D8A825' }
-        if ($t -match '^\[INFO\]')    { $ic = '&#8505;';  $icc = '#2E75B6' }
-        if ($t -match '^\[SKIP\]')    { $ic = '&#8594;';  $icc = '#AAAAAA' }
-        if ($t -match '^\s*\|')       { $pad = 'padding-left:24px;'; $icc = '#AAAAAA'; $ic = '&#8226;' }
+        $pad = ''
+        $sb  = $script:StepDefault
+        if ($t -match '^\s*\|') {
+            # ligne de detail (continuation) : indentation, puce neutre
+            $pad = 'padding-left:24px;'
+            $sb  = @{ Icon = '&#8226;'; Color = '#AAAAAA'; Bold = $false }
+        } elseif ($t -match '^\[([^\]]+)\]') {
+            $k = Norm-Key $Matches[1]
+            if ($script:StepBadges.ContainsKey($k)) { $sb = $script:StepBadges[$k] }
+        }
+        $ic     = $sb['Icon']
+        $icc    = $sb['Color']
+        $weight = if ($sb['Bold']) { 'bold' } else { 'normal' }
         $h += "<tr><td style=`"font-family:'Courier New',Consolas,monospace;font-size:11px;color:#2B2B2B;padding:3px 0;line-height:1.6;font-weight:${weight};${pad}`"><span style=`"color:${icc};font-size:13px;`">${ic}</span>&nbsp; $(HtmlEnc $t)</td></tr>"
     }
     $h += '</table></td></tr>'
@@ -393,11 +483,14 @@ function Rnd-Table([string]$title, [array]$headers, [array]$rows, [string]$icon 
     $h += '<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="background-color:#ffffff;border:1px solid #eee;">'
     $h += '<tr><td style="padding:15px;">'
     if ($title) { $h += Rnd-SectionTitle $title $icon }
+    $hdrColor = $script:Theme['TableHeaderText']
+    $pPos     = $script:Theme['PercentPositive'];  $pPosBg = $script:Theme['PercentPositiveBg']
+    $pNeg     = $script:Theme['PercentNegative'];  $pNegBg = $script:Theme['PercentNegativeBg']
     $h += '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">'
     if ($headers -and $headers.Count -gt 0) {
         $h += '<tr bgcolor="#ffffff" style="background-color:#ffffff;">'
         foreach ($hd in $headers) {
-            $h += "<td style=`"padding:10px;font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:12px;font-weight:600;color:#666666;text-transform:uppercase;border-bottom:2px solid #dee2e6;`">$(HtmlEnc $hd)</td>"
+            $h += "<td style=`"padding:10px;font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:12px;font-weight:600;color:${hdrColor};text-transform:uppercase;border-bottom:2px solid #dee2e6;`">$(HtmlEnc $hd)</td>"
         }
         $h += '</tr>'
     }
@@ -410,9 +503,9 @@ function Rnd-Table([string]$title, [array]$headers, [array]$rows, [string]$icon 
             $cellColor = '#333333'
             $extraStyle = ''
             if ($cs -match '^-[\d.,]+\s*%$') {
-                $cellColor = '#dc3545'; $extraStyle = 'background-color:#fdf2f2;padding:2px 6px;border-radius:3px;'
+                $cellColor = $pNeg; $extraStyle = "background-color:${pNegBg};padding:2px 6px;border-radius:3px;"
             } elseif ($cs -match '^\+?[\d.,]+\s*%$' -and $cs -notmatch '^\+?0([.,]0+)?\s*%$') {
-                $cellColor = '#28a745'; $extraStyle = 'background-color:#eafaf1;padding:2px 6px;border-radius:3px;'
+                $cellColor = $pPos; $extraStyle = "background-color:${pPosBg};padding:2px 6px;border-radius:3px;"
             }
             $h += "<td style=`"padding:12px 10px;font-family:'Segoe UI',Calibri,Arial,sans-serif;font-size:13px;border-bottom:1px solid #eee;`"><span style=`"color:${cellColor};font-weight:$(if($extraStyle){'bold'}else{'normal'});${extraStyle}`">$(HtmlEnc $cs)</span></td>"
         }
@@ -435,15 +528,17 @@ function Rnd-Texte([string]$title, [string]$content, [string]$icon = '') {
 function Rnd-CodeBlock([string]$title, [string[]]$lines, [string]$icon = '&#128196;') {
     $h = '<tr><td style="padding:12px 22px;">'
     if ($title) { $h += Rnd-SectionTitle $title $icon }
+    $primary = $script:Theme['Primary']
+    $cErr = $script:Theme['LogError']; $cWarn = $script:Theme['LogWarning']; $cOk = $script:Theme['LogSuccess']
     $h += '<table width="100%" cellpadding="0" cellspacing="0" border="0">'
-    $h += '<tr><td bgcolor="#1E1E1E" style="background-color:#1E1E1E;padding:14px 18px;border-left:3px solid #00A8A8;">'
+    $h += "<tr><td bgcolor=`"#1E1E1E`" style=`"background-color:#1E1E1E;padding:14px 18px;border-left:3px solid ${primary};`">"
     $lineNum = 0
     foreach ($l in $lines) {
         $lineNum++
         $color = '#D4D4D4'
-        if ($l -match $LogErrorPattern)                          { $color = '#F44747' }
-        elseif ($l -match '(?i)(warn|attention|avert)')          { $color = '#CCA700' }
-        elseif ($l -match '(?i)(success|succes|ok|done|termine)') { $color = '#6A9955' }
+        if ($l -match $LogErrorPattern)                          { $color = $cErr }
+        elseif ($l -match '(?i)(warn|attention|avert)')          { $color = $cWarn }
+        elseif ($l -match '(?i)(success|succes|ok|done|termine)') { $color = $cOk }
         $h += "<div style=`"font-family:'Courier New',Consolas,monospace;font-size:10px;line-height:1.5;white-space:pre-wrap;word-break:break-all;`">"
         $h += "<span style=`"color:#555555;margin-right:10px;user-select:none;`">$($lineNum.ToString().PadLeft(3,' '))</span>"
         $h += "<span style=`"color:${color};`">$(HtmlEnc $l)</span></div>"
@@ -456,7 +551,8 @@ function Rnd-StatsBar([string]$title, [hashtable]$stats) {
     $h = '<tr><td style="padding:12px 22px;">'
     if ($title) { $h += Rnd-SectionTitle $title '&#128202;' }
     $h += '<table width="100%" cellpadding="0" cellspacing="8" border="0"><tr>'
-    $colors = @('#00A8A8','#2E75B6','#D8A825','#C0392B','#6BCFCF','#E67E22','#8E44AD','#27AE60')
+    $colors = @($script:Theme['StatsPalette'])
+    if (-not $colors -or $colors.Count -eq 0) { $colors = @('#00A8A8') }
     $i = 0
     foreach ($key in $stats.Keys) {
         $c = $colors[$i % $colors.Count]
@@ -471,8 +567,9 @@ function Rnd-StatsBar([string]$title, [hashtable]$stats) {
 }
 
 function Rnd-FileCard([string]$filename, [string]$description, [hashtable]$meta) {
+    $primary = $script:Theme['Primary']
     $h = '<tr><td style="padding:8px 22px;">'
-    $h += '<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F5F8F8" style="background-color:#F5F8F8;border-left:4px solid #00A8A8;">'
+    $h += "<table width=`"100%`" cellpadding=`"0`" cellspacing=`"0`" border=`"0`" bgcolor=`"#F5F8F8`" style=`"background-color:#F5F8F8;border-left:4px solid ${primary};`">"
     $h += '<tr><td style="padding:12px 16px;">'
     $h += "<div style=`"font-family:Calibri,sans-serif;font-size:13px;font-weight:bold;color:#2B2B2B;`">&#128206; $(HtmlEnc $filename)</div>"
     if ($description) {
@@ -788,7 +885,7 @@ if ($SectionsInline) {
 if ($TableCsv -and (Test-Path -LiteralPath $TableCsv)) {
     if ($effGroupBy -or $effColumns.Count -gt 0 -or $effStatusColumn) {
         try {
-            $csv = Import-Csv -Path $TableCsv -Delimiter ';' -Encoding (Detect-Encoding $TableCsv)
+            $csv = Import-Csv -Path $TableCsv -Delimiter $effDelimiter -Encoding (Detect-Encoding $TableCsv)
             if ($csv.Count -gt 0) {
                 $allCols  = @($csv[0].PSObject.Properties.Name)
                 $dispCols = if ($effColumns.Count -gt 0) { $effColumns } else { $allCols }
@@ -801,25 +898,27 @@ if ($TableCsv -and (Test-Path -LiteralPath $TableCsv)) {
                 }
 
                 if ($effGroupBy -and ($allCols -contains $effGroupBy)) {
-                    # Rang de gravite : sert a determiner la pire valeur d'un groupe
-                    $sRank = @{
-                        'NON_RECU'=3; 'ABSENT'=3; 'ECHEC'=3; 'KO'=3; 'ERREUR'=3
-                        'RETARD'=2;   'WARNING'=2; 'PARTIEL'=2
-                        'RECU'=1;     'OK'=1;      'SUCCES'=1
-                    }
                     foreach ($g in ($csv | Group-Object -Property $effGroupBy | Sort-Object Name)) {
+                        # Tri des lignes du groupe (optionnel, configurable)
+                        $grp = $g.Group
+                        if ($effSortBy -and ($allCols -contains $effSortBy)) {
+                            $grp = if ($effDescending) { @($grp | Sort-Object -Property $effSortBy -Descending) }
+                                   else                { @($grp | Sort-Object -Property $effSortBy) }
+                        }
+                        # Badge = pire valeur du groupe (gravite depuis le theme/config)
                         $suffix = ''
                         if ($effStatusColumn -and ($allCols -contains $effStatusColumn)) {
                             $worst = 0; $worstVal = ''
-                            foreach ($row in $g.Group) {
-                                $sv = ([string]$row.$effStatusColumn).ToUpper().Trim()
-                                $rv = if ($sRank.ContainsKey($sv)) { $sRank[$sv] } else { 0 }
+                            foreach ($row in $grp) {
+                                $k  = Norm-Key ([string]$row.$effStatusColumn)
+                                $rv = if ($script:BadgeSeverity.ContainsKey($k)) { $script:BadgeSeverity[$k] } else { 0 }
                                 if ($rv -gt $worst) { $worst = $rv; $worstVal = [string]$row.$effStatusColumn }
                             }
                             if ($worstVal) { $suffix = " [$($worstVal -replace '_',' ')]" }
                         }
-                        $rws = @($g.Group | ForEach-Object { $r = $_; ,@($dispCols | ForEach-Object { [string]$r.$_ }) })
-                        $secHtml += Rnd-Table "$($g.Name)$suffix" $dispHdrs $rws
+                        $titleTxt = if ($effTitlePrefix) { "$effTitlePrefix $($g.Name)" } else { "$($g.Name)" }
+                        $rws = @($grp | ForEach-Object { $r = $_; ,@($dispCols | ForEach-Object { [string]$r.$_ }) })
+                        $secHtml += Rnd-Table "$titleTxt$suffix" $dispHdrs $rws
                     }
                 } else {
                     $rws = @($csv | ForEach-Object { $r = $_; ,@($dispCols | ForEach-Object { [string]$r.$_ }) })
@@ -863,7 +962,7 @@ $execKv = @(
     ,@('Duree execution', '{0:00}:{1:00}:{2:00}.{3:000}' -f $execTime.Hours, $execTime.Minutes, $execTime.Seconds, $execTime.Milliseconds)
     ,@('Machine',         $env:COMPUTERNAME)
     ,@('Utilisateur',     "$env:USERDOMAIN\$env:USERNAME")
-    ,@('Script',          'SendMailNotificationHTML v3.3')
+    ,@('Script',          'SendMailNotificationHTML v4.0')
 )
 if ($allAttachments.Count -gt 0) { $execKv += ,@('Pieces jointes', $allAttachments.Count.ToString()) }
 $secHtml += Rnd-Kv $execKv 'Informations d''execution'
